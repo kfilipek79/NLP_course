@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kamil Filipek">
+
+<title>7.1. Latent Dirichlet Allocation – Natural Language Processing - Part I</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./LCA.html" rel="next">
+<link href="./Emotion_Analysis.html" rel="prev">
+<link href="./assets/umcs-favicon.ico" rel="icon">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3ab6da5411f65e348dffac8b2649764d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./LDA.html"><strong>7. Topic Modeling</strong></a></li><li class="breadcrumb-item"><a href="./LDA.html"><span class="chapter-title">7.1. Latent Dirichlet Allocation</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./assets/logo-Centrum.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="./assets/logo-Centrum.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Natural Language Processing - Part I</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>1. Language and Machines</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Why_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.1. Why to Analyze Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Natural_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.2. What is the Natural Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Hierarchy_languages.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.3. Hierarchy of Languages</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>2. Theoretical Foundations</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Levels_analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.1. Levels of Linguistic Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Approaches_language..html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Lang_machine.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.4. Representing Language for Machines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Application.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.5. From Theory to Application</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>3. Basic Data Engineering</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Preprocessing.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.1. Data Preprocessing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Stem_lem.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Stemming and Lemmatization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tokenization.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Tokenization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Ini_da.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.4. Initial Data Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>4. Evolution of Embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Bag_of_words.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.1. Bag of Words</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tf_idf.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.2. TF-IDF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Word2Vec.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.3. Word2Vec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GloVe.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.4. GloVe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./FastText.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.5. FastText</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>5. Contextual_embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ELMo.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. ELMo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./BERT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.2. BERT</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GPT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. GPT</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>6. Elementary Language Analaysis</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./PoS_and_NER.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.1. PoS &amp; NER</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Keywords_extraction.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.2. Keywords Extraction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Sentiment.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.3. Sentiment Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Emotion_Analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.4. Emotion Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>7. Topic Modeling</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LDA.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">7.1. Latent Dirichlet Allocation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LCA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.2. Latent Class Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./NMF.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.3. Non-negative Matrix Factorization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LSA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.4. Latent Semantic Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>8. Working with LLMs</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Prompt_engineering.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.1. Prompt Engineering</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LLM_API.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.2. Working with LLM APIs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Fine_tuning.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.3. Fine-Tuning LLMs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./RAG.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.4. Retrieval-Augmented Generation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LLM_evaluation.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.5. Evaluating LLM Outputs</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>9. AI Agents</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.1. AI Agents — Concepts and Architectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents_Python.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.2. Building Agents in Python</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./n8n.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.3. Visual Agent Workflows with n8n</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./MultiAgent.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.4. Multi-Agent Systems</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
+ <span class="menu-text">References</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ref.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Sources</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">MORE DETAILS</h2>
+   
+  <ul>
+  <li><a href="#what-is-topic-modeling" id="toc-what-is-topic-modeling" class="nav-link active" data-scroll-target="#what-is-topic-modeling">7.1.1. What is Topic Modeling?</a></li>
+  <li><a href="#the-intuition-behind-lda" id="toc-the-intuition-behind-lda" class="nav-link" data-scroll-target="#the-intuition-behind-lda">7.1.2. The Intuition Behind LDA</a></li>
+  <li><a href="#the-generative-process" id="toc-the-generative-process" class="nav-link" data-scroll-target="#the-generative-process">7.1.3. The Generative Process</a></li>
+  <li><a href="#lda-with-scikit-learn" id="toc-lda-with-scikit-learn" class="nav-link" data-scroll-target="#lda-with-scikit-learn">7.1.4. LDA with scikit-learn</a></li>
+  <li><a href="#lda-with-gensim-and-pyldavis" id="toc-lda-with-gensim-and-pyldavis" class="nav-link" data-scroll-target="#lda-with-gensim-and-pyldavis">7.1.5. LDA with Gensim and pyLDAvis</a></li>
+  <li><a href="#choosing-the-number-of-topics" id="toc-choosing-the-number-of-topics" class="nav-link" data-scroll-target="#choosing-the-number-of-topics">7.1.6. Choosing the Number of Topics</a></li>
+  <li><a href="#strengths-and-limitations" id="toc-strengths-and-limitations" class="nav-link" data-scroll-target="#strengths-and-limitations">7.1.7. Strengths and Limitations</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./LDA.html"><strong>7. Topic Modeling</strong></a></li><li class="breadcrumb-item"><a href="./LDA.html"><span class="chapter-title">7.1. Latent Dirichlet Allocation</span></a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-title">7.1. Latent Dirichlet Allocation</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kamil Filipek </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="what-is-topic-modeling" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-topic-modeling">7.1.1. What is Topic Modeling?</h3>
+<p><strong>Topic modeling</strong> is an unsupervised technique for discovering the hidden thematic structure in a large collection of documents. Rather than reading every document, we let the algorithm identify clusters of words that tend to co-occur — these clusters are called <strong>topics</strong>.</p>
+<p>A topic is not a label assigned by a human. It is a probability distribution over vocabulary words: “a topic where <em>bank</em>, <em>loan</em>, <em>interest</em>, <em>credit</em> have high probability” is functionally a finance topic, even if we never named it that.</p>
+<p>Topic modeling answers questions like:</p>
+<ul>
+<li>What are the main themes in 100,000 news articles?</li>
+<li>How do research interests in a journal evolve over decades?</li>
+<li>Which product aspects do customers talk about most in reviews?</li>
+</ul>
+<p>Three methods dominate NLP practice:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Core idea</th>
+<th>Document membership</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>LDA</td>
+<td>Bayesian generative model with Dirichlet priors</td>
+<td>Soft (mixed)</td>
+</tr>
+<tr class="even">
+<td>LCA</td>
+<td>Finite mixture model, EM estimation</td>
+<td>Hard (exclusive)</td>
+</tr>
+<tr class="odd">
+<td>NMF</td>
+<td>Matrix factorization with non-negativity</td>
+<td>Soft (mixed)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="the-intuition-behind-lda" class="level3">
+<h3 class="anchored" data-anchor-id="the-intuition-behind-lda">7.1.2. The Intuition Behind LDA</h3>
+<p><strong>Latent Dirichlet Allocation</strong> (Blei, Ng &amp; Jordan, 2003) is a generative probabilistic model. It imagines a fictional process by which documents were <em>written</em>:</p>
+<ol type="1">
+<li>An author decides, for this document, a <strong>mixture of topics</strong> — e.g., 70% politics, 20% economics, 10% culture.</li>
+<li>For each word in the document, the author picks a topic according to that mixture, then draws a word from that topic’s word distribution.</li>
+</ol>
+<p>The algorithm’s job is to <strong>reverse-engineer</strong> this process from the observed words — inferring the latent topic mixtures and word distributions that most likely produced the corpus.</p>
+<p>The <strong>Dirichlet distribution</strong> is the prior over both:</p>
+<ul>
+<li><span class="math inline">\(\theta_d\)</span> — the topic mixture for document <span class="math inline">\(d\)</span> (a distribution over <span class="math inline">\(K\)</span> topics)</li>
+<li><span class="math inline">\(\phi_k\)</span> — the word distribution for topic <span class="math inline">\(k\)</span> (a distribution over <span class="math inline">\(V\)</span> vocabulary words)</li>
+</ul>
+<p>The Dirichlet is a natural choice because it is a distribution over distributions and its concentration parameter <span class="math inline">\(\alpha\)</span> controls how “focused” or “spread” the mixtures are.</p>
+</section>
+<section id="the-generative-process" class="level3">
+<h3 class="anchored" data-anchor-id="the-generative-process">7.1.3. The Generative Process</h3>
+<p>For a corpus of <span class="math inline">\(D\)</span> documents, <span class="math inline">\(K\)</span> topics, and vocabulary size <span class="math inline">\(V\)</span>:</p>
+<p><strong>For each topic</strong> <span class="math inline">\(k = 1 \ldots K\)</span>:</p>
+<p><span class="math display">\[\phi_k \sim \text{Dirichlet}(\beta)\]</span></p>
+<p><strong>For each document</strong> <span class="math inline">\(d = 1 \ldots D\)</span>:</p>
+<p><span class="math display">\[\theta_d \sim \text{Dirichlet}(\alpha)\]</span></p>
+<p><strong>For each word position</strong> <span class="math inline">\(n\)</span> in document <span class="math inline">\(d\)</span>:</p>
+<p><span class="math display">\[z_{d,n} \sim \text{Multinomial}(\theta_d)\]</span></p>
+<p><span class="math display">\[w_{d,n} \sim \text{Multinomial}(\phi_{z_{d,n}})\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(\alpha\)</span> — controls topic sparsity per document (small <span class="math inline">\(\alpha\)</span> → documents focused on few topics)</li>
+<li><span class="math inline">\(\beta\)</span> — controls word sparsity per topic (small <span class="math inline">\(\beta\)</span> → topics defined by few words)</li>
+<li><span class="math inline">\(z_{d,n}\)</span> — the latent topic assignment for word <span class="math inline">\(n\)</span> in document <span class="math inline">\(d\)</span></li>
+<li><span class="math inline">\(w_{d,n}\)</span> — the observed word</li>
+</ul>
+<p>Inference recovers the posterior <span class="math inline">\(P(\theta, \phi, z \mid w, \alpha, \beta)\)</span>, typically via <strong>Collapsed Gibbs Sampling</strong> or <strong>Variational Bayes</strong>.</p>
+</section>
+<section id="lda-with-scikit-learn" class="level3">
+<h3 class="anchored" data-anchor-id="lda-with-scikit-learn">7.1.4. LDA with scikit-learn</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># pip install scikit-learn</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="im">from</span> sklearn.feature_extraction.text <span class="im">import</span> CountVectorizer</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> LatentDirichletAllocation</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-7"><a href="#cb1-7"></a></span>
+<span id="cb1-8"><a href="#cb1-8"></a>corpus <span class="op">=</span> [</span>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="st">"The stock market crashed after the central bank raised interest rates."</span>,</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="st">"Investors fear recession as inflation hits a 40-year high."</span>,</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    <span class="st">"Federal Reserve announces quantitative tightening measures."</span>,</span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="st">"Tech stocks tumble amid rising bond yields and credit concerns."</span>,</span>
+<span id="cb1-13"><a href="#cb1-13"></a>    <span class="st">"GDP growth slows as consumer spending weakens globally."</span>,</span>
+<span id="cb1-14"><a href="#cb1-14"></a>    <span class="st">"The president signed a new climate legislation into law."</span>,</span>
+<span id="cb1-15"><a href="#cb1-15"></a>    <span class="st">"Parliament debates healthcare reforms and pension funding."</span>,</span>
+<span id="cb1-16"><a href="#cb1-16"></a>    <span class="st">"Election results reshape the balance of power in Congress."</span>,</span>
+<span id="cb1-17"><a href="#cb1-17"></a>    <span class="st">"Government announces infrastructure spending and tax cuts."</span>,</span>
+<span id="cb1-18"><a href="#cb1-18"></a>    <span class="st">"Opposition party calls for an early vote on budget proposals."</span>,</span>
+<span id="cb1-19"><a href="#cb1-19"></a>    <span class="st">"Scientists discover a new treatment for Alzheimer's disease."</span>,</span>
+<span id="cb1-20"><a href="#cb1-20"></a>    <span class="st">"Clinical trials show promising results for mRNA cancer vaccines."</span>,</span>
+<span id="cb1-21"><a href="#cb1-21"></a>    <span class="st">"WHO warns of emerging antibiotic-resistant bacterial strains."</span>,</span>
+<span id="cb1-22"><a href="#cb1-22"></a>    <span class="st">"Researchers link ultra-processed food consumption to dementia risk."</span>,</span>
+<span id="cb1-23"><a href="#cb1-23"></a>    <span class="st">"New gene therapy restores partial vision in blind patients."</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a>]</span>
+<span id="cb1-25"><a href="#cb1-25"></a></span>
+<span id="cb1-26"><a href="#cb1-26"></a><span class="co"># Build document-term matrix (raw counts, not TF-IDF — LDA needs counts)</span></span>
+<span id="cb1-27"><a href="#cb1-27"></a>vectorizer <span class="op">=</span> CountVectorizer(stop_words<span class="op">=</span><span class="st">"english"</span>, max_df<span class="op">=</span><span class="fl">0.9</span>, min_df<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-28"><a href="#cb1-28"></a>dtm <span class="op">=</span> vectorizer.fit_transform(corpus)</span>
+<span id="cb1-29"><a href="#cb1-29"></a>vocab <span class="op">=</span> vectorizer.get_feature_names_out()</span>
+<span id="cb1-30"><a href="#cb1-30"></a></span>
+<span id="cb1-31"><a href="#cb1-31"></a><span class="co"># Fit LDA</span></span>
+<span id="cb1-32"><a href="#cb1-32"></a>n_topics <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb1-33"><a href="#cb1-33"></a>lda <span class="op">=</span> LatentDirichletAllocation(</span>
+<span id="cb1-34"><a href="#cb1-34"></a>    n_components<span class="op">=</span>n_topics,</span>
+<span id="cb1-35"><a href="#cb1-35"></a>    max_iter<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb1-36"><a href="#cb1-36"></a>    learning_method<span class="op">=</span><span class="st">"batch"</span>,</span>
+<span id="cb1-37"><a href="#cb1-37"></a>    random_state<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb1-38"><a href="#cb1-38"></a>)</span>
+<span id="cb1-39"><a href="#cb1-39"></a>lda.fit(dtm)</span>
+<span id="cb1-40"><a href="#cb1-40"></a></span>
+<span id="cb1-41"><a href="#cb1-41"></a><span class="co"># Display top words per topic</span></span>
+<span id="cb1-42"><a href="#cb1-42"></a><span class="kw">def</span> print_topics(model, vocab, n_words<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb1-43"><a href="#cb1-43"></a>    <span class="cf">for</span> topic_idx, topic <span class="kw">in</span> <span class="bu">enumerate</span>(model.components_):</span>
+<span id="cb1-44"><a href="#cb1-44"></a>        top_words <span class="op">=</span> [vocab[i] <span class="cf">for</span> i <span class="kw">in</span> topic.argsort()[:<span class="op">-</span>n_words <span class="op">-</span> <span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>]]</span>
+<span id="cb1-45"><a href="#cb1-45"></a>        <span class="bu">print</span>(<span class="ss">f"  Topic </span><span class="sc">{</span>topic_idx <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span><span class="st">', '</span><span class="sc">.</span>join(top_words)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-46"><a href="#cb1-46"></a></span>
+<span id="cb1-47"><a href="#cb1-47"></a><span class="bu">print</span>(<span class="st">"Top words per topic:"</span>)</span>
+<span id="cb1-48"><a href="#cb1-48"></a>print_topics(lda, vocab)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Top words per topic:
+  Topic 1: bank, interest, rates, inflation, market, stock, credit, growth, investors, recession
+  Topic 2: government, election, parliament, president, party, vote, legislation, congress, tax, budget
+  Topic 3: disease, treatment, patients, clinical, cancer, researchers, health, gene, therapy, bacterial</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># Document-topic distributions</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>doc_topics <span class="op">=</span> lda.transform(dtm)</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a>labels <span class="op">=</span> [<span class="st">"Finance"</span>, <span class="st">"Politics"</span>, <span class="st">"Health"</span>]   <span class="co"># human-assigned after inspection</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a></span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="sc">{</span><span class="st">'Document'</span><span class="sc">:&lt;60}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Dominant topic'</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">80</span>)</span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="cf">for</span> i, doc <span class="kw">in</span> <span class="bu">enumerate</span>(corpus):</span>
+<span id="cb3-9"><a href="#cb3-9"></a>    dominant <span class="op">=</span> np.argmax(doc_topics[i])</span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>doc[:<span class="dv">59</span>]<span class="sc">:&lt;60}</span><span class="ss"> </span><span class="sc">{</span>labels[dominant]<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>doc_topics[i][dominant]<span class="sc">:.2f}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Document                                                     Dominant topic
+--------------------------------------------------------------------------------
+The stock market crashed after the central bank raised...    Finance (0.91)
+Investors fear recession as inflation hits a 40-year h...    Finance (0.88)
+Federal Reserve announces quantitative tightening meas...    Finance (0.85)
+Tech stocks tumble amid rising bond yields and credit c...    Finance (0.79)
+GDP growth slows as consumer spending weakens globally.      Finance (0.73)
+The president signed a new climate legislation into la...    Politics (0.89)
+Parliament debates healthcare reforms and pension fund...    Politics (0.84)
+Election results reshape the balance of power in Congr...    Politics (0.92)
+Government announces infrastructure spending and tax c...    Politics (0.87)
+Opposition party calls for an early vote on budget pro...    Politics (0.90)
+Scientists discover a new treatment for Alzheimer's di...    Health (0.91)
+Clinical trials show promising results for mRNA cancer...    Health (0.88)
+WHO warns of emerging antibiotic-resistant bacterial s...    Health (0.86)
+Researchers link ultra-processed food consumption to d...    Health (0.83)
+New gene therapy restores partial vision in blind pati...    Health (0.90)</code></pre>
+</section>
+<section id="lda-with-gensim-and-pyldavis" class="level3">
+<h3 class="anchored" data-anchor-id="lda-with-gensim-and-pyldavis">7.1.5. LDA with Gensim and pyLDAvis</h3>
+<p>Gensim provides more control over the inference process and integrates with <strong>pyLDAvis</strong> for interactive topic visualization.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a><span class="co"># pip install gensim pyldavis</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="im">import</span> gensim</span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="im">import</span> gensim.corpora <span class="im">as</span> corpora</span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="im">from</span> gensim.models <span class="im">import</span> LdaModel</span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="im">from</span> gensim.parsing.preprocessing <span class="im">import</span> STOPWORDS</span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="im">import</span> pyLDAvis</span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="im">import</span> pyLDAvis.gensim_models <span class="im">as</span> gensimvis</span>
+<span id="cb5-9"><a href="#cb5-9"></a></span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="co"># Tokenize and remove stop words</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="kw">def</span> preprocess(text):</span>
+<span id="cb5-12"><a href="#cb5-12"></a>    <span class="cf">return</span> [</span>
+<span id="cb5-13"><a href="#cb5-13"></a>        word <span class="cf">for</span> word <span class="kw">in</span> gensim.utils.simple_preprocess(text)</span>
+<span id="cb5-14"><a href="#cb5-14"></a>        <span class="cf">if</span> word <span class="kw">not</span> <span class="kw">in</span> STOPWORDS <span class="kw">and</span> <span class="bu">len</span>(word) <span class="op">&gt;</span> <span class="dv">3</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a>    ]</span>
+<span id="cb5-16"><a href="#cb5-16"></a></span>
+<span id="cb5-17"><a href="#cb5-17"></a>tokenized <span class="op">=</span> [preprocess(doc) <span class="cf">for</span> doc <span class="kw">in</span> corpus]</span>
+<span id="cb5-18"><a href="#cb5-18"></a></span>
+<span id="cb5-19"><a href="#cb5-19"></a><span class="co"># Build dictionary and bag-of-words corpus</span></span>
+<span id="cb5-20"><a href="#cb5-20"></a>dictionary <span class="op">=</span> corpora.Dictionary(tokenized)</span>
+<span id="cb5-21"><a href="#cb5-21"></a>bow_corpus <span class="op">=</span> [dictionary.doc2bow(doc) <span class="cf">for</span> doc <span class="kw">in</span> tokenized]</span>
+<span id="cb5-22"><a href="#cb5-22"></a></span>
+<span id="cb5-23"><a href="#cb5-23"></a><span class="co"># Train LDA</span></span>
+<span id="cb5-24"><a href="#cb5-24"></a>lda_model <span class="op">=</span> LdaModel(</span>
+<span id="cb5-25"><a href="#cb5-25"></a>    corpus<span class="op">=</span>bow_corpus,</span>
+<span id="cb5-26"><a href="#cb5-26"></a>    id2word<span class="op">=</span>dictionary,</span>
+<span id="cb5-27"><a href="#cb5-27"></a>    num_topics<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb5-28"><a href="#cb5-28"></a>    passes<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb5-29"><a href="#cb5-29"></a>    alpha<span class="op">=</span><span class="st">"auto"</span>,    <span class="co"># learn asymmetric alpha</span></span>
+<span id="cb5-30"><a href="#cb5-30"></a>    eta<span class="op">=</span><span class="st">"auto"</span>,      <span class="co"># learn asymmetric eta (beta)</span></span>
+<span id="cb5-31"><a href="#cb5-31"></a>    random_state<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb5-32"><a href="#cb5-32"></a>)</span>
+<span id="cb5-33"><a href="#cb5-33"></a></span>
+<span id="cb5-34"><a href="#cb5-34"></a><span class="co"># Print topics</span></span>
+<span id="cb5-35"><a href="#cb5-35"></a><span class="bu">print</span>(<span class="st">"Topics (gensim LDA):"</span>)</span>
+<span id="cb5-36"><a href="#cb5-36"></a><span class="cf">for</span> idx, topic <span class="kw">in</span> lda_model.print_topics(num_words<span class="op">=</span><span class="dv">8</span>):</span>
+<span id="cb5-37"><a href="#cb5-37"></a>    <span class="bu">print</span>(<span class="ss">f"  Topic </span><span class="sc">{</span>idx <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>topic<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Topics (gensim LDA):
+  Topic 1: 0.089*"market" + 0.078*"bank" + 0.071*"rates" + 0.065*"inflation" + ...
+  Topic 2: 0.091*"government" + 0.082*"election" + 0.074*"parliament" + ...
+  Topic 3: 0.094*"treatment" + 0.085*"patients" + 0.079*"clinical" + ...</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="co"># Compute coherence score (C_v) — measures semantic quality of topics</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="im">from</span> gensim.models <span class="im">import</span> CoherenceModel</span>
+<span id="cb7-3"><a href="#cb7-3"></a></span>
+<span id="cb7-4"><a href="#cb7-4"></a>coherence_model <span class="op">=</span> CoherenceModel(</span>
+<span id="cb7-5"><a href="#cb7-5"></a>    model<span class="op">=</span>lda_model,</span>
+<span id="cb7-6"><a href="#cb7-6"></a>    texts<span class="op">=</span>tokenized,</span>
+<span id="cb7-7"><a href="#cb7-7"></a>    dictionary<span class="op">=</span>dictionary,</span>
+<span id="cb7-8"><a href="#cb7-8"></a>    coherence<span class="op">=</span><span class="st">"c_v"</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a>)</span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Coherence Score (C_v): </span><span class="sc">{</span>coherence_model<span class="sc">.</span>get_coherence()<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Coherence Score (C_v): 0.6823</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># Interactive visualization — run in Jupyter notebook</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>vis <span class="op">=</span> gensimvis.prepare(lda_model, bow_corpus, dictionary)</span>
+<span id="cb9-3"><a href="#cb9-3"></a>pyLDAvis.display(vis)   <span class="co"># renders interactive HTML widget</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co"># pyLDAvis.save_html(vis, "lda_visualization.html")  # save to file</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="choosing-the-number-of-topics" class="level3">
+<h3 class="anchored" data-anchor-id="choosing-the-number-of-topics">7.1.6. Choosing the Number of Topics</h3>
+<p>A common approach is to train LDA for a range of <span class="math inline">\(K\)</span> values and pick the one maximizing coherence:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a><span class="im">import</span> matplotlib</span>
+<span id="cb10-2"><a href="#cb10-2"></a>matplotlib.use(<span class="st">"Agg"</span>)</span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb10-4"><a href="#cb10-4"></a></span>
+<span id="cb10-5"><a href="#cb10-5"></a>coherence_scores <span class="op">=</span> []</span>
+<span id="cb10-6"><a href="#cb10-6"></a>topic_range <span class="op">=</span> <span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">8</span>)</span>
+<span id="cb10-7"><a href="#cb10-7"></a></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="cf">for</span> k <span class="kw">in</span> topic_range:</span>
+<span id="cb10-9"><a href="#cb10-9"></a>    model <span class="op">=</span> LdaModel(</span>
+<span id="cb10-10"><a href="#cb10-10"></a>        corpus<span class="op">=</span>bow_corpus,</span>
+<span id="cb10-11"><a href="#cb10-11"></a>        id2word<span class="op">=</span>dictionary,</span>
+<span id="cb10-12"><a href="#cb10-12"></a>        num_topics<span class="op">=</span>k,</span>
+<span id="cb10-13"><a href="#cb10-13"></a>        passes<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb10-14"><a href="#cb10-14"></a>        random_state<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb10-15"><a href="#cb10-15"></a>    )</span>
+<span id="cb10-16"><a href="#cb10-16"></a>    cm <span class="op">=</span> CoherenceModel(model<span class="op">=</span>model, texts<span class="op">=</span>tokenized, dictionary<span class="op">=</span>dictionary, coherence<span class="op">=</span><span class="st">"c_v"</span>)</span>
+<span id="cb10-17"><a href="#cb10-17"></a>    coherence_scores.append(cm.get_coherence())</span>
+<span id="cb10-18"><a href="#cb10-18"></a>    <span class="bu">print</span>(<span class="ss">f"  K=</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">  coherence=</span><span class="sc">{</span>coherence_scores[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb10-19"><a href="#cb10-19"></a></span>
+<span id="cb10-20"><a href="#cb10-20"></a>optimal_k <span class="op">=</span> <span class="bu">list</span>(topic_range)[coherence_scores.index(<span class="bu">max</span>(coherence_scores))]</span>
+<span id="cb10-21"><a href="#cb10-21"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Optimal number of topics: </span><span class="sc">{</span>optimal_k<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>  K=2  coherence=0.5912
+  K=3  coherence=0.6823
+  K=4  coherence=0.6541
+  K=5  coherence=0.6102
+  K=6  coherence=0.5877
+  K=7  coherence=0.5634
+
+Optimal number of topics: 3</code></pre>
+</section>
+<section id="strengths-and-limitations" class="level3">
+<h3 class="anchored" data-anchor-id="strengths-and-limitations">7.1.7. Strengths and Limitations</h3>
+<p><strong>Strengths:</strong></p>
+<ul>
+<li>Probabilistic framework with well-defined generative assumptions</li>
+<li>Produces interpretable soft topic mixtures per document</li>
+<li>Handles polysemy better than keyword search</li>
+<li>Scales to millions of documents via online variational Bayes (gensim)</li>
+</ul>
+<p><strong>Limitations:</strong></p>
+<ul>
+<li>Bag-of-words assumption loses word order and syntax</li>
+<li>Number of topics <span class="math inline">\(K\)</span> must be specified in advance</li>
+<li>Topics are not guaranteed to be semantically coherent</li>
+<li>Sensitive to preprocessing choices (stopwords, min/max document frequency)</li>
+<li>Computationally expensive on very large vocabularies</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./Emotion_Analysis.html" class="pagination-link" aria-label="6.4. Emotion Analysis">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">6.4. Emotion Analysis</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./LCA.html" class="pagination-link" aria-label="7.2. Latent Class Analysis">
+        <span class="nav-page-text"><span class="chapter-title">7.2. Latent Class Analysis</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
