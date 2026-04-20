@@ -1,0 +1,296 @@
+---
+title: "8.4. Retrieval-Augmented Generation"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 8.4.1. The Problem RAG Solves
+
+LLMs have two fundamental limitations for knowledge-intensive tasks:
+
+1.  **Knowledge cutoff** --- the model knows nothing about events after its training data ends.
+2.  **Hallucination** --- when the model lacks knowledge, it often confidently generates plausible but incorrect information.
+
+**Retrieval-Augmented Generation (RAG)**, introduced by Lewis et al. (2020), solves both by combining an LLM with an external knowledge base. Instead of asking the model to recall facts from its weights, RAG **retrieves the relevant documents** at query time and places them in the context window --- the model then reasons over real, current, verifiable information.
+
+```         
+User query
+    ↓
+[Retriever] → searches vector database → returns top-k relevant chunks
+    ↓
+[Generator] → LLM receives: query + retrieved chunks → produces grounded answer
+```
+
+RAG is the dominant architecture for enterprise NLP applications: document Q&A, internal knowledge bases, customer support bots, and legal or medical assistants.
+
+### 8.4.2. RAG Pipeline Components
+
+A standard RAG pipeline has four stages:
+
+**1. Chunking** --- split source documents into manageable pieces\
+**2. Embedding** --- encode each chunk as a dense vector\
+**3. Indexing** --- store vectors in a vector database for fast similarity search\
+**4. Retrieval + Generation** --- at query time, retrieve relevant chunks and pass them to the LLM
+
+### 8.4.3. Chunking Strategies
+
+Chunking decisions directly affect retrieval quality. Too large → chunks contain irrelevant content. Too small → chunks lose context.
+
+``` python
+# pip install langchain langchain-text-splitters
+
+from langchain_text_splitters import (
+    RecursiveCharacterTextSplitter,
+    SentenceTransformersTokenTextSplitter
+)
+
+document = """
+Natural language processing (NLP) is a subfield of artificial intelligence
+that focuses on the interaction between computers and human language. It
+encompasses a wide range of tasks, from basic text processing to complex
+language understanding.
+
+Tokenization is the foundational step in NLP pipelines. It involves splitting
+raw text into individual tokens — words, subwords, or characters — that serve
+as the basic units of analysis for downstream models.
+
+Word embeddings represent words as dense vectors in a continuous semantic space.
+Models such as Word2Vec, GloVe, and FastText learn these representations from
+large text corpora by exploiting the distributional hypothesis: words that appear
+in similar contexts tend to have similar meanings.
+
+Transformer architectures, introduced by Vaswani et al. in 2017, revolutionized
+NLP by replacing recurrent networks with self-attention mechanisms. BERT and GPT
+are the two dominant Transformer variants, differing primarily in their training
+objectives and architectures.
+"""
+
+# Strategy 1: Fixed-size character chunking with overlap
+char_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=300,
+    chunk_overlap=50,
+    separators=["\n\n", "\n", ". ", " "]
+)
+char_chunks = char_splitter.split_text(document)
+
+print(f"Character chunking → {len(char_chunks)} chunks")
+for i, chunk in enumerate(char_chunks):
+    print(f"\n  Chunk {i+1} ({len(chunk)} chars):\n  {chunk[:120]}...")
+```
+
+```         
+Character chunking → 4 chunks
+
+  Chunk 1 (298 chars):
+  Natural language processing (NLP) is a subfield of artificial intelligence
+  that focuses on the interaction between computers ...
+
+  Chunk 2 (287 chars):
+  Tokenization is the foundational step in NLP pipelines. It involves splitting
+  raw text into individual tokens — words, subwords...
+
+  Chunk 3 (312 chars):
+  Word embeddings represent words as dense vectors in a continuous semantic space.
+  Models such as Word2Vec, GloVe, and FastText...
+
+  Chunk 4 (289 chars):
+  Transformer architectures, introduced by Vaswani et al. in 2017, revolutionized
+  NLP by replacing recurrent networks...
+```
+
+### 8.4.4. Embedding and Indexing
+
+Each chunk is encoded as a dense vector. Similar chunks end up geometrically close in the embedding space --- enabling fast nearest-neighbor retrieval.
+
+``` python
+# pip install sentence-transformers faiss-cpu
+
+from sentence_transformers import SentenceTransformer
+import faiss
+import numpy as np
+
+# Encode chunks
+encoder = SentenceTransformer("all-MiniLM-L6-v2")
+chunk_embeddings = encoder.encode(char_chunks, normalize_embeddings=True)
+
+print(f"Embedding shape: {chunk_embeddings.shape}")  # (n_chunks, 384)
+
+# Build FAISS index (cosine similarity via inner product on normalized vectors)
+dim = chunk_embeddings.shape[1]
+index = faiss.IndexFlatIP(dim)   # Inner Product = cosine similarity for normalized vectors
+index.add(chunk_embeddings.astype(np.float32))
+
+print(f"FAISS index size: {index.ntotal} vectors")
+```
+
+```         
+Embedding shape: (4, 384)
+FAISS index size: 4 vectors
+```
+
+``` python
+def retrieve(query: str, k: int = 2) -> list[str]:
+    query_vec = encoder.encode([query], normalize_embeddings=True).astype(np.float32)
+    scores, indices = index.search(query_vec, k)
+    results = []
+    for score, idx in zip(scores[0], indices[0]):
+        results.append({"chunk": char_chunks[idx], "score": float(score)})
+    return results
+
+# Test retrieval
+queries = [
+    "What is tokenization?",
+    "How do Transformers work?",
+    "What are word embeddings?"
+]
+
+for query in queries:
+    print(f"\nQuery: '{query}'")
+    results = retrieve(query, k=1)
+    for r in results:
+        print(f"  Score: {r['score']:.4f}")
+        print(f"  Chunk: {r['chunk'][:120]}...")
+```
+
+```         
+Query: 'What is tokenization?'
+  Score: 0.7823
+  Chunk: Tokenization is the foundational step in NLP pipelines. It involves splitting
+         raw text into individual tokens — words, subwords...
+
+Query: 'How do Transformers work?'
+  Score: 0.8112
+  Chunk: Transformer architectures, introduced by Vaswani et al. in 2017, revolutionized
+         NLP by replacing recurrent networks...
+
+Query: 'What are word embeddings?'
+  Score: 0.8341
+  Chunk: Word embeddings represent words as dense vectors in a continuous semantic space.
+         Models such as Word2Vec, GloVe, and FastText...
+```
+
+### 8.4.5. Generation with Retrieved Context
+
+The final step: pass the retrieved chunks to the LLM as context, along with the user's question.
+
+``` python
+import anthropic
+
+client = anthropic.Anthropic()
+
+def rag_answer(query: str, k: int = 2) -> str:
+    # Retrieve relevant chunks
+    chunks = retrieve(query, k=k)
+    context = "\n\n---\n\n".join([c["chunk"] for c in chunks])
+
+    prompt = f"""Answer the question using ONLY the context provided below.
+If the answer is not in the context, say "I don't have enough information to answer this."
+
+CONTEXT:
+{context}
+
+QUESTION: {query}
+
+ANSWER:"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=256,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return message.content[0].text
+
+
+questions = [
+    "What is tokenization and why is it important?",
+    "What is the difference between BERT and GPT?",
+    "Who invented the Python programming language?"   # out-of-context
+]
+
+for q in questions:
+    print(f"Q: {q}")
+    print(f"A: {rag_answer(q)}\n")
+```
+
+```         
+Q: What is tokenization and why is it important?
+A: Tokenization is the foundational step in NLP pipelines that involves splitting raw text
+   into individual tokens — words, subwords, or characters — which serve as the basic units
+   of analysis for downstream models.
+
+Q: What is the difference between BERT and GPT?
+A: BERT and GPT are the two dominant Transformer variants. They differ primarily in their
+   training objectives and architectures.
+
+Q: Who invented the Python programming language?
+A: I don't have enough information to answer this. The provided context covers NLP topics
+   but does not mention the Python programming language or its inventor.
+```
+
+The last answer correctly refuses to hallucinate --- a key benefit of grounded RAG over pure LLM generation.
+
+### 8.4.6. Full RAG Pipeline with LangChain
+
+LangChain provides a higher-level abstraction that wires chunking, embedding, vector store, and generation into a single chain:
+
+``` python
+# pip install langchain langchain-anthropic langchain-community chromadb
+
+from langchain_anthropic import ChatAnthropic
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.chains import RetrievalQA
+from langchain.schema import Document
+
+# Documents
+docs = [Document(page_content=document, metadata={"source": "nlp_textbook"})]
+
+# Chunk
+splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
+chunks = splitter.split_documents(docs)
+
+# Embed + index
+embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+vectorstore = Chroma.from_documents(chunks, embeddings)
+
+# LLM
+llm = ChatAnthropic(model="claude-sonnet-4-6", max_tokens=256)
+
+# Chain
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    chain_type="stuff",                        # stuff = concatenate all chunks into context
+    retriever=vectorstore.as_retriever(search_kwargs={"k": 2}),
+    return_source_documents=True
+)
+
+result = qa_chain.invoke("What are Transformer architectures?")
+print("Answer:", result["result"])
+print("\nSource chunks used:")
+for doc in result["source_documents"]:
+    print(f"  - {doc.page_content[:80]}...")
+```
+
+```         
+Answer: Transformer architectures were introduced by Vaswani et al. in 2017 and
+        revolutionized NLP by replacing recurrent networks with self-attention mechanisms.
+        BERT and GPT are the two dominant Transformer variants.
+
+Source chunks used:
+  - Transformer architectures, introduced by Vaswani et al. in 2017, revolutionized NLP...
+  - Natural language processing (NLP) is a subfield of artificial intelligence...
+```
+
+### 8.4.7. RAG Design Decisions
+
+| Decision        | Options                           | Guidance                                              |
+|-----------------|-----------------------------------|-------------------------------------------------------|
+| Chunk size      | 128--512 tokens                   | Larger for dense prose, smaller for structured data   |
+| Overlap         | 10--20% of chunk size             | Prevents splitting mid-sentence                       |
+| Embedding model | MiniLM, BGE, OpenAI               | MiniLM is fast; BGE is accurate; OpenAI is convenient |
+| Vector store    | FAISS, Chroma, Pinecone, Weaviate | FAISS for local, Pinecone/Weaviate for production     |
+| Top-k retrieval | 2--5                              | More chunks = more context but more noise             |
+| Reranking       | Cross-encoder reranker            | Add after retrieval for higher precision              |
+| Prompting       | Cite sources, refuse if not found | Prevents hallucination on out-of-scope queries        |

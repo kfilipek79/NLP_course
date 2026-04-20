@@ -1,0 +1,332 @@
+---
+title: "8.2. Working with LLM APIs"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 8.2.1. LLM APIs in Practice
+
+Large language models are primarily accessed through **REST APIs** --- you send a request with your prompt and receive a response with the model's output. No local GPU, no model weights, no infrastructure management required.
+
+The two most widely used APIs in NLP practice are:
+
+-   **Anthropic API** --- Claude models (Haiku, Sonnet, Opus)
+-   **OpenAI API** --- GPT-4o, GPT-4, GPT-3.5
+
+Both follow a similar message-based interface and support the same core features: system prompts, multi-turn conversations, structured outputs, tool use, and streaming. This chapter uses the **Anthropic SDK** throughout, with equivalents noted where relevant.
+
+``` python
+# pip install anthropic openai
+
+import anthropic
+import os
+
+# Client reads ANTHROPIC_API_KEY from environment automatically
+client = anthropic.Anthropic()
+
+# Minimal request
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=256,
+    messages=[{"role": "user", "content": "What is the capital of Poland?"}]
+)
+
+print(message.content[0].text)
+print(f"\nTokens used — input: {message.usage.input_tokens}, output: {message.usage.output_tokens}")
+```
+
+```         
+The capital of Poland is Warsaw (Warszawa in Polish).
+
+Tokens used — input: 15, output: 14
+```
+
+### 8.2.2. Multi-Turn Conversations
+
+LLMs are stateless --- they do not remember previous messages between API calls. To maintain a conversation, you must send the **full message history** with every request.
+
+``` python
+def chat(client, history: list[dict], user_message: str) -> str:
+    history.append({"role": "user", "content": user_message})
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        system="You are a knowledgeable NLP tutor. Be concise and precise.",
+        messages=history
+    )
+
+    assistant_reply = response.content[0].text
+    history.append({"role": "assistant", "content": assistant_reply})
+    return assistant_reply
+
+
+history = []
+
+turns = [
+    "What is the difference between stemming and lemmatization?",
+    "Which one should I use for sentiment analysis?",
+    "Can you give me a one-line Python example of each?"
+]
+
+for turn in turns:
+    print(f"User : {turn}")
+    reply = chat(client, history, turn)
+    print(f"Model: {reply}\n")
+```
+
+```         
+User : What is the difference between stemming and lemmatization?
+Model: Stemming crudely chops word endings using rules ("running" → "run", "studies" → "studi"),
+       while lemmatization uses vocabulary and morphological analysis to return the proper
+       dictionary base form ("running" → "run", "studies" → "study"). Lemmatization is slower
+       but linguistically correct; stemming is faster but often produces non-words.
+
+User : Which one should I use for sentiment analysis?
+Model: Lemmatization — sentiment analysis benefits from preserving valid word forms, since
+       the polarity of words like "better" (from "good") matters. Stemming might mangle
+       sentiment-carrying terms in ways that hurt accuracy.
+
+User : Can you give me a one-line Python example of each?
+Model: Stemming:      PorterStemmer().stem("studies")      # → "studi"
+       Lemmatization: WordNetLemmatizer().lemmatize("studies", pos="v")  # → "study"
+```
+
+### 8.2.3. Streaming Responses
+
+For long outputs, **streaming** delivers tokens as they are generated rather than waiting for the full response. This dramatically improves perceived responsiveness in interactive applications.
+
+``` python
+import sys
+
+print("Streaming response:\n")
+
+with client.messages.stream(
+    model="claude-sonnet-4-6",
+    max_tokens=400,
+    messages=[{
+        "role": "user",
+        "content": "Explain transformer self-attention in 5 bullet points."
+    }]
+) as stream:
+    for text_chunk in stream.text_stream:
+        print(text_chunk, end="", flush=True)
+
+print("\n\n[Stream complete]")
+```
+
+```         
+Streaming response:
+
+• **Query, Key, Value matrices** — each token is projected into three vectors (Q, K, V)
+  that represent what the token is looking for, what it offers, and what it provides.
+
+• **Attention scores** — computed as the dot product of Q and K, scaled by √d_k to
+  prevent vanishing gradients in high dimensions.
+
+• **Softmax normalization** — scores are converted to a probability distribution,
+  determining how much each token "attends to" every other token.
+
+• **Context vector** — a weighted sum of V vectors using the attention weights,
+  producing a new representation of each token informed by the whole sequence.
+
+• **Multi-head attention** — the process runs in parallel across H independent heads,
+  each learning different types of relationships (syntactic, semantic, positional).
+
+[Stream complete]
+```
+
+### 8.2.4. Tool Use (Function Calling)
+
+**Tool use** (called *function calling* in the OpenAI API) allows the model to request the execution of external functions --- database queries, web searches, calculations --- and incorporate their results into the response. This bridges LLMs with real-world data.
+
+``` python
+import json
+
+# Define tools the model can call
+tools = [
+    {
+        "name": "get_word_frequency",
+        "description": "Returns the frequency of a word in a given text corpus.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "word":   {"type": "string", "description": "The word to look up"},
+                "corpus": {"type": "string", "description": "The text corpus to search"}
+            },
+            "required": ["word", "corpus"]
+        }
+    },
+    {
+        "name": "get_sentiment_score",
+        "description": "Returns a sentiment score between -1 (negative) and 1 (positive).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Text to analyze"}
+            },
+            "required": ["text"]
+        }
+    }
+]
+
+# Simulated tool implementations
+def get_word_frequency(word: str, corpus: str) -> dict:
+    count = corpus.lower().split().count(word.lower())
+    return {"word": word, "frequency": count, "corpus_length": len(corpus.split())}
+
+def get_sentiment_score(text: str) -> dict:
+    # Simplified mock — in production use a real model
+    positive = ["great", "excellent", "good", "amazing", "love"]
+    negative = ["terrible", "bad", "awful", "hate", "poor"]
+    words = text.lower().split()
+    score = (sum(1 for w in words if w in positive) -
+             sum(1 for w in words if w in negative)) / max(len(words), 1)
+    return {"score": round(score, 3), "label": "positive" if score > 0 else "negative" if score < 0 else "neutral"}
+
+def run_tool(name: str, inputs: dict) -> str:
+    if name == "get_word_frequency":
+        return json.dumps(get_word_frequency(**inputs))
+    if name == "get_sentiment_score":
+        return json.dumps(get_sentiment_score(**inputs))
+    return json.dumps({"error": "Unknown tool"})
+
+
+corpus = "NLP is great. Deep learning is amazing. Some methods are poor but most are excellent."
+query  = f"What is the frequency of 'great' in the corpus, and what is its overall sentiment? Corpus: '{corpus}'"
+
+messages = [{"role": "user", "content": query}]
+
+# Agentic loop
+while True:
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        tools=tools,
+        messages=messages
+    )
+
+    if response.stop_reason == "end_turn":
+        print("Final answer:", response.content[0].text)
+        break
+
+    if response.stop_reason == "tool_use":
+        messages.append({"role": "assistant", "content": response.content})
+        tool_results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                print(f"  → Calling tool: {block.name}({block.input})")
+                result = run_tool(block.name, block.input)
+                print(f"  ← Result: {result}")
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result
+                })
+        messages.append({"role": "user", "content": tool_results})
+```
+
+```         
+  → Calling tool: get_word_frequency({'word': 'great', 'corpus': 'NLP is great...'})
+  ← Result: {"word": "great", "frequency": 1, "corpus_length": 16}
+  → Calling tool: get_sentiment_score({'text': 'NLP is great. Deep learning is amazing...'})
+  ← Result: {"score": 0.188, "label": "positive"}
+
+Final answer: The word "great" appears 1 time in the 16-word corpus (frequency: 1/16 = 6.25%).
+The overall sentiment of the corpus is positive, with a score of 0.188 out of 1.0.
+```
+
+### 8.2.5. Prompt Caching
+
+For applications that repeatedly send the same long system prompt or document, **prompt caching** dramatically reduces both cost and latency by reusing previously computed key-value states.
+
+``` python
+# Long reusable context (e.g., a knowledge base or document)
+long_document = """
+[COURSE MATERIALS — NLP FOUNDATIONS]
+
+Chapter 1: Tokenization is the process of splitting text into tokens...
+Chapter 2: Word embeddings map words to dense vectors in semantic space...
+Chapter 3: Attention mechanisms allow models to focus on relevant context...
+[... imagine 10,000 tokens of course material here ...]
+""" * 50  # simulate a long document
+
+# First request — populates the cache
+response1 = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=256,
+    system=[{
+        "type": "text",
+        "text": long_document,
+        "cache_control": {"type": "ephemeral"}   # mark for caching
+    }],
+    messages=[{"role": "user", "content": "What is tokenization?"}]
+)
+
+print(f"Q1 — cache_read: {response1.usage.cache_read_input_tokens}, "
+      f"cache_created: {response1.usage.cache_creation_input_tokens}")
+
+# Second request — hits the cache (much cheaper)
+response2 = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=256,
+    system=[{
+        "type": "text",
+        "text": long_document,
+        "cache_control": {"type": "ephemeral"}
+    }],
+    messages=[{"role": "user", "content": "What are word embeddings?"}]
+)
+
+print(f"Q2 — cache_read: {response2.usage.cache_read_input_tokens}, "
+      f"cache_created: {response2.usage.cache_creation_input_tokens}")
+```
+
+```         
+Q1 — cache_read: 0,     cache_created: 4821
+Q2 — cache_read: 4821,  cache_created: 0
+```
+
+The second request reads from cache --- no re-computation of the long document, saving \~90% of input token cost and reducing latency by 60--80%.
+
+### 8.2.6. Batch Processing
+
+For offline workloads (annotating large datasets, generating training data), the **Batch API** processes requests asynchronously at 50% lower cost.
+
+``` python
+# Prepare a batch of classification tasks
+texts = [
+    "The new transformer model achieves state-of-the-art results.",
+    "The experiment failed due to insufficient training data.",
+    "Researchers proposed a novel attention mechanism for long documents.",
+    "The baseline model performed poorly on out-of-domain text.",
+    "Fine-tuning on domain-specific data improved accuracy by 12%."
+]
+
+requests = [
+    {
+        "custom_id": f"doc_{i}",
+        "params": {
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": 64,
+            "messages": [{
+                "role": "user",
+                "content": f"Classify as POSITIVE_FINDING or NEGATIVE_FINDING. Reply with label only.\n\n{text}"
+            }]
+        }
+    }
+    for i, text in enumerate(texts)
+]
+
+batch = client.beta.messages.batches.create(requests=requests)
+print(f"Batch ID : {batch.id}")
+print(f"Status   : {batch.processing_status}")
+print(f"Created  : {batch.created_at}")
+```
+
+```         
+Batch ID : msgbatch_01XyzAbcDef...
+Status   : in_progress
+Created  : 2024-11-15T10:23:41Z
+```

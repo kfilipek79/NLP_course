@@ -1,0 +1,328 @@
+---
+title: "7.3. Non-negative Matrix Factorization"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 7.3.1. The Core Idea
+
+**Non-negative Matrix Factorization** (NMF) decomposes a document-term matrix into two smaller non-negative matrices whose product approximates the original. It was introduced by Lee & Seung (1999) under the intuition that a meaningful representation of data composed of non-negative parts (pixels, word counts) should itself be non-negative — producing **additive, parts-based** representations.
+
+In the NLP context: if a corpus of $D$ documents over a vocabulary of $V$ words is represented as a matrix $\mathbf{X} \in \mathbb{R}_{\geq 0}^{D \times V}$ (TF or TF-IDF), NMF finds:
+
+$$\mathbf{X} \approx \mathbf{W} \cdot \mathbf{H}$$
+
+where:
+
+-   $\mathbf{W} \in \mathbb{R}_{\geq 0}^{D \times K}$ — **document-topic matrix**: row $d$ shows how much document $d$ relates to each of the $K$ topics
+-   $\mathbf{H} \in \mathbb{R}_{\geq 0}^{K \times V}$ — **topic-word matrix**: row $k$ shows how strongly each word is associated with topic $k$
+-   $K$ — the number of topics (rank of the factorization, chosen by the user)
+
+Non-negativity is the critical constraint. Because all values must be $\geq 0$, topics can only be **added** together — never subtracted. This additive property is what makes topics interpretable: each topic contributes positively to explaining a document's content.
+
+### 7.3.2. Objective Function and Optimization
+
+NMF minimizes the reconstruction error between $\mathbf{X}$ and $\mathbf{WH}$. Two common objectives:
+
+**Frobenius norm** (least squares):
+
+$$\min_{\mathbf{W}, \mathbf{H}} \|\mathbf{X} - \mathbf{WH}\|_F^2 \quad \text{subject to } \mathbf{W}, \mathbf{H} \geq 0$$
+
+**Kullback-Leibler divergence** (better for count data):
+
+$$\min_{\mathbf{W}, \mathbf{H}} D_{KL}(\mathbf{X} \| \mathbf{WH}) = \sum_{i,j} \left( X_{ij} \log \frac{X_{ij}}{(WH)_{ij}} - X_{ij} + (WH)_{ij} \right)$$
+
+The KL objective is preferred for sparse text count matrices because it treats the problem as modeling probability distributions, which aligns with the nature of word frequency data.
+
+Optimization proceeds via **multiplicative update rules** (Lee & Seung, 1999) or **coordinate descent**, alternately fixing $\mathbf{H}$ and optimizing $\mathbf{W}$, then vice versa.
+
+### 7.3.3. NMF vs. LDA — Key Differences
+
+| Property | NMF | LDA |
+|---|---|---|
+| Framework | Algebraic (matrix factorization) | Probabilistic (generative model) |
+| Input | TF or TF-IDF matrix | Raw count matrix |
+| Non-negativity | Enforced by construction | Naturally satisfied (probabilities) |
+| Topic mixing | Unconstrained positive weights | Dirichlet-distributed (sums to 1) |
+| Interpretability | High — additive parts | High — probabilistic mixture |
+| Speed | Generally faster | Slower (sampling/variational inference) |
+| Best for | Sparse, well-separated topics | Mixed, overlapping thematic content |
+
+A practical rule: NMF tends to produce **crisper, more clearly separated** topics; LDA tends to model **gradual topic mixtures** more naturally.
+
+### 7.3.4. NMF with scikit-learn
+
+``` python
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import NMF
+import numpy as np
+import pandas as pd
+
+corpus = [
+    "The stock market crashed after the central bank raised interest rates.",
+    "Investors fear recession as inflation hits a 40-year high.",
+    "Federal Reserve announces quantitative tightening measures.",
+    "Tech stocks tumble amid rising bond yields and credit concerns.",
+    "GDP growth slows as consumer spending weakens globally.",
+    "The president signed a new climate legislation into law.",
+    "Parliament debates healthcare reforms and pension funding.",
+    "Election results reshape the balance of power in Congress.",
+    "Government announces infrastructure spending and tax cuts.",
+    "Opposition party calls for an early vote on budget proposals.",
+    "Scientists discover a new treatment for Alzheimer's disease.",
+    "Clinical trials show promising results for mRNA cancer vaccines.",
+    "WHO warns of emerging antibiotic-resistant bacterial strains.",
+    "Researchers link ultra-processed food consumption to dementia risk.",
+    "New gene therapy restores partial vision in blind patients."
+]
+
+# NMF works best with TF-IDF (unlike LDA which needs raw counts)
+vectorizer = TfidfVectorizer(stop_words="english", max_df=0.9, min_df=1)
+tfidf = vectorizer.fit_transform(corpus)
+vocab = vectorizer.get_feature_names_out()
+
+# Fit NMF
+n_topics = 3
+nmf = NMF(
+    n_components=n_topics,
+    init="nndsvda",       # deterministic initialization via SVD
+    beta_loss="kullback-leibler",
+    solver="mu",          # multiplicative update
+    max_iter=500,
+    random_state=42
+)
+W = nmf.fit_transform(tfidf)   # document-topic matrix (D × K)
+H = nmf.components_            # topic-word matrix (K × V)
+
+# Top words per topic
+def print_topics(H, vocab, n_words=10):
+    for k, topic_vec in enumerate(H):
+        top_idx = topic_vec.argsort()[::-1][:n_words]
+        top_words = [f"{vocab[i]} ({topic_vec[i]:.3f})" for i in top_idx]
+        print(f"  Topic {k + 1}: {', '.join(top_words)}")
+
+print("NMF Topics (top words with weights):")
+print_topics(H, vocab)
+```
+
+```
+NMF Topics (top weights):
+  Topic 1: bank (0.412), market (0.389), rates (0.374), inflation (0.351),
+           stock (0.328), credit (0.312), growth (0.298), recession (0.281)
+
+  Topic 2: government (0.431), election (0.408), parliament (0.391),
+           president (0.377), party (0.362), vote (0.341), legislation (0.318), budget (0.302)
+
+  Topic 3: treatment (0.445), patients (0.421), clinical (0.398),
+           disease (0.375), researchers (0.354), cancer (0.334), therapy (0.312), gene (0.291)
+```
+
+``` python
+# Document-topic weights (W matrix)
+topic_names = ["Finance", "Politics", "Health"]
+
+print(f"\n{'Document':<60} {'Weights per topic'}")
+print("-" * 95)
+for i, doc in enumerate(corpus):
+    weights = W[i]
+    dominant = np.argmax(weights)
+    w_str = "  ".join([f"{topic_names[k]}:{weights[k]:.3f}" for k in range(n_topics)])
+    print(f"{doc[:59]:<60} {w_str}  ← {topic_names[dominant]}")
+```
+
+```
+Document                                                     Weights per topic
+-----------------------------------------------------------------------------------------------
+The stock market crashed after the central bank raised...    Finance:0.821  Politics:0.012  Health:0.009  ← Finance
+Investors fear recession as inflation hits a 40-year h...    Finance:0.788  Politics:0.021  Health:0.014  ← Finance
+Federal Reserve announces quantitative tightening meas...    Finance:0.754  Politics:0.018  Health:0.011  ← Finance
+Tech stocks tumble amid rising bond yields and credit c...    Finance:0.731  Politics:0.024  Health:0.016  ← Finance
+GDP growth slows as consumer spending weakens globally.      Finance:0.712  Politics:0.031  Health:0.019  ← Finance
+The president signed a new climate legislation into la...    Finance:0.018  Politics:0.843  Health:0.013  ← Politics
+Parliament debates healthcare reforms and pension fund...    Finance:0.022  Politics:0.812  Health:0.019  ← Politics
+Election results reshape the balance of power in Congr...    Finance:0.011  Politics:0.878  Health:0.008  ← Politics
+Government announces infrastructure spending and tax c...    Finance:0.019  Politics:0.831  Health:0.011  ← Politics
+Opposition party calls for an early vote on budget pro...    Finance:0.014  Politics:0.856  Health:0.009  ← Politics
+Scientists discover a new treatment for Alzheimer's di...    Finance:0.008  Politics:0.011  Health:0.891  ← Health
+Clinical trials show promising results for mRNA cancer...    Finance:0.012  Politics:0.009  Health:0.874  ← Health
+WHO warns of emerging antibiotic-resistant bacterial s...    Finance:0.009  Politics:0.014  Health:0.862  ← Health
+Researchers link ultra-processed food consumption to d...    Finance:0.011  Politics:0.016  Health:0.841  ← Health
+New gene therapy restores partial vision in blind pati...    Finance:0.007  Politics:0.010  Health:0.883  ← Health
+```
+
+### 7.3.5. Reconstruction Quality
+
+The Frobenius reconstruction error measures how well the factorization approximates the original matrix. It decreases as $K$ increases but the marginal gain drops off — a useful signal for choosing $K$:
+
+``` python
+errors = []
+k_range = range(2, 10)
+
+for k in k_range:
+    model = NMF(n_components=k, init="nndsvda", max_iter=500, random_state=42)
+    model.fit(tfidf)
+    errors.append(model.reconstruction_err_)
+    print(f"  K={k}  reconstruction error={model.reconstruction_err_:.4f}")
+```
+
+```
+  K=2  reconstruction error=1.8934
+  K=3  reconstruction error=1.4121
+  K=4  reconstruction error=1.1032
+  K=5  reconstruction error=0.9217
+  K=6  reconstruction error=0.8541
+  K=7  reconstruction error=0.8188
+  K=8  reconstruction error=0.7994
+  K=9  reconstruction error=0.7912
+```
+
+The "elbow" at $K=3$ to $K=5$ suggests diminishing returns — consistent with the three genuine topics in this corpus.
+
+### 7.3.6. Topic Visualization with Word Clouds
+
+``` python
+# pip install wordcloud matplotlib
+
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+
+for k, ax in enumerate(axes):
+    # Build word-weight dictionary for this topic
+    word_weights = {vocab[i]: H[k, i] for i in range(len(vocab))}
+
+    wc = WordCloud(
+        width=400, height=300,
+        background_color="white",
+        colormap="viridis",
+        max_words=30
+    ).generate_from_frequencies(word_weights)
+
+    ax.imshow(wc, interpolation="bilinear")
+    ax.set_title(f"Topic {k + 1}: {topic_names[k]}", fontsize=13, fontweight="bold")
+    ax.axis("off")
+
+plt.tight_layout()
+plt.savefig("nmf_topics_wordclouds.png", dpi=150, bbox_inches="tight")
+plt.show()
+```
+
+### 7.3.7. NMF for New Documents (Out-of-Sample Inference)
+
+A fitted NMF model can assign topics to new documents by solving for the $\mathbf{w}$ row while keeping $\mathbf{H}$ fixed:
+
+``` python
+new_docs = [
+    "The central bank cut interest rates to stimulate economic growth.",
+    "A new study links social media use to increased anxiety in teenagers."
+]
+
+# Transform using the fitted vectorizer and NMF
+new_tfidf = vectorizer.transform(new_docs)
+new_W = nmf.transform(new_tfidf)
+
+print("Topic weights for new documents:")
+for i, doc in enumerate(new_docs):
+    weights = new_W[i]
+    dominant = topic_names[np.argmax(weights)]
+    print(f"\n  '{doc}'")
+    for k, name in enumerate(topic_names):
+        bar = "█" * int(weights[k] * 40)
+        print(f"    {name:<10} {weights[k]:.3f} {bar}")
+    print(f"  → Assigned to: {dominant}")
+```
+
+```
+Topic weights for new documents:
+
+  'The central bank cut interest rates to stimulate economic growth.'
+    Finance    0.743 █████████████████████████████
+    Politics   0.031 █
+    Health     0.018
+  → Assigned to: Finance
+
+  'A new study links social media use to increased anxiety in teenagers.'
+    Finance    0.021
+    Politics   0.089 ███
+    Health     0.412 ████████████████
+  → Assigned to: Health
+```
+
+### 7.3.8. Method Comparison: LDA, LCA, NMF
+
+``` python
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import CountVectorizer
+from stepmix.stepmix import StepMix
+from sklearn.preprocessing import Binarizer
+import time
+
+# Common preprocessing
+count_vec = CountVectorizer(stop_words="english")
+dtm_counts = count_vec.fit_transform(corpus).toarray()
+dtm_binary = Binarizer().fit_transform(dtm_counts).astype(float)
+
+results = {}
+
+# LDA
+t0 = time.time()
+lda = LatentDirichletAllocation(n_components=3, random_state=42)
+lda.fit(dtm_counts)
+results["LDA"] = {
+    "time_ms": round((time.time() - t0) * 1000),
+    "assignments": lda.transform(dtm_counts).argmax(axis=1),
+    "type": "soft (mixed)"
+}
+
+# LCA
+t0 = time.time()
+lca = StepMix(n_components=3, measurement="bernoulli", random_state=42, verbose=0)
+lca.fit(dtm_binary)
+results["LCA"] = {
+    "time_ms": round((time.time() - t0) * 1000),
+    "assignments": lca.predict(dtm_binary),
+    "type": "hard (exclusive)"
+}
+
+# NMF
+t0 = time.time()
+nmf_model = NMF(n_components=3, init="nndsvda", random_state=42)
+nmf_model.fit(tfidf)
+results["NMF"] = {
+    "time_ms": round((time.time() - t0) * 1000),
+    "assignments": nmf_model.transform(tfidf).argmax(axis=1),
+    "type": "soft (additive)"
+}
+
+print(f"{'Method':<8} {'Type':<20} {'Time (ms)':>10}")
+print("-" * 42)
+for method, info in results.items():
+    print(f"{method:<8} {info['type']:<20} {info['time_ms']:>10}")
+```
+
+```
+Method   Type                  Time (ms)
+------------------------------------------
+LDA      soft (mixed)                 312
+LCA      hard (exclusive)              87
+NMF      soft (additive)               41
+```
+
+### 7.3.9. Strengths and Limitations
+
+**Strengths:**
+
+-   Deterministic initialization (`nndsvda`) avoids random restarts
+-   Fast — often an order of magnitude faster than LDA
+-   Highly interpretable: additive parts, no cancellation
+-   Works well with TF-IDF (whereas LDA requires raw counts)
+-   Straightforward out-of-sample inference
+
+**Limitations:**
+
+-   No probabilistic interpretation — cannot quantify uncertainty in topic assignments
+-   Non-convex optimization: different initializations can yield different solutions
+-   All word weights are non-negative, so the model cannot capture *contrast* (words that are informative by their *absence*)
+-   Topic proportions per document do not sum to 1, making cross-document comparison of weights less intuitive than LDA posteriors

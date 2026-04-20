@@ -1,11 +1,13 @@
-title: "Natural Language Processing"
-subtitle: "From Idea to Application"
-author: "Kamil Filipek"
+cat > _brand.yml << 'EOF'
+meta:
+  name: "Natural Language Processing"
+  description: "From Idea to Application"
 
-logo: logo-Centrum.png     # <- Twoje logo
-logo-alt: "UMCS AI Center" # <- tekst alternatywny
-favicon: assets/umcs-favicon.ico
+logo:
+  small: logo-Centrum.png
+  alt: "UMCS AI Center"
 
-# (opcjonalnie) kolory i typografia
-theme:
-  light: cosmo
+color:
+  palette:
+    primary: "#2C3E50"
+EOF

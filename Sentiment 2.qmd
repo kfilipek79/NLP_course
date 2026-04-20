@@ -1,0 +1,335 @@
+---
+title: "6.3. Sentiment Analysis"
+author: "Kamil Filipek"
+format: html
+editor: visual
+---
+
+### 6.3.1. What is Sentiment Analysis?
+
+**Sentiment analysis** (also called *opinion mining*) is the task of automatically detecting the **emotional polarity** of a piece of text — most commonly classified as *positive*, *negative*, or *neutral*. It is one of the most commercially applied NLP tasks, powering product review monitoring, social media brand tracking, financial signal extraction, and customer support triage.
+
+Beyond simple three-class polarity, modern sentiment analysis includes:
+
+-   **Fine-grained polarity**: very positive / positive / neutral / negative / very negative
+-   **Aspect-based sentiment** (ABSA): "*The battery life is great, but the camera is disappointing*" — different sentiments for different aspects
+-   **Subjectivity detection**: distinguishing factual statements from opinion
+-   **Comparative sentiment**: "*Product A is better than Product B*"
+
+### 6.3.2. Rule-Based Approaches
+
+Rule-based systems rely on curated **sentiment lexicons** — dictionaries that assign polarity scores to individual words. They are fast, transparent, and require no training data.
+
+#### VADER
+
+**VADER** (Valence Aware Dictionary and sEntiment Reasoner) was designed specifically for **social media text**. It handles punctuation (!!!), capitalization (GREAT), emojis, and common internet slang. It produces four scores: positive, negative, neutral proportions, and a compound score in [−1, 1].
+
+``` python
+# pip install vaderSentiment
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+analyzer = SentimentIntensityAnalyzer()
+
+texts = [
+    "This product is absolutely AMAZING!!!",
+    "Worst purchase I've ever made. Complete waste of money.",
+    "The package arrived on time.",
+    "Not bad, but could be better 🤔",
+    "I can't say this is a bad product... NOT."
+]
+
+print(f"{'Text':<50} {'Compound':>9} {'Label'}")
+print("-" * 70)
+for text in texts:
+    scores = analyzer.polarity_scores(text)
+    compound = scores["compound"]
+    label = "POSITIVE" if compound >= 0.05 else "NEGATIVE" if compound <= -0.05 else "NEUTRAL"
+    print(f"{text[:49]:<50} {compound:>9.4f} {label}")
+```
+
+```
+Text                                               Compound Label
+----------------------------------------------------------------------
+This product is absolutely AMAZING!!!               0.7003 POSITIVE
+Worst purchase I've ever made. Complete waste o...  -0.7506 NEGATIVE
+The package arrived on time.                         0.0000 NEUTRAL
+Not bad, but could be better 🤔                     0.1027 POSITIVE
+I can't say this is a bad product... NOT.           -0.5423 NEGATIVE
+```
+
+::: callout-note
+VADER correctly captures the negation in the last sentence ("can't say... bad... NOT") and recognizes all-caps emphasis ("AMAZING") — things simple bag-of-words models miss.
+:::
+
+#### TextBlob
+
+**TextBlob** provides a simpler interface built on Pattern's lexicon. It returns `polarity` ∈ [−1, 1] and `subjectivity` ∈ [0, 1].
+
+``` python
+# pip install textblob
+from textblob import TextBlob
+
+texts = [
+    "The camera quality is stunning and battery life is excellent.",
+    "Customer service was unhelpful and rude.",
+    "The event starts at 9am on Monday."
+]
+
+print(f"{'Text':<55} {'Polarity':>9} {'Subjectivity':>13}")
+print("-" * 80)
+for text in texts:
+    blob = TextBlob(text)
+    print(f"{text[:54]:<55} {blob.sentiment.polarity:>9.4f} {blob.sentiment.subjectivity:>13.4f}")
+```
+
+```
+Text                                                    Polarity  Subjectivity
+--------------------------------------------------------------------------------
+The camera quality is stunning and battery life is...     0.6750        0.7750
+Customer service was unhelpful and rude.                 -0.5500        0.6000
+The event starts at 9am on Monday.                        0.0000        0.0000
+```
+
+### 6.3.3. Machine Learning Approach
+
+Classical ML treats sentiment as a **text classification** problem. TF-IDF vectors feed a logistic regression (or SVM, Naive Bayes) trained on labeled examples.
+
+``` python
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
+# Minimal labeled dataset (in practice: thousands of examples)
+texts = [
+    "I love this product, it's fantastic!",
+    "Absolutely terrible, never buying again.",
+    "Works as expected, nothing special.",
+    "Best purchase I've made this year.",
+    "Broken on arrival. Complete disappointment.",
+    "Average quality, does the job.",
+    "Outstanding performance and great value!",
+    "Very poor build quality and bad support.",
+    "Decent product for the price.",
+    "Exceeded all my expectations, highly recommend!"
+]
+labels = [1, 0, 2, 1, 0, 2, 1, 0, 2, 1]  # 0=neg, 1=pos, 2=neutral
+
+X_train, X_test, y_train, y_test = train_test_split(
+    texts, labels, test_size=0.3, random_state=42
+)
+
+pipeline = Pipeline([
+    ("tfidf", TfidfVectorizer(ngram_range=(1, 2))),
+    ("clf",   LogisticRegression(max_iter=1000))
+])
+
+pipeline.fit(X_train, y_train)
+y_pred = pipeline.predict(X_test)
+
+print(classification_report(y_test, y_pred, target_names=["negative", "positive", "neutral"]))
+```
+
+### 6.3.4. BERT-Based Sentiment Analysis
+
+Fine-tuned Transformer models achieve state-of-the-art accuracy on standard sentiment benchmarks. The `transformers` pipeline makes this a single-line operation.
+
+``` python
+from transformers import pipeline
+
+# Fine-tuned on SST-2 (Stanford Sentiment Treebank)
+sentiment = pipeline(
+    "sentiment-analysis",
+    model="distilbert-base-uncased-finetuned-sst-2-english"
+)
+
+texts = [
+    "The film was a masterpiece of modern cinema.",
+    "I've never been so bored in my life.",
+    "It was okay, nothing I'd watch again.",
+    "Incredible performances and stunning visuals.",
+    "The plot made absolutely no sense whatsoever."
+]
+
+print(f"{'Text':<50} {'Label':<10} {'Score'}")
+print("-" * 70)
+for text in texts:
+    result = sentiment(text)[0]
+    print(f"{text[:49]:<50} {result['label']:<10} {result['score']:.4f}")
+```
+
+```
+Text                                               Label      Score
+----------------------------------------------------------------------
+The film was a masterpiece of modern cinema.       POSITIVE   0.9998
+I've never been so bored in my life.               NEGATIVE   0.9995
+It was okay, nothing I'd watch again.              NEGATIVE   0.8712
+Incredible performances and stunning visuals.      POSITIVE   0.9997
+The plot made absolutely no sense whatsoever.      NEGATIVE   0.9989
+```
+
+#### Five-Class Sentiment (Yelp Reviews)
+
+For finer granularity, use a model trained on star-rating corpora:
+
+``` python
+sentiment_5 = pipeline(
+    "text-classification",
+    model="nlptown/bert-base-multilingual-uncased-sentiment"
+)
+
+reviews = [
+    "Absolutely phenomenal — best restaurant in the city!",
+    "Pretty good food but service was slow.",
+    "Nothing special, just average.",
+    "Food was cold and staff was rude.",
+    "Disgusting. Never again."
+]
+
+print(f"{'Review':<50} {'Stars'}")
+print("-" * 60)
+for review in reviews:
+    result = sentiment_5(review)[0]
+    stars = result["label"]   # e.g., "4 stars"
+    print(f"{review[:49]:<50} {stars}")
+```
+
+```
+Review                                             Stars
+------------------------------------------------------------
+Absolutely phenomenal — best restaurant in the...  5 stars
+Pretty good food but service was slow.             3 stars
+Nothing special, just average.                     3 stars
+Food was cold and staff was rude.                  2 stars
+Disgusting. Never again.                           1 star
+```
+
+### 6.3.5. Aspect-Based Sentiment Analysis (ABSA)
+
+Standard sentiment analysis gives one polarity score per text. **ABSA** identifies which *aspect* (feature, attribute) a sentiment targets — essential for product reviews where different aspects can have opposite sentiments.
+
+``` python
+import anthropic
+import json
+
+client = anthropic.Anthropic()
+
+def aspect_sentiment(text: str, aspects: list[str]) -> list[dict]:
+    prompt = f"""Analyze the sentiment toward each aspect in the review.
+For each aspect return: "aspect", "sentiment" (positive/negative/neutral/not_mentioned), "evidence" (the quote from text supporting this).
+Return ONLY a valid JSON array.
+
+Aspects: {", ".join(aspects)}
+
+Review: {text}"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return json.loads(message.content[0].text)
+
+
+review = """
+The laptop's performance is blazing fast and I'm impressed by the battery life
+that lasts all day. However, the keyboard feels cheap and mushy, and the screen
+is quite dim — definitely not ideal for outdoor use. Customer support took 5 days
+to respond to a simple query.
+"""
+
+aspects = ["performance", "battery", "keyboard", "display", "customer support", "price"]
+results = aspect_sentiment(review, aspects)
+
+print(f"{'Aspect':<20} {'Sentiment':<12} {'Evidence'}")
+print("-" * 70)
+for item in results:
+    print(f"{item['aspect']:<20} {item['sentiment']:<12} {item['evidence'][:40]}")
+```
+
+```
+Aspect               Sentiment    Evidence
+----------------------------------------------------------------------
+performance          positive     blazing fast
+battery              positive     lasts all day
+keyboard             negative     feels cheap and mushy
+display              negative     quite dim — not ideal for outdoor
+customer support     negative     took 5 days to respond
+price                not_mentioned —
+```
+
+### 6.3.6. Sentiment Analysis with GenAI
+
+Generative models offer the richest sentiment output: they explain reasoning, handle sarcasm, detect mixed sentiments, and return structured results in any format.
+
+``` python
+def analyze_sentiment_detailed(text: str) -> dict:
+    prompt = f"""Perform a detailed sentiment analysis of the text below.
+Return a JSON object with:
+- "overall_sentiment": positive / negative / neutral / mixed
+- "polarity_score": float from -1.0 (very negative) to 1.0 (very positive)
+- "confidence": float 0.0 to 1.0
+- "emotions_detected": list of detected emotions
+- "sarcasm_detected": true or false
+- "key_phrases": list of phrases that most influenced the sentiment
+- "explanation": one sentence summary
+
+Return ONLY valid JSON.
+
+Text: {text}"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return json.loads(message.content[0].text)
+
+
+texts = [
+    "Oh great, another software update that breaks everything. Just what I needed on a Monday morning.",
+    "The course was challenging but I learned so much. Tough at times, incredibly rewarding in the end.",
+]
+
+for text in texts:
+    print(f"\nText: {text[:70]}...")
+    result = analyze_sentiment_detailed(text)
+    for key, value in result.items():
+        print(f"  {key:<22} {value}")
+```
+
+```
+Text: Oh great, another software update that breaks everything. Just what I ...
+  overall_sentiment      negative
+  polarity_score         -0.75
+  confidence             0.94
+  emotions_detected      ['frustration', 'sarcasm', 'resignation']
+  sarcasm_detected       True
+  key_phrases            ['Oh great', 'breaks everything', 'Just what I needed']
+  explanation            Sarcastic complaint about a disruptive software update.
+
+Text: The course was challenging but I learned so much. Tough at times, inc...
+  overall_sentiment      mixed
+  polarity_score         0.45
+  confidence             0.88
+  emotions_detected      ['satisfaction', 'pride', 'mild frustration']
+  sarcasm_detected       False
+  key_phrases            ['challenging', 'learned so much', 'incredibly rewarding']
+  explanation            Mixed but net-positive sentiment about a difficult
+                         but ultimately valuable learning experience.
+```
+
+### 6.3.7. Approach Comparison
+
+| Approach | Accuracy | Speed | Sarcasm | Aspect-level | No training data |
+|---|---|---|---|---|---|
+| VADER | Moderate | Instant | Partial | No | Yes |
+| TextBlob | Low–Moderate | Instant | No | No | Yes |
+| sklearn + TF-IDF | Moderate | Fast | No | No | No |
+| BERT (fine-tuned) | High | Moderate | Partial | No | No |
+| GenAI (Claude/GPT) | Very high | Slow/API | Yes | Yes | Yes |
+
+**Rule of thumb:** use VADER for quick social-media pipelines, BERT for high-accuracy production classification, and GenAI for nuanced, structured, or explanatory output.

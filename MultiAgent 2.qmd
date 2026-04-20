@@ -1,0 +1,394 @@
+---
+title: "9.4. Multi-Agent Systems"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 9.4.1. Why Multiple Agents?
+
+A single agent with many tools works well for moderate tasks. But complex, multi-faceted problems benefit from **specialization and parallelism** — the same reasons human organizations divide work among specialists rather than relying on one generalist.
+
+Multi-agent systems (MAS) distribute a task across several agents, each optimized for a sub-task, communicating through structured messages. Key benefits:
+
+-   **Specialization** — each agent has a focused system prompt, tool set, and expertise
+-   **Parallelism** — independent subtasks run concurrently, reducing total time
+-   **Verification** — one agent can check another's work (critic–author pattern)
+-   **Scale** — tasks too large for a single context window are decomposed across agents
+
+The theoretical foundations come from distributed AI research (Bond & Gasser, 1988) and multi-agent reinforcement learning (Busoniu et al., 2008), but modern LLM-based MAS are primarily orchestrated through prompting and tool use rather than learned policies.
+
+### 9.4.2. Orchestrator–Worker Pattern
+
+The most common MAS architecture: an **orchestrator** agent decomposes the task and delegates to **worker** agents, then synthesizes their outputs.
+
+``` python
+import anthropic
+import json
+from concurrent.futures import ThreadPoolExecutor
+
+client = anthropic.Anthropic()
+
+# ── Worker agents ────────────────────────────────────────────
+
+def sentiment_agent(text: str) -> dict:
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=256,
+        system="You are a sentiment analysis specialist. Return JSON only: {sentiment, score, key_phrases}",
+        messages=[{"role": "user", "content": f"Analyze: {text}"}]
+    )
+    return {"agent": "sentiment", "result": json.loads(response.content[0].text)}
+
+def ner_agent(text: str) -> dict:
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=256,
+        system="You are a Named Entity Recognition specialist. Return JSON only: {entities: [{text, type}]}",
+        messages=[{"role": "user", "content": f"Extract entities: {text}"}]
+    )
+    return {"agent": "ner", "result": json.loads(response.content[0].text)}
+
+def keyword_agent(text: str) -> dict:
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=256,
+        system="You are a keyword extraction specialist. Return JSON only: {keywords: [{term, relevance}]}",
+        messages=[{"role": "user", "content": f"Extract keywords: {text}"}]
+    )
+    return {"agent": "keywords", "result": json.loads(response.content[0].text)}
+
+def summary_agent(text: str) -> dict:
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=256,
+        system="You are a summarization specialist. Return JSON only: {summary, length_reduction_pct}",
+        messages=[{"role": "user", "content": f"Summarize in one sentence: {text}"}]
+    )
+    return {"agent": "summary", "result": json.loads(response.content[0].text)}
+
+
+# ── Orchestrator ─────────────────────────────────────────────
+
+def orchestrator(text: str) -> dict:
+    print(f"Orchestrator: starting parallel NLP analysis\n{'─'*60}")
+
+    # Run all workers in parallel
+    workers = [sentiment_agent, ner_agent, keyword_agent, summary_agent]
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {executor.submit(w, text): w.__name__ for w in workers}
+        results = {}
+        for future in futures:
+            result = future.result()
+            results[result["agent"]] = result["result"]
+            print(f"  ✓ {result['agent']:<12} agent completed")
+
+    # Synthesize with a more capable model
+    synthesis_prompt = f"""You received reports from 4 specialist NLP agents.
+Synthesize them into a coherent analysis report.
+
+Original text: {text}
+
+Agent reports:
+{json.dumps(results, indent=2)}
+
+Write a structured report covering: overall assessment, key findings, and any contradictions between agents."""
+
+    synthesis = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        messages=[{"role": "user", "content": synthesis_prompt}]
+    )
+
+    print(f"\n{'─'*60}")
+    print(f"[Synthesis]\n{synthesis.content[0].text}")
+
+    return {"individual_results": results, "synthesis": synthesis.content[0].text}
+
+
+text = """
+Apple's new AI research division, led by Dr. Sarah Chen, published groundbreaking
+findings on transformer efficiency last Tuesday. The results are remarkably promising,
+reducing computational costs by 40% while maintaining accuracy. However, critics
+question whether the benchmarks are sufficiently rigorous for real-world deployment.
+"""
+
+report = orchestrator(text)
+```
+
+```
+Orchestrator: starting parallel NLP analysis
+────────────────────────────────────────────────────────────
+  ✓ sentiment     agent completed
+  ✓ ner           agent completed
+  ✓ keywords      agent completed
+  ✓ summary       agent completed
+
+────────────────────────────────────────────────────────────
+[Synthesis]
+## NLP Analysis Report
+
+**Summary:** Apple's AI division published efficiency research showing 40% cost
+reduction in transformers, with ongoing debate about benchmark validity.
+
+**Sentiment:** Mixed-positive (score: 0.32). Strong positive framing around
+"groundbreaking" and "remarkably promising," tempered by the critical note
+in the final sentence.
+
+**Entities:** Apple (ORG), Dr. Sarah Chen (PERSON), last Tuesday (DATE).
+
+**Key themes:** transformer efficiency (0.94), computational cost reduction (0.88),
+AI research (0.81), benchmark validity (0.72).
+
+**Note:** The sentiment and keyword agents agree on the dominant positive tone;
+the summary agent correctly captured the tension between promise and skepticism.
+```
+
+### 9.4.3. Critic–Author Pattern
+
+A powerful quality-control pattern: one agent writes, another critiques, the first revises. This self-improvement loop often produces higher-quality outputs than a single pass.
+
+``` python
+def critic_author_loop(task: str, max_rounds: int = 3) -> str:
+    system_author = """You are an expert NLP writer. Write clearly and precisely.
+When given feedback, revise your work to address all critique points."""
+
+    system_critic = """You are a rigorous academic peer reviewer.
+Evaluate the text for: accuracy, completeness, clarity, and appropriate use of examples.
+Return JSON: {score: 1-10, issues: [list of specific problems], suggestions: [improvements], approved: bool}
+Approve (approved: true) only if score >= 8 and no major issues remain."""
+
+    # Initial draft
+    draft_response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        system=system_author,
+        messages=[{"role": "user", "content": task}]
+    )
+    draft = draft_response.content[0].text
+    print(f"[Round 0 — Initial Draft]\n{draft[:200]}...\n")
+
+    for round_num in range(1, max_rounds + 1):
+        # Critic evaluates
+        critique_response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=512,
+            system=system_critic,
+            messages=[{"role": "user", "content": f"Evaluate this text:\n\n{draft}"}]
+        )
+        critique = json.loads(critique_response.content[0].text)
+        print(f"[Round {round_num} — Critique] Score: {critique['score']}/10  Approved: {critique['approved']}")
+        if critique["issues"]:
+            print(f"  Issues: {'; '.join(critique['issues'][:2])}")
+
+        if critique["approved"]:
+            print(f"\n✓ Approved after {round_num} round(s).")
+            return draft
+
+        # Author revises
+        revision_prompt = f"""Revise your text based on this critique:
+
+Issues: {json.dumps(critique['issues'])}
+Suggestions: {json.dumps(critique['suggestions'])}
+
+Original text:
+{draft}
+
+Provide the complete revised text."""
+
+        revision_response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=512,
+            system=system_author,
+            messages=[{"role": "user", "content": revision_prompt}]
+        )
+        draft = revision_response.content[0].text
+        print(f"[Round {round_num} — Revision] {len(draft)} chars\n")
+
+    print("Max rounds reached — returning final draft.")
+    return draft
+
+
+final = critic_author_loop(
+    "Write a 3-sentence explanation of the difference between LDA and NMF for topic modeling.",
+    max_rounds=3
+)
+```
+
+```
+[Round 0 — Initial Draft]
+LDA and NMF are both topic modeling methods used to discover latent themes
+in text. LDA is a probabilistic model that produces soft topic mixtures...
+
+[Round 1 — Critique] Score: 6/10  Approved: False
+  Issues: Missing mathematical intuition; no mention of non-negativity constraint
+
+[Round 1 — Revision] 487 chars
+
+[Round 2 — Critique] Score: 9/10  Approved: True
+
+✓ Approved after 2 round(s).
+```
+
+### 9.4.4. Multi-Agent NLP Pipeline
+
+A production-style pipeline for processing a batch of documents through specialized agents:
+
+``` python
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class Document:
+    id: str
+    text: str
+    sentiment: Optional[str] = None
+    entities: Optional[list] = None
+    topic: Optional[str] = None
+    flagged: bool = False
+
+def triage_agent(doc: Document) -> Document:
+    """Routes documents: flags very short/long texts or non-English."""
+    words = len(doc.text.split())
+    if words < 10:
+        doc.flagged = True
+    return doc
+
+def topic_agent(doc: Document) -> Document:
+    """Assigns a topic label."""
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=64,
+        system="Classify into one topic: FINANCE, HEALTH, POLITICS, TECHNOLOGY, OTHER. Reply with label only.",
+        messages=[{"role": "user", "content": doc.text}]
+    )
+    doc.topic = response.content[0].text.strip()
+    return doc
+
+def analysis_agent(doc: Document) -> Document:
+    """Runs sentiment + NER."""
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=256,
+        system='Return JSON: {"sentiment": "positive|negative|neutral", "entities": [{"text": str, "type": str}]}',
+        messages=[{"role": "user", "content": doc.text}]
+    )
+    result = json.loads(response.content[0].text)
+    doc.sentiment = result["sentiment"]
+    doc.entities  = result["entities"]
+    return doc
+
+
+# Pipeline execution
+documents = [
+    Document("d1", "Apple reported record quarterly revenue of $89 billion."),
+    Document("d2", "New mRNA vaccine shows 94% efficacy in phase III trials."),
+    Document("d3", "Too short."),  # will be flagged
+    Document("d4", "The election results shifted the balance of power in Parliament.")
+]
+
+print(f"{'ID':<5} {'Topic':<12} {'Sentiment':<10} {'Flagged':<8} {'Entities'}")
+print("─" * 70)
+
+for doc in documents:
+    doc = triage_agent(doc)
+    if not doc.flagged:
+        doc = topic_agent(doc)
+        doc = analysis_agent(doc)
+    entities_str = ", ".join([f"{e['text']} ({e['type']})" for e in (doc.entities or [])])
+    print(f"{doc.id:<5} {(doc.topic or 'N/A'):<12} {(doc.sentiment or 'N/A'):<10} {str(doc.flagged):<8} {entities_str}")
+```
+
+```
+ID    Topic        Sentiment  Flagged  Entities
+──────────────────────────────────────────────────────────────────────
+d1    FINANCE      positive   False    Apple (ORG), $89 billion (MONEY)
+d2    HEALTH       positive   False    mRNA vaccine (PRODUCT)
+d3    N/A          N/A        True
+d4    POLITICS     neutral    False    Parliament (ORG)
+```
+
+### 9.4.5. Frameworks for Multi-Agent Systems
+
+Building MAS from scratch is educational but time-consuming. Several frameworks provide higher-level abstractions:
+
+| Framework | Language | Key concept | Best for |
+|---|---|---|---|
+| **LangGraph** | Python | Stateful graph of agents | Complex workflows with branching |
+| **AutoGen** (Microsoft) | Python | Conversational agents | Research, debate, code generation |
+| **CrewAI** | Python | Role-based agent crews | Task-oriented teamwork |
+| **n8n** | Visual/JS | Node-based workflows | No-code / low-code automation |
+| **Swarm** (OpenAI) | Python | Lightweight handoff protocol | Simple orchestration |
+
+``` python
+# CrewAI example — defining a 3-agent NLP analysis crew
+# pip install crewai
+
+from crewai import Agent, Task, Crew, Process
+
+# Define specialist agents
+researcher = Agent(
+    role="NLP Research Analyst",
+    goal="Gather and synthesize information about NLP topics",
+    backstory="Expert in NLP literature with 10 years of research experience",
+    llm="claude-sonnet-4-6",
+    verbose=True
+)
+
+writer = Agent(
+    role="Technical Writer",
+    goal="Transform research findings into clear, structured reports",
+    backstory="Science communicator specializing in AI and machine learning",
+    llm="claude-sonnet-4-6",
+    verbose=True
+)
+
+reviewer = Agent(
+    role="Quality Reviewer",
+    goal="Ensure accuracy, completeness, and clarity of all content",
+    backstory="Peer reviewer with expertise in NLP and academic writing standards",
+    llm="claude-sonnet-4-6",
+    verbose=True
+)
+
+# Define tasks
+research_task = Task(
+    description="Research and summarize the key differences between LDA, NMF, and LSA for topic modeling.",
+    expected_output="A structured bullet-point summary of each method with key characteristics.",
+    agent=researcher
+)
+
+writing_task = Task(
+    description="Based on the research, write a 200-word explanation suitable for a university NLP textbook.",
+    expected_output="A clear, accurate, well-structured textbook section.",
+    agent=writer,
+    context=[research_task]
+)
+
+review_task = Task(
+    description="Review the written section for accuracy, completeness, and appropriate academic tone. Suggest improvements.",
+    expected_output="A reviewed version of the text with tracked changes or final approved text.",
+    agent=reviewer,
+    context=[writing_task]
+)
+
+# Assemble crew and run
+crew = Crew(
+    agents=[researcher, writer, reviewer],
+    tasks=[research_task, writing_task, review_task],
+    process=Process.sequential,
+    verbose=True
+)
+
+result = crew.kickoff()
+print(result)
+```
+
+::: callout-note
+**Key references**
+
+-   Park, J. S., et al. (2023). Generative Agents: Interactive Simulacra of Human Behavior. *UIST 2023*. arXiv:2304.03442.
+-   Wu, Q., et al. (2023). AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation. *arXiv:2308.08155*.
+-   Hong, S., et al. (2023). MetaGPT: Meta Programming for a Multi-Agent Collaborative Framework. *arXiv:2308.00352*.
+-   Bond, A. H., & Gasser, L. (1988). *Readings in Distributed Artificial Intelligence*. Morgan Kaufmann.
+:::

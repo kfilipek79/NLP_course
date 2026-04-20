@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kamil Filipek">
+
+<title>Natural Language Processing - Part I - 7.3. Non-negative Matrix Factorization</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./LSA.html" rel="next">
+<link href="./LCA.html" rel="prev">
+<link href="./assets/umcs-favicon.ico" rel="icon">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./LDA.html"><strong>7. Topic Modeling</strong></a></li><li class="breadcrumb-item"><a href="./NMF.html"><span class="chapter-number">28</span>&nbsp; <span class="chapter-title">7.3. Non-negative Matrix Factorization</span></a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./assets/logo-Centrum.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      </a>
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Natural Language Processing - Part I</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text"><strong>1. Language and Machines</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Why_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.1. Why to Analyze Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Natural_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.2. What is the Natural Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Hierarchy_languages.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.3. Hierarchy of Languages</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text"><strong>2. Theoretical Foundations</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Levels_analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.1. Levels of Linguistic Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Approaches_language..html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Lang_machine.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.4. Representing Language for Machines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Application.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.5. From Theory to Application</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text"><strong>3. Basic Data Engineering</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Preprocessing.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.1. Data Preprocessing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Stem_lem.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Stemming and Lemmatization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tokenization.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Tokenization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Ini_da.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.4. Initial Data Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
+ <span class="menu-text"><strong>4. Evolution of Embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Bag_of_words.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.1. Bag of Words</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tf_idf.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.2. TF-IDF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Word2Vec.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.3. Word2Vec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GloVe.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.4. GloVe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./FastText.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.5. FastText</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true">
+ <span class="menu-text"><strong>5. Contextual_embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ELMo.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. ELMo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./BERT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.2. BERT</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GPT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. GPT</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true">
+ <span class="menu-text"><strong>6. Elementary Language Analaysis</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./PoS_and_NER.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.1. PoS &amp; NER</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Keywords_extraction.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.2. Keywords Extraction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Sentiment.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.3. Sentiment Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Emotion_Analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.4. Emotion Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="true">
+ <span class="menu-text"><strong>7. Topic Modeling</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LDA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.1. Latent Dirichlet Allocation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LCA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.2. Latent Class Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./NMF.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">7.3. Non-negative Matrix Factorization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LSA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.4. Latent Semantic Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text"><strong>8. Working with LLMs</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Prompt_engineering.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.1. Prompt Engineering</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LLM_API.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.2. Working with LLM APIs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Fine_tuning.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.3. Fine-Tuning LLMs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./RAG.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.4. Retrieval-Augmented Generation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LLM_evaluation.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.5. Evaluating LLM Outputs</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true">
+ <span class="menu-text"><strong>9. AI Agents</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.1. AI Agents — Concepts and Architectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents_Python.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.2. Building Agents in Python</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./n8n.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.3. Visual Agent Workflows with n8n</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./MultiAgent.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.4. Multi-Agent Systems</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true">
+ <span class="menu-text">References</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ref.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Sources</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">MORE DETAILS</h2>
+   
+  <ul>
+  <li><a href="#the-core-idea" id="toc-the-core-idea" class="nav-link active" data-scroll-target="#the-core-idea">7.3.1. The Core Idea</a></li>
+  <li><a href="#objective-function-and-optimization" id="toc-objective-function-and-optimization" class="nav-link" data-scroll-target="#objective-function-and-optimization">7.3.2. Objective Function and Optimization</a></li>
+  <li><a href="#nmf-vs.-lda-key-differences" id="toc-nmf-vs.-lda-key-differences" class="nav-link" data-scroll-target="#nmf-vs.-lda-key-differences">7.3.3. NMF vs.&nbsp;LDA — Key Differences</a></li>
+  <li><a href="#nmf-with-scikit-learn" id="toc-nmf-with-scikit-learn" class="nav-link" data-scroll-target="#nmf-with-scikit-learn">7.3.4. NMF with scikit-learn</a></li>
+  <li><a href="#reconstruction-quality" id="toc-reconstruction-quality" class="nav-link" data-scroll-target="#reconstruction-quality">7.3.5. Reconstruction Quality</a></li>
+  <li><a href="#topic-visualization-with-word-clouds" id="toc-topic-visualization-with-word-clouds" class="nav-link" data-scroll-target="#topic-visualization-with-word-clouds">7.3.6. Topic Visualization with Word Clouds</a></li>
+  <li><a href="#nmf-for-new-documents-out-of-sample-inference" id="toc-nmf-for-new-documents-out-of-sample-inference" class="nav-link" data-scroll-target="#nmf-for-new-documents-out-of-sample-inference">7.3.7. NMF for New Documents (Out-of-Sample Inference)</a></li>
+  <li><a href="#method-comparison-lda-lca-nmf" id="toc-method-comparison-lda-lca-nmf" class="nav-link" data-scroll-target="#method-comparison-lda-lca-nmf">7.3.8. Method Comparison: LDA, LCA, NMF</a></li>
+  <li><a href="#strengths-and-limitations" id="toc-strengths-and-limitations" class="nav-link" data-scroll-target="#strengths-and-limitations">7.3.9. Strengths and Limitations</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-title">7.3. Non-negative Matrix Factorization</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kamil Filipek </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="the-core-idea" class="level3">
+<h3 class="anchored" data-anchor-id="the-core-idea">7.3.1. The Core Idea</h3>
+<p><strong>Non-negative Matrix Factorization</strong> (NMF) decomposes a document-term matrix into two smaller non-negative matrices whose product approximates the original. It was introduced by Lee &amp; Seung (1999) under the intuition that a meaningful representation of data composed of non-negative parts (pixels, word counts) should itself be non-negative — producing <strong>additive, parts-based</strong> representations.</p>
+<p>In the NLP context: if a corpus of <span class="math inline">\(D\)</span> documents over a vocabulary of <span class="math inline">\(V\)</span> words is represented as a matrix <span class="math inline">\(\mathbf{X} \in \mathbb{R}_{\geq 0}^{D \times V}\)</span> (TF or TF-IDF), NMF finds:</p>
+<p><span class="math display">\[\mathbf{X} \approx \mathbf{W} \cdot \mathbf{H}\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(\mathbf{W} \in \mathbb{R}_{\geq 0}^{D \times K}\)</span> — <strong>document-topic matrix</strong>: row <span class="math inline">\(d\)</span> shows how much document <span class="math inline">\(d\)</span> relates to each of the <span class="math inline">\(K\)</span> topics</li>
+<li><span class="math inline">\(\mathbf{H} \in \mathbb{R}_{\geq 0}^{K \times V}\)</span> — <strong>topic-word matrix</strong>: row <span class="math inline">\(k\)</span> shows how strongly each word is associated with topic <span class="math inline">\(k\)</span></li>
+<li><span class="math inline">\(K\)</span> — the number of topics (rank of the factorization, chosen by the user)</li>
+</ul>
+<p>Non-negativity is the critical constraint. Because all values must be <span class="math inline">\(\geq 0\)</span>, topics can only be <strong>added</strong> together — never subtracted. This additive property is what makes topics interpretable: each topic contributes positively to explaining a document’s content.</p>
+</section>
+<section id="objective-function-and-optimization" class="level3">
+<h3 class="anchored" data-anchor-id="objective-function-and-optimization">7.3.2. Objective Function and Optimization</h3>
+<p>NMF minimizes the reconstruction error between <span class="math inline">\(\mathbf{X}\)</span> and <span class="math inline">\(\mathbf{WH}\)</span>. Two common objectives:</p>
+<p><strong>Frobenius norm</strong> (least squares):</p>
+<p><span class="math display">\[\min_{\mathbf{W}, \mathbf{H}} \|\mathbf{X} - \mathbf{WH}\|_F^2 \quad \text{subject to } \mathbf{W}, \mathbf{H} \geq 0\]</span></p>
+<p><strong>Kullback-Leibler divergence</strong> (better for count data):</p>
+<p><span class="math display">\[\min_{\mathbf{W}, \mathbf{H}} D_{KL}(\mathbf{X} \| \mathbf{WH}) = \sum_{i,j} \left( X_{ij} \log \frac{X_{ij}}{(WH)_{ij}} - X_{ij} + (WH)_{ij} \right)\]</span></p>
+<p>The KL objective is preferred for sparse text count matrices because it treats the problem as modeling probability distributions, which aligns with the nature of word frequency data.</p>
+<p>Optimization proceeds via <strong>multiplicative update rules</strong> (Lee &amp; Seung, 1999) or <strong>coordinate descent</strong>, alternately fixing <span class="math inline">\(\mathbf{H}\)</span> and optimizing <span class="math inline">\(\mathbf{W}\)</span>, then vice versa.</p>
+</section>
+<section id="nmf-vs.-lda-key-differences" class="level3">
+<h3 class="anchored" data-anchor-id="nmf-vs.-lda-key-differences">7.3.3. NMF vs.&nbsp;LDA — Key Differences</h3>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>NMF</th>
+<th>LDA</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Framework</td>
+<td>Algebraic (matrix factorization)</td>
+<td>Probabilistic (generative model)</td>
+</tr>
+<tr class="even">
+<td>Input</td>
+<td>TF or TF-IDF matrix</td>
+<td>Raw count matrix</td>
+</tr>
+<tr class="odd">
+<td>Non-negativity</td>
+<td>Enforced by construction</td>
+<td>Naturally satisfied (probabilities)</td>
+</tr>
+<tr class="even">
+<td>Topic mixing</td>
+<td>Unconstrained positive weights</td>
+<td>Dirichlet-distributed (sums to 1)</td>
+</tr>
+<tr class="odd">
+<td>Interpretability</td>
+<td>High — additive parts</td>
+<td>High — probabilistic mixture</td>
+</tr>
+<tr class="even">
+<td>Speed</td>
+<td>Generally faster</td>
+<td>Slower (sampling/variational inference)</td>
+</tr>
+<tr class="odd">
+<td>Best for</td>
+<td>Sparse, well-separated topics</td>
+<td>Mixed, overlapping thematic content</td>
+</tr>
+</tbody>
+</table>
+<p>A practical rule: NMF tends to produce <strong>crisper, more clearly separated</strong> topics; LDA tends to model <strong>gradual topic mixtures</strong> more naturally.</p>
+</section>
+<section id="nmf-with-scikit-learn" class="level3">
+<h3 class="anchored" data-anchor-id="nmf-with-scikit-learn">7.3.4. NMF with scikit-learn</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">from</span> sklearn.feature_extraction.text <span class="im">import</span> TfidfVectorizer</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> NMF</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a>corpus <span class="op">=</span> [</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    <span class="st">"The stock market crashed after the central bank raised interest rates."</span>,</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="st">"Investors fear recession as inflation hits a 40-year high."</span>,</span>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="st">"Federal Reserve announces quantitative tightening measures."</span>,</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="st">"Tech stocks tumble amid rising bond yields and credit concerns."</span>,</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    <span class="st">"GDP growth slows as consumer spending weakens globally."</span>,</span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="st">"The president signed a new climate legislation into law."</span>,</span>
+<span id="cb1-13"><a href="#cb1-13"></a>    <span class="st">"Parliament debates healthcare reforms and pension funding."</span>,</span>
+<span id="cb1-14"><a href="#cb1-14"></a>    <span class="st">"Election results reshape the balance of power in Congress."</span>,</span>
+<span id="cb1-15"><a href="#cb1-15"></a>    <span class="st">"Government announces infrastructure spending and tax cuts."</span>,</span>
+<span id="cb1-16"><a href="#cb1-16"></a>    <span class="st">"Opposition party calls for an early vote on budget proposals."</span>,</span>
+<span id="cb1-17"><a href="#cb1-17"></a>    <span class="st">"Scientists discover a new treatment for Alzheimer's disease."</span>,</span>
+<span id="cb1-18"><a href="#cb1-18"></a>    <span class="st">"Clinical trials show promising results for mRNA cancer vaccines."</span>,</span>
+<span id="cb1-19"><a href="#cb1-19"></a>    <span class="st">"WHO warns of emerging antibiotic-resistant bacterial strains."</span>,</span>
+<span id="cb1-20"><a href="#cb1-20"></a>    <span class="st">"Researchers link ultra-processed food consumption to dementia risk."</span>,</span>
+<span id="cb1-21"><a href="#cb1-21"></a>    <span class="st">"New gene therapy restores partial vision in blind patients."</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a>]</span>
+<span id="cb1-23"><a href="#cb1-23"></a></span>
+<span id="cb1-24"><a href="#cb1-24"></a><span class="co"># NMF works best with TF-IDF (unlike LDA which needs raw counts)</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a>vectorizer <span class="op">=</span> TfidfVectorizer(stop_words<span class="op">=</span><span class="st">"english"</span>, max_df<span class="op">=</span><span class="fl">0.9</span>, min_df<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-26"><a href="#cb1-26"></a>tfidf <span class="op">=</span> vectorizer.fit_transform(corpus)</span>
+<span id="cb1-27"><a href="#cb1-27"></a>vocab <span class="op">=</span> vectorizer.get_feature_names_out()</span>
+<span id="cb1-28"><a href="#cb1-28"></a></span>
+<span id="cb1-29"><a href="#cb1-29"></a><span class="co"># Fit NMF</span></span>
+<span id="cb1-30"><a href="#cb1-30"></a>n_topics <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb1-31"><a href="#cb1-31"></a>nmf <span class="op">=</span> NMF(</span>
+<span id="cb1-32"><a href="#cb1-32"></a>    n_components<span class="op">=</span>n_topics,</span>
+<span id="cb1-33"><a href="#cb1-33"></a>    init<span class="op">=</span><span class="st">"nndsvda"</span>,       <span class="co"># deterministic initialization via SVD</span></span>
+<span id="cb1-34"><a href="#cb1-34"></a>    beta_loss<span class="op">=</span><span class="st">"kullback-leibler"</span>,</span>
+<span id="cb1-35"><a href="#cb1-35"></a>    solver<span class="op">=</span><span class="st">"mu"</span>,          <span class="co"># multiplicative update</span></span>
+<span id="cb1-36"><a href="#cb1-36"></a>    max_iter<span class="op">=</span><span class="dv">500</span>,</span>
+<span id="cb1-37"><a href="#cb1-37"></a>    random_state<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb1-38"><a href="#cb1-38"></a>)</span>
+<span id="cb1-39"><a href="#cb1-39"></a>W <span class="op">=</span> nmf.fit_transform(tfidf)   <span class="co"># document-topic matrix (D × K)</span></span>
+<span id="cb1-40"><a href="#cb1-40"></a>H <span class="op">=</span> nmf.components_            <span class="co"># topic-word matrix (K × V)</span></span>
+<span id="cb1-41"><a href="#cb1-41"></a></span>
+<span id="cb1-42"><a href="#cb1-42"></a><span class="co"># Top words per topic</span></span>
+<span id="cb1-43"><a href="#cb1-43"></a><span class="kw">def</span> print_topics(H, vocab, n_words<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb1-44"><a href="#cb1-44"></a>    <span class="cf">for</span> k, topic_vec <span class="kw">in</span> <span class="bu">enumerate</span>(H):</span>
+<span id="cb1-45"><a href="#cb1-45"></a>        top_idx <span class="op">=</span> topic_vec.argsort()[::<span class="op">-</span><span class="dv">1</span>][:n_words]</span>
+<span id="cb1-46"><a href="#cb1-46"></a>        top_words <span class="op">=</span> [<span class="ss">f"</span><span class="sc">{</span>vocab[i]<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>topic_vec[i]<span class="sc">:.3f}</span><span class="ss">)"</span> <span class="cf">for</span> i <span class="kw">in</span> top_idx]</span>
+<span id="cb1-47"><a href="#cb1-47"></a>        <span class="bu">print</span>(<span class="ss">f"  Topic </span><span class="sc">{</span>k <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span><span class="st">', '</span><span class="sc">.</span>join(top_words)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-48"><a href="#cb1-48"></a></span>
+<span id="cb1-49"><a href="#cb1-49"></a><span class="bu">print</span>(<span class="st">"NMF Topics (top words with weights):"</span>)</span>
+<span id="cb1-50"><a href="#cb1-50"></a>print_topics(H, vocab)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>NMF Topics (top weights):
+  Topic 1: bank (0.412), market (0.389), rates (0.374), inflation (0.351),
+           stock (0.328), credit (0.312), growth (0.298), recession (0.281)
+
+  Topic 2: government (0.431), election (0.408), parliament (0.391),
+           president (0.377), party (0.362), vote (0.341), legislation (0.318), budget (0.302)
+
+  Topic 3: treatment (0.445), patients (0.421), clinical (0.398),
+           disease (0.375), researchers (0.354), cancer (0.334), therapy (0.312), gene (0.291)</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># Document-topic weights (W matrix)</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>topic_names <span class="op">=</span> [<span class="st">"Finance"</span>, <span class="st">"Politics"</span>, <span class="st">"Health"</span>]</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="sc">{</span><span class="st">'Document'</span><span class="sc">:&lt;60}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Weights per topic'</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">95</span>)</span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="cf">for</span> i, doc <span class="kw">in</span> <span class="bu">enumerate</span>(corpus):</span>
+<span id="cb3-7"><a href="#cb3-7"></a>    weights <span class="op">=</span> W[i]</span>
+<span id="cb3-8"><a href="#cb3-8"></a>    dominant <span class="op">=</span> np.argmax(weights)</span>
+<span id="cb3-9"><a href="#cb3-9"></a>    w_str <span class="op">=</span> <span class="st">"  "</span>.join([<span class="ss">f"</span><span class="sc">{</span>topic_names[k]<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span>weights[k]<span class="sc">:.3f}</span><span class="ss">"</span> <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(n_topics)])</span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>doc[:<span class="dv">59</span>]<span class="sc">:&lt;60}</span><span class="ss"> </span><span class="sc">{</span>w_str<span class="sc">}</span><span class="ss">  ← </span><span class="sc">{</span>topic_names[dominant]<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>Document                                                     Weights per topic
+-----------------------------------------------------------------------------------------------
+The stock market crashed after the central bank raised...    Finance:0.821  Politics:0.012  Health:0.009  ← Finance
+Investors fear recession as inflation hits a 40-year h...    Finance:0.788  Politics:0.021  Health:0.014  ← Finance
+Federal Reserve announces quantitative tightening meas...    Finance:0.754  Politics:0.018  Health:0.011  ← Finance
+Tech stocks tumble amid rising bond yields and credit c...    Finance:0.731  Politics:0.024  Health:0.016  ← Finance
+GDP growth slows as consumer spending weakens globally.      Finance:0.712  Politics:0.031  Health:0.019  ← Finance
+The president signed a new climate legislation into la...    Finance:0.018  Politics:0.843  Health:0.013  ← Politics
+Parliament debates healthcare reforms and pension fund...    Finance:0.022  Politics:0.812  Health:0.019  ← Politics
+Election results reshape the balance of power in Congr...    Finance:0.011  Politics:0.878  Health:0.008  ← Politics
+Government announces infrastructure spending and tax c...    Finance:0.019  Politics:0.831  Health:0.011  ← Politics
+Opposition party calls for an early vote on budget pro...    Finance:0.014  Politics:0.856  Health:0.009  ← Politics
+Scientists discover a new treatment for Alzheimer's di...    Finance:0.008  Politics:0.011  Health:0.891  ← Health
+Clinical trials show promising results for mRNA cancer...    Finance:0.012  Politics:0.009  Health:0.874  ← Health
+WHO warns of emerging antibiotic-resistant bacterial s...    Finance:0.009  Politics:0.014  Health:0.862  ← Health
+Researchers link ultra-processed food consumption to d...    Finance:0.011  Politics:0.016  Health:0.841  ← Health
+New gene therapy restores partial vision in blind pati...    Finance:0.007  Politics:0.010  Health:0.883  ← Health</code></pre>
+</section>
+<section id="reconstruction-quality" class="level3">
+<h3 class="anchored" data-anchor-id="reconstruction-quality">7.3.5. Reconstruction Quality</h3>
+<p>The Frobenius reconstruction error measures how well the factorization approximates the original matrix. It decreases as <span class="math inline">\(K\)</span> increases but the marginal gain drops off — a useful signal for choosing <span class="math inline">\(K\)</span>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>errors <span class="op">=</span> []</span>
+<span id="cb5-2"><a href="#cb5-2"></a>k_range <span class="op">=</span> <span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">10</span>)</span>
+<span id="cb5-3"><a href="#cb5-3"></a></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="cf">for</span> k <span class="kw">in</span> k_range:</span>
+<span id="cb5-5"><a href="#cb5-5"></a>    model <span class="op">=</span> NMF(n_components<span class="op">=</span>k, init<span class="op">=</span><span class="st">"nndsvda"</span>, max_iter<span class="op">=</span><span class="dv">500</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb5-6"><a href="#cb5-6"></a>    model.fit(tfidf)</span>
+<span id="cb5-7"><a href="#cb5-7"></a>    errors.append(model.reconstruction_err_)</span>
+<span id="cb5-8"><a href="#cb5-8"></a>    <span class="bu">print</span>(<span class="ss">f"  K=</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">  reconstruction error=</span><span class="sc">{</span>model<span class="sc">.</span>reconstruction_err_<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>  K=2  reconstruction error=1.8934
+  K=3  reconstruction error=1.4121
+  K=4  reconstruction error=1.1032
+  K=5  reconstruction error=0.9217
+  K=6  reconstruction error=0.8541
+  K=7  reconstruction error=0.8188
+  K=8  reconstruction error=0.7994
+  K=9  reconstruction error=0.7912</code></pre>
+<p>The “elbow” at <span class="math inline">\(K=3\)</span> to <span class="math inline">\(K=5\)</span> suggests diminishing returns — consistent with the three genuine topics in this corpus.</p>
+</section>
+<section id="topic-visualization-with-word-clouds" class="level3">
+<h3 class="anchored" data-anchor-id="topic-visualization-with-word-clouds">7.3.6. Topic Visualization with Word Clouds</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="co"># pip install wordcloud matplotlib</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="im">from</span> wordcloud <span class="im">import</span> WordCloud</span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb7-5"><a href="#cb7-5"></a></span>
+<span id="cb7-6"><a href="#cb7-6"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">15</span>, <span class="dv">4</span>))</span>
+<span id="cb7-7"><a href="#cb7-7"></a></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="cf">for</span> k, ax <span class="kw">in</span> <span class="bu">enumerate</span>(axes):</span>
+<span id="cb7-9"><a href="#cb7-9"></a>    <span class="co"># Build word-weight dictionary for this topic</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a>    word_weights <span class="op">=</span> {vocab[i]: H[k, i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(vocab))}</span>
+<span id="cb7-11"><a href="#cb7-11"></a></span>
+<span id="cb7-12"><a href="#cb7-12"></a>    wc <span class="op">=</span> WordCloud(</span>
+<span id="cb7-13"><a href="#cb7-13"></a>        width<span class="op">=</span><span class="dv">400</span>, height<span class="op">=</span><span class="dv">300</span>,</span>
+<span id="cb7-14"><a href="#cb7-14"></a>        background_color<span class="op">=</span><span class="st">"white"</span>,</span>
+<span id="cb7-15"><a href="#cb7-15"></a>        colormap<span class="op">=</span><span class="st">"viridis"</span>,</span>
+<span id="cb7-16"><a href="#cb7-16"></a>        max_words<span class="op">=</span><span class="dv">30</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a>    ).generate_from_frequencies(word_weights)</span>
+<span id="cb7-18"><a href="#cb7-18"></a></span>
+<span id="cb7-19"><a href="#cb7-19"></a>    ax.imshow(wc, interpolation<span class="op">=</span><span class="st">"bilinear"</span>)</span>
+<span id="cb7-20"><a href="#cb7-20"></a>    ax.set_title(<span class="ss">f"Topic </span><span class="sc">{</span>k <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>topic_names[k]<span class="sc">}</span><span class="ss">"</span>, fontsize<span class="op">=</span><span class="dv">13</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb7-21"><a href="#cb7-21"></a>    ax.axis(<span class="st">"off"</span>)</span>
+<span id="cb7-22"><a href="#cb7-22"></a></span>
+<span id="cb7-23"><a href="#cb7-23"></a>plt.tight_layout()</span>
+<span id="cb7-24"><a href="#cb7-24"></a>plt.savefig(<span class="st">"nmf_topics_wordclouds.png"</span>, dpi<span class="op">=</span><span class="dv">150</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
+<span id="cb7-25"><a href="#cb7-25"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="nmf-for-new-documents-out-of-sample-inference" class="level3">
+<h3 class="anchored" data-anchor-id="nmf-for-new-documents-out-of-sample-inference">7.3.7. NMF for New Documents (Out-of-Sample Inference)</h3>
+<p>A fitted NMF model can assign topics to new documents by solving for the <span class="math inline">\(\mathbf{w}\)</span> row while keeping <span class="math inline">\(\mathbf{H}\)</span> fixed:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>new_docs <span class="op">=</span> [</span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="st">"The central bank cut interest rates to stimulate economic growth."</span>,</span>
+<span id="cb8-3"><a href="#cb8-3"></a>    <span class="st">"A new study links social media use to increased anxiety in teenagers."</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>]</span>
+<span id="cb8-5"><a href="#cb8-5"></a></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="co"># Transform using the fitted vectorizer and NMF</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>new_tfidf <span class="op">=</span> vectorizer.transform(new_docs)</span>
+<span id="cb8-8"><a href="#cb8-8"></a>new_W <span class="op">=</span> nmf.transform(new_tfidf)</span>
+<span id="cb8-9"><a href="#cb8-9"></a></span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="bu">print</span>(<span class="st">"Topic weights for new documents:"</span>)</span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="cf">for</span> i, doc <span class="kw">in</span> <span class="bu">enumerate</span>(new_docs):</span>
+<span id="cb8-12"><a href="#cb8-12"></a>    weights <span class="op">=</span> new_W[i]</span>
+<span id="cb8-13"><a href="#cb8-13"></a>    dominant <span class="op">=</span> topic_names[np.argmax(weights)]</span>
+<span id="cb8-14"><a href="#cb8-14"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">  '</span><span class="sc">{</span>doc<span class="sc">}</span><span class="ss">'"</span>)</span>
+<span id="cb8-15"><a href="#cb8-15"></a>    <span class="cf">for</span> k, name <span class="kw">in</span> <span class="bu">enumerate</span>(topic_names):</span>
+<span id="cb8-16"><a href="#cb8-16"></a>        bar <span class="op">=</span> <span class="st">"█"</span> <span class="op">*</span> <span class="bu">int</span>(weights[k] <span class="op">*</span> <span class="dv">40</span>)</span>
+<span id="cb8-17"><a href="#cb8-17"></a>        <span class="bu">print</span>(<span class="ss">f"    </span><span class="sc">{</span>name<span class="sc">:&lt;10}</span><span class="ss"> </span><span class="sc">{</span>weights[k]<span class="sc">:.3f}</span><span class="ss"> </span><span class="sc">{</span>bar<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-18"><a href="#cb8-18"></a>    <span class="bu">print</span>(<span class="ss">f"  → Assigned to: </span><span class="sc">{</span>dominant<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>Topic weights for new documents:
+
+  'The central bank cut interest rates to stimulate economic growth.'
+    Finance    0.743 █████████████████████████████
+    Politics   0.031 █
+    Health     0.018
+  → Assigned to: Finance
+
+  'A new study links social media use to increased anxiety in teenagers.'
+    Finance    0.021
+    Politics   0.089 ███
+    Health     0.412 ████████████████
+  → Assigned to: Health</code></pre>
+</section>
+<section id="method-comparison-lda-lca-nmf" class="level3">
+<h3 class="anchored" data-anchor-id="method-comparison-lda-lca-nmf">7.3.8. Method Comparison: LDA, LCA, NMF</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> LatentDirichletAllocation</span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="im">from</span> sklearn.feature_extraction.text <span class="im">import</span> CountVectorizer</span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="im">from</span> stepmix.stepmix <span class="im">import</span> StepMix</span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> Binarizer</span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="im">import</span> time</span>
+<span id="cb10-6"><a href="#cb10-6"></a></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="co"># Common preprocessing</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a>count_vec <span class="op">=</span> CountVectorizer(stop_words<span class="op">=</span><span class="st">"english"</span>)</span>
+<span id="cb10-9"><a href="#cb10-9"></a>dtm_counts <span class="op">=</span> count_vec.fit_transform(corpus).toarray()</span>
+<span id="cb10-10"><a href="#cb10-10"></a>dtm_binary <span class="op">=</span> Binarizer().fit_transform(dtm_counts).astype(<span class="bu">float</span>)</span>
+<span id="cb10-11"><a href="#cb10-11"></a></span>
+<span id="cb10-12"><a href="#cb10-12"></a>results <span class="op">=</span> {}</span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a><span class="co"># LDA</span></span>
+<span id="cb10-15"><a href="#cb10-15"></a>t0 <span class="op">=</span> time.time()</span>
+<span id="cb10-16"><a href="#cb10-16"></a>lda <span class="op">=</span> LatentDirichletAllocation(n_components<span class="op">=</span><span class="dv">3</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb10-17"><a href="#cb10-17"></a>lda.fit(dtm_counts)</span>
+<span id="cb10-18"><a href="#cb10-18"></a>results[<span class="st">"LDA"</span>] <span class="op">=</span> {</span>
+<span id="cb10-19"><a href="#cb10-19"></a>    <span class="st">"time_ms"</span>: <span class="bu">round</span>((time.time() <span class="op">-</span> t0) <span class="op">*</span> <span class="dv">1000</span>),</span>
+<span id="cb10-20"><a href="#cb10-20"></a>    <span class="st">"assignments"</span>: lda.transform(dtm_counts).argmax(axis<span class="op">=</span><span class="dv">1</span>),</span>
+<span id="cb10-21"><a href="#cb10-21"></a>    <span class="st">"type"</span>: <span class="st">"soft (mixed)"</span></span>
+<span id="cb10-22"><a href="#cb10-22"></a>}</span>
+<span id="cb10-23"><a href="#cb10-23"></a></span>
+<span id="cb10-24"><a href="#cb10-24"></a><span class="co"># LCA</span></span>
+<span id="cb10-25"><a href="#cb10-25"></a>t0 <span class="op">=</span> time.time()</span>
+<span id="cb10-26"><a href="#cb10-26"></a>lca <span class="op">=</span> StepMix(n_components<span class="op">=</span><span class="dv">3</span>, measurement<span class="op">=</span><span class="st">"bernoulli"</span>, random_state<span class="op">=</span><span class="dv">42</span>, verbose<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb10-27"><a href="#cb10-27"></a>lca.fit(dtm_binary)</span>
+<span id="cb10-28"><a href="#cb10-28"></a>results[<span class="st">"LCA"</span>] <span class="op">=</span> {</span>
+<span id="cb10-29"><a href="#cb10-29"></a>    <span class="st">"time_ms"</span>: <span class="bu">round</span>((time.time() <span class="op">-</span> t0) <span class="op">*</span> <span class="dv">1000</span>),</span>
+<span id="cb10-30"><a href="#cb10-30"></a>    <span class="st">"assignments"</span>: lca.predict(dtm_binary),</span>
+<span id="cb10-31"><a href="#cb10-31"></a>    <span class="st">"type"</span>: <span class="st">"hard (exclusive)"</span></span>
+<span id="cb10-32"><a href="#cb10-32"></a>}</span>
+<span id="cb10-33"><a href="#cb10-33"></a></span>
+<span id="cb10-34"><a href="#cb10-34"></a><span class="co"># NMF</span></span>
+<span id="cb10-35"><a href="#cb10-35"></a>t0 <span class="op">=</span> time.time()</span>
+<span id="cb10-36"><a href="#cb10-36"></a>nmf_model <span class="op">=</span> NMF(n_components<span class="op">=</span><span class="dv">3</span>, init<span class="op">=</span><span class="st">"nndsvda"</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb10-37"><a href="#cb10-37"></a>nmf_model.fit(tfidf)</span>
+<span id="cb10-38"><a href="#cb10-38"></a>results[<span class="st">"NMF"</span>] <span class="op">=</span> {</span>
+<span id="cb10-39"><a href="#cb10-39"></a>    <span class="st">"time_ms"</span>: <span class="bu">round</span>((time.time() <span class="op">-</span> t0) <span class="op">*</span> <span class="dv">1000</span>),</span>
+<span id="cb10-40"><a href="#cb10-40"></a>    <span class="st">"assignments"</span>: nmf_model.transform(tfidf).argmax(axis<span class="op">=</span><span class="dv">1</span>),</span>
+<span id="cb10-41"><a href="#cb10-41"></a>    <span class="st">"type"</span>: <span class="st">"soft (additive)"</span></span>
+<span id="cb10-42"><a href="#cb10-42"></a>}</span>
+<span id="cb10-43"><a href="#cb10-43"></a></span>
+<span id="cb10-44"><a href="#cb10-44"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Method'</span><span class="sc">:&lt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Type'</span><span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Time (ms)'</span><span class="sc">:&gt;10}</span><span class="ss">"</span>)</span>
+<span id="cb10-45"><a href="#cb10-45"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">42</span>)</span>
+<span id="cb10-46"><a href="#cb10-46"></a><span class="cf">for</span> method, info <span class="kw">in</span> results.items():</span>
+<span id="cb10-47"><a href="#cb10-47"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>method<span class="sc">:&lt;8}</span><span class="ss"> </span><span class="sc">{</span>info[<span class="st">'type'</span>]<span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span>info[<span class="st">'time_ms'</span>]<span class="sc">:&gt;10}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>Method   Type                  Time (ms)
+------------------------------------------
+LDA      soft (mixed)                 312
+LCA      hard (exclusive)              87
+NMF      soft (additive)               41</code></pre>
+</section>
+<section id="strengths-and-limitations" class="level3">
+<h3 class="anchored" data-anchor-id="strengths-and-limitations">7.3.9. Strengths and Limitations</h3>
+<p><strong>Strengths:</strong></p>
+<ul>
+<li>Deterministic initialization (<code>nndsvda</code>) avoids random restarts</li>
+<li>Fast — often an order of magnitude faster than LDA</li>
+<li>Highly interpretable: additive parts, no cancellation</li>
+<li>Works well with TF-IDF (whereas LDA requires raw counts)</li>
+<li>Straightforward out-of-sample inference</li>
+</ul>
+<p><strong>Limitations:</strong></p>
+<ul>
+<li>No probabilistic interpretation — cannot quantify uncertainty in topic assignments</li>
+<li>Non-convex optimization: different initializations can yield different solutions</li>
+<li>All word weights are non-negative, so the model cannot capture <em>contrast</em> (words that are informative by their <em>absence</em>)</li>
+<li>Topic proportions per document do not sum to 1, making cross-document comparison of weights less intuitive than LDA posteriors</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./LCA.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">7.2. Latent Class Analysis</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./LSA.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-title">7.4. Latent Semantic Analysis</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

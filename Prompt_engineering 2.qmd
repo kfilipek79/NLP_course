@@ -1,0 +1,265 @@
+---
+title: "8.1. Prompt Engineering"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 8.1.1. What is Prompt Engineering?
+
+**Prompt engineering** is the practice of designing and refining the input given to a large language model (LLM) in order to elicit the best possible output — without changing the model's weights. It is the primary interface between a user or application and an LLM.
+
+Unlike traditional machine learning, where you improve performance by retraining on more data, prompt engineering improves performance by crafting better instructions. This makes it accessible, fast to iterate, and often surprisingly powerful.
+
+The quality of an LLM's output depends heavily on:
+
+-   **Clarity** — is the task unambiguously stated?
+-   **Context** — does the model have the information it needs?
+-   **Format** — is the desired output structure specified?
+-   **Examples** — does the model know what "good" looks like?
+
+### 8.1.2. Zero-Shot Prompting
+
+In **zero-shot** prompting, the model receives only a task description — no examples. It relies entirely on knowledge acquired during pre-training.
+
+``` python
+import anthropic
+
+client = anthropic.Anthropic()
+
+def prompt(system: str, user: str) -> str:
+    msg = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        system=system,
+        messages=[{"role": "user", "content": user}]
+    )
+    return msg.content[0].text
+
+
+# Zero-shot classification
+response = prompt(
+    system="You are a precise text classifier. Reply with only the label.",
+    user="""Classify the sentiment of this review as POSITIVE, NEGATIVE, or NEUTRAL.
+
+Review: "The battery lasts forever but the screen is disappointingly dim."
+
+Label:"""
+)
+print(f"Zero-shot: {response}")
+```
+
+```
+Zero-shot: MIXED
+```
+
+Zero-shot works well for tasks the model has seen many times during training (sentiment, translation, summarization). It struggles with niche domains, specific output formats, or tasks requiring precise reasoning.
+
+### 8.1.3. Few-Shot Prompting
+
+**Few-shot** prompting provides $k$ input–output examples before the actual query. The model learns the pattern from the examples and applies it to the new input — no gradient updates, no training.
+
+``` python
+few_shot_prompt = """Classify customer feedback into: BUG, FEATURE_REQUEST, COMPLIMENT, or QUESTION.
+
+Feedback: "The app crashes every time I try to export a PDF."
+Category: BUG
+
+Feedback: "It would be great if you could add dark mode."
+Category: FEATURE_REQUEST
+
+Feedback: "Your support team resolved my issue in under 10 minutes — fantastic!"
+Category: COMPLIMENT
+
+Feedback: "How do I reset my password without access to my old email?"
+Category: QUESTION
+
+Feedback: "The search function doesn't return results when I use accented characters."
+Category:"""
+
+response = prompt(
+    system="You are a customer support classifier. Reply with only the category label.",
+    user=few_shot_prompt
+)
+print(f"Few-shot: {response}")
+```
+
+```
+Few-shot: BUG
+```
+
+**Why few-shot works:** the examples demonstrate the label vocabulary, the expected reasoning pattern, and the output format simultaneously — far more efficiently than instructions alone.
+
+### 8.1.4. Chain-of-Thought Prompting
+
+**Chain-of-Thought (CoT)** prompting instructs the model to reason step by step before producing a final answer. It substantially improves accuracy on tasks that require multi-step reasoning: arithmetic, logic, causal inference, and complex classification.
+
+``` python
+# Without CoT
+response_direct = prompt(
+    system="Answer concisely.",
+    user="""A train leaves Warsaw at 08:15 and travels at 120 km/h.
+Another train leaves Kraków (300 km away) at 09:00 traveling toward Warsaw at 90 km/h.
+At what time do they meet?"""
+)
+print(f"Direct: {response_direct}")
+
+# With CoT
+response_cot = prompt(
+    system="Solve step by step, then state the final answer clearly.",
+    user="""A train leaves Warsaw at 08:15 and travels at 120 km/h.
+Another train leaves Kraków (300 km away) at 09:00 traveling toward Warsaw at 90 km/h.
+At what time do they meet?"""
+)
+print(f"\nChain-of-Thought:\n{response_cot}")
+```
+
+```
+Direct: 09:45
+
+Chain-of-Thought:
+Step 1: By 09:00, the Warsaw train has been traveling for 45 minutes = 0.75 hours.
+        Distance covered = 120 × 0.75 = 90 km.
+        Remaining gap at 09:00 = 300 - 90 = 210 km.
+
+Step 2: From 09:00, both trains move toward each other.
+        Combined speed = 120 + 90 = 210 km/h.
+
+Step 3: Time to close 210 km at 210 km/h = 210 / 210 = 1 hour.
+
+Step 4: They meet at 09:00 + 1 hour = 10:00.
+
+Final answer: The trains meet at 10:00.
+```
+
+::: callout-note
+Simply appending **"Let's think step by step"** to a prompt is often sufficient to trigger chain-of-thought reasoning, even without explicit step-by-step examples. This is called *zero-shot CoT* and was demonstrated by Kojima et al. (2022).
+:::
+
+### 8.1.5. System Prompts and Persona
+
+The **system prompt** sets the model's overall behavior, role, constraints, and output style for the entire conversation. It is processed before any user message and acts as a persistent instruction layer.
+
+``` python
+# Persona: formal academic writer
+academic_response = prompt(
+    system="""You are a senior academic writer specializing in computational linguistics.
+Write in formal, precise prose. Use passive voice where appropriate.
+Cite concepts accurately. Avoid colloquialisms.""",
+    user="Explain what word embeddings are in 3 sentences."
+)
+print("Academic:\n", academic_response)
+
+print("\n" + "─"*60 + "\n")
+
+# Persona: friendly tutor for beginners
+tutor_response = prompt(
+    system="""You are a friendly tutor explaining NLP to complete beginners.
+Use simple words, everyday analogies, and a conversational tone.
+Never use jargon without immediately explaining it.""",
+    user="Explain what word embeddings are in 3 sentences."
+)
+print("Friendly tutor:\n", tutor_response)
+```
+
+```
+Academic:
+ Word embeddings are dense, low-dimensional vector representations of lexical
+ units, derived through the application of neural language models to large
+ textual corpora. Semantic relationships between lexemes are encoded as
+ geometric proximity within the embedding space, such that words sharing
+ contextual distributions occupy similar regions. This representational
+ framework has been demonstrated to capture both syntactic and semantic
+ regularities, enabling their application across a broad range of downstream
+ natural language processing tasks.
+
+Friendly tutor:
+ Imagine every word in the English language gets its own address in a giant
+ map — that's basically what word embeddings do. Words with similar meanings
+ end up living close to each other on this map, so "cat" and "dog" would be
+ neighbours, while "cat" and "democracy" would be far apart. Computers use
+ these addresses (which are just lists of numbers) to understand what words
+ mean and how they relate to each other.
+```
+
+### 8.1.6. Structured Output
+
+For programmatic use, instruct the model to return structured data (JSON, CSV, Markdown tables) rather than free text.
+
+``` python
+import json
+
+structured_response = prompt(
+    system="You are a data extraction assistant. Always return valid JSON only. No prose.",
+    user="""Extract the following fields from the job posting below.
+Return JSON with keys: job_title, company, location, salary_range, required_skills (list), experience_years (int).
+
+Posting:
+Senior Machine Learning Engineer at DataFlow Inc., based in Warsaw (hybrid).
+Salary: 25,000–35,000 PLN/month. We require 5+ years of experience with Python,
+TensorFlow or PyTorch, and strong knowledge of NLP and transformer architectures.
+Experience with MLOps tools (MLflow, Kubeflow) is a plus."""
+)
+
+job = json.loads(structured_response)
+for key, value in job.items():
+    print(f"  {key:<20} {value}")
+```
+
+```
+  job_title            Senior Machine Learning Engineer
+  company              DataFlow Inc.
+  location             Warsaw (hybrid)
+  salary_range         25,000–35,000 PLN/month
+  required_skills      ['Python', 'TensorFlow', 'PyTorch', 'NLP', 'transformer architectures']
+  experience_years     5
+```
+
+### 8.1.7. Prompt Engineering Best Practices
+
+| Practice | Why it matters |
+|---|---|
+| Be explicit about the output format | Models default to prose; specify JSON, list, table, etc. |
+| Give a role / persona | Anchors the model's style and domain knowledge |
+| Separate instructions from content | Use delimiters (`---`, `"""`) to avoid ambiguity |
+| Ask for reasoning before the answer | CoT improves accuracy on complex tasks |
+| Iterate and version your prompts | Small wording changes can shift quality significantly |
+| Test edge cases | Check empty input, very long input, adversarial phrasing |
+| Specify length | "In 2–3 sentences" prevents both truncation and verbosity |
+
+``` python
+# Template demonstrating all best practices together
+SYSTEM = """You are an expert NLP researcher and teacher.
+Respond in valid JSON only. No additional prose."""
+
+TEMPLATE = """Analyze the text below and return a JSON object with:
+- "main_topic": string
+- "sentiment": "positive" | "negative" | "neutral" | "mixed"
+- "key_entities": list of strings
+- "readability": "beginner" | "intermediate" | "advanced"
+- "summary": string (max 2 sentences)
+
+---
+TEXT:
+{text}
+---"""
+
+text = """The Federal Reserve raised interest rates by 50 basis points on Wednesday,
+citing persistent inflationary pressures. Markets responded with a sharp sell-off
+in technology stocks, while bond yields climbed to their highest level since 2007."""
+
+response = prompt(system=SYSTEM, user=TEMPLATE.format(text=text))
+result = json.loads(response)
+for k, v in result.items():
+    print(f"  {k:<18} {v}")
+```
+
+```
+  main_topic         Federal Reserve interest rate decision
+  sentiment          negative
+  key_entities       ['Federal Reserve', 'bond yields', '2007']
+  readability        advanced
+  summary            The Federal Reserve raised interest rates by 50 basis
+                     points amid inflation concerns, triggering a tech stock
+                     sell-off and pushing bond yields to 16-year highs.
+```

@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kamil Filipek">
+
+<title>Natural Language Processing - Part I - 2.4. Representing Language for Machines</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./Application.html" rel="next">
+<link href="./Amb_var.html" rel="prev">
+<link href="./assets/umcs-favicon.ico" rel="icon">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Levels_analysis.html"><strong>2. Theoretical Foundations</strong></a></li><li class="breadcrumb-item"><a href="./Lang_machine.html"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">2.4. Representing Language for Machines</span></a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./assets/logo-Centrum.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      </a>
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Natural Language Processing - Part I</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text"><strong>1. Language and Machines</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Why_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.1. Why to Analyze Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Natural_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.2. What is the Natural Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Hierarchy_languages.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.3. Hierarchy of Languages</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text"><strong>2. Theoretical Foundations</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Levels_analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.1. Levels of Linguistic Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Approaches_language..html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Lang_machine.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">2.4. Representing Language for Machines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Application.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.5. From Theory to Application</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text"><strong>3. Basic Data Engineering</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Preprocessing.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.1. Data Preprocessing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Stem_lem.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Stemming and Lemmatization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tokenization.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Tokenization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Ini_da.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.4. Initial Data Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
+ <span class="menu-text"><strong>4. Evolution of Embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Bag_of_words.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.1. Bag of Words</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tf_idf.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.2. TF-IDF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Word2Vec.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.3. Word2Vec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GloVe.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.4. GloVe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./FastText.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.5. FastText</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true">
+ <span class="menu-text"><strong>5. Contextual_embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ELMo.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. ELMo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./BERT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.2. BERT</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GPT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. GPT</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true">
+ <span class="menu-text"><strong>6. Elementary Language Analaysis</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./PoS_and_NER.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. PoS &amp; NER</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Keywords_extraction.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.2. Keywords Extraction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Semntiment.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. Sentiment Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Emotion_Analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.4. Emotion Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <span class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">**6. Advanced Language Analysis**</span></span>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text">Bibliography</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ref.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">References</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">MORE DETAILS</h2>
+   
+  <ul>
+  <li><a href="#formal-grammars-and-parsing" id="toc-formal-grammars-and-parsing" class="nav-link active" data-scroll-target="#formal-grammars-and-parsing">2.4.1. Formal Grammars and Parsing</a></li>
+  <li><a href="#semantic-networks-ontologies-wordnet" id="toc-semantic-networks-ontologies-wordnet" class="nav-link" data-scroll-target="#semantic-networks-ontologies-wordnet">2.4.2. Semantic Networks, Ontologies, WordNet</a></li>
+  <li><a href="#distributional-semantics-and-embeddings" id="toc-distributional-semantics-and-embeddings" class="nav-link" data-scroll-target="#distributional-semantics-and-embeddings">2.4.3. Distributional Semantics and Embeddings</a></li>
+  <li><a href="#embeddings-in-practice" id="toc-embeddings-in-practice" class="nav-link" data-scroll-target="#embeddings-in-practice">2.4.4. Embeddings in practice</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-title">2.4. Representing Language for Machines</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kamil Filipek </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="formal-grammars-and-parsing" class="level3">
+<h3 class="anchored" data-anchor-id="formal-grammars-and-parsing">2.4.1. Formal Grammars and Parsing</h3>
+<p><strong>Formal grammars</strong>&nbsp;are mathematical models used to define the syntax of programming languages and, by extension, to describe aspects of natural language. They consist of a set of production rules that specify how valid strings in a language can be formed. The&nbsp;<strong>Chomsky hierarchy</strong>&nbsp;is the standard classification:</p>
+<ul>
+<li><strong>Type 3: Regular grammars</strong>&nbsp;– the simplest, used in&nbsp;<strong>regex engines</strong>,&nbsp;<strong>lexical analyzers</strong>, and tokenization (e.g., recognizing identifiers, keywords, or numbers in source code).</li>
+<li><strong>Type 2: Context-free grammars (CFGs)</strong>&nbsp;– widely applied in&nbsp;<strong>programming language compilers</strong>, where they describe nested structures like loops, conditionals, or function calls. CFGs form the basis of parser generators such as&nbsp;<strong>Yacc</strong>&nbsp;or&nbsp;<strong>ANTLR</strong>.</li>
+<li><strong>Type 1: Context-sensitive grammars</strong>&nbsp;– more powerful but less practical computationally; relevant in natural language analysis or advanced type systems.</li>
+<li><strong>Type 0: Unrestricted grammars</strong>&nbsp;– theoretical interest, equivalent to&nbsp;<strong>Turing machines</strong>, rarely applied in practice.</li>
+</ul>
+<p>Below Python code illustrates how a&nbsp;<strong>Type 3 regular grammar</strong>&nbsp;can be implemented using&nbsp;<strong>regular expressions (regex) [</strong>a&nbsp;<strong>formal way of describing text patterns</strong>&nbsp;using a compact, rule-based syntax].</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>\d+ [regex]</td>
+</tr>
+<tr class="even">
+<td>[meaning] “one more digit”</td>
+</tr>
+<tr class="odd">
+<td><strong>Example</strong></td>
+</tr>
+<tr class="even">
+<td>[abc] [regex]</td>
+</tr>
+<tr class="odd">
+<td>[meaning] “one of: a, b, or c”</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">import</span> re</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="co"># Simple lexer for identifiers, integers, and +, -, *, /, parentheses</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>TOKEN_SPEC <span class="op">=</span> [</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    (<span class="st">"INT"</span>,       <span class="vs">r"\d+"</span>),</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    (<span class="st">"ID"</span>,        <span class="vs">r"[A-Za-z_]\w*"</span>),</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    (<span class="st">"PLUS"</span>,      <span class="vs">r"\+"</span>),</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    (<span class="st">"MINUS"</span>,     <span class="vs">r"-"</span>),</span>
+<span id="cb1-9"><a href="#cb1-9"></a>    (<span class="st">"STAR"</span>,      <span class="vs">r"\*"</span>),</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    (<span class="st">"SLASH"</span>,     <span class="vs">r"/"</span>),</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    (<span class="st">"LPAREN"</span>,    <span class="vs">r"\("</span>),</span>
+<span id="cb1-12"><a href="#cb1-12"></a>    (<span class="st">"RPAREN"</span>,    <span class="vs">r"\)"</span>),</span>
+<span id="cb1-13"><a href="#cb1-13"></a>    (<span class="st">"SKIP"</span>,      <span class="vs">r"[ \t\n]+"</span>),</span>
+<span id="cb1-14"><a href="#cb1-14"></a>    (<span class="st">"MISMATCH"</span>,  <span class="vs">r"."</span>),</span>
+<span id="cb1-15"><a href="#cb1-15"></a>]</span>
+<span id="cb1-16"><a href="#cb1-16"></a></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="co"># It builds one big regular expression out of all the token patterns.Each pair is a token type and the regex that matches it.</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a>master <span class="op">=</span> re.<span class="bu">compile</span>(<span class="st">"|"</span>.join(<span class="ss">f"(?P&lt;</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">&gt;</span><span class="sc">{</span>pat<span class="sc">}</span><span class="ss">)"</span> <span class="cf">for</span> name, pat <span class="kw">in</span> TOKEN_SPEC))</span>
+<span id="cb1-19"><a href="#cb1-19"></a></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="kw">def</span> lex(code: <span class="bu">str</span>):</span>
+<span id="cb1-21"><a href="#cb1-21"></a>    <span class="cf">for</span> m <span class="kw">in</span> master.finditer(code):</span>
+<span id="cb1-22"><a href="#cb1-22"></a>        kind <span class="op">=</span> m.lastgroup</span>
+<span id="cb1-23"><a href="#cb1-23"></a>        <span class="cf">if</span> kind <span class="op">==</span> <span class="st">"SKIP"</span>:</span>
+<span id="cb1-24"><a href="#cb1-24"></a>            <span class="cf">continue</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a>        <span class="cf">if</span> kind <span class="op">==</span> <span class="st">"MISMATCH"</span>:</span>
+<span id="cb1-26"><a href="#cb1-26"></a>            <span class="cf">raise</span> <span class="pp">SyntaxError</span>(<span class="ss">f"Unexpected </span><span class="sc">{</span>m<span class="sc">.</span>group()<span class="sc">!r}</span><span class="ss">"</span>)</span>
+<span id="cb1-27"><a href="#cb1-27"></a>        <span class="cf">yield</span> (kind, m.group())</span>
+<span id="cb1-28"><a href="#cb1-28"></a></span>
+<span id="cb1-29"><a href="#cb1-29"></a><span class="bu">print</span>(<span class="bu">list</span>(lex(<span class="st">"sum1 + 23*(x - y)"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>[('ID', 'sum1'), ('PLUS', '+'), ('INT', '23'), ('STAR', '*'), ('LPAREN', '('), ('ID', 'x'), ('MINUS', '-'), ('ID', 'y'), ('RPAREN', ')')]</code></pre>
+<p><strong>How it works?</strong></p>
+<ul>
+<li><code>TOKEN_SPEC</code>&nbsp;defines a set of regex patterns, each with a name:
+<ul>
+<li><code>"INT"</code>&nbsp;→ integers (<code>\d+</code>)</li>
+<li><code>"ID"</code>&nbsp;→ identifiers (<code>[A-Za-z_]\w*</code>)</li>
+<li><code>"PLUS"</code>,&nbsp;<code>"MINUS"</code>,&nbsp;<code>"STAR"</code>,&nbsp;<code>"SLASH"</code>, etc. → arithmetic operators</li>
+<li><code>"LPAREN"</code>,&nbsp;<code>"RPAREN"</code>&nbsp;→ parentheses</li>
+<li><code>"SKIP"</code>&nbsp;→ whitespace (ignored)</li>
+<li><code>"MISMATCH"</code>&nbsp;→ anything else (triggers an error)</li>
+</ul></li>
+<li><code>master = re.compile(... )</code>&nbsp;builds one&nbsp;<strong>big regex</strong>&nbsp;with named groups.</li>
+<li><code>lex(code)</code>&nbsp;walks through the input, matches the regex, and yields&nbsp;<code>(TOKEN_TYPE, value)</code>&nbsp;pairs.</li>
+</ul>
+<p>👉 That line dynamically builds&nbsp;<strong>one master regular expression</strong>&nbsp;that can recognize&nbsp;<em>all token types at once</em>. Thanks to named groups, the lexer knows&nbsp;<em>what kind of token</em>&nbsp;was matched (INT, ID, PLUS, etc.), not just the text.</p>
+<p><strong>Once again</strong></p>
+<p>Imagine the input: <strong><em>“sum1 + 23*(x - y)”</em></strong></p>
+<p>The lexer output:</p>
+<p>[</p>
+<p>(‘ID’, ‘sum1’),</p>
+<p>(‘PLUS’, ‘+’),</p>
+<p>(‘INT’, ‘23’),</p>
+<p>(‘STAR’, ‘*’),</p>
+<p>(‘LPAREN’, ‘(’),</p>
+<p>(‘ID’, ‘x’),</p>
+<p>(‘MINUS’, ‘-’),</p>
+<p>(‘ID’, ‘y’),</p>
+<p>(‘RPAREN’, ‘)’)</p>
+<p>]</p>
+<p>👉 Tokens we get are the&nbsp;<strong>lexer's output</strong>, ready to be consumed by the parser.</p>
+<p><strong>Parsing</strong>&nbsp;is the process of analyzing input (e.g., code, text, or data) according to a grammar in order to build a structural representation, such as a&nbsp;<strong>parse tree</strong>&nbsp;or&nbsp;<strong>abstract syntax tree (AST)</strong>. For IT specialists, parsing is central to:</p>
+<ul>
+<li><strong>Compilers &amp; Interpreters</strong>&nbsp;– converting source code into executable instructions, ensuring syntax is correct before semantic analysis and optimization.</li>
+<li><strong>Data Processing Pipelines</strong>&nbsp;– interpreting structured input like JSON, XML, or domain-specific languages.</li>
+<li><strong>Natural Language Processing (NLP)</strong>&nbsp;– analyzing user queries, chatbots, or search engines, where parsing helps extract intent and relationships between entities.</li>
+</ul>
+<p>Common parsing approaches:</p>
+<ul>
+<li><strong>Top-down (recursive descent)</strong>&nbsp;– intuitive, hand-coded parsers for simpler grammars.</li>
+<li><strong>Bottom-up (shift–reduce, LR parsers)</strong>&nbsp;– efficient for programming languages; used in compiler construction.</li>
+<li><strong>Probabilistic/Statistical parsers</strong>&nbsp;– assign probabilities to multiple interpretations, key in NLP.</li>
+<li><strong>Neural parsers</strong>&nbsp;– machine learning–based, leveraging embeddings and graph models for robust handling of natural language.</li>
+</ul>
+<p>👉 For IT practice:&nbsp;<strong>Regular grammars</strong>&nbsp;cover pattern matching (regex),&nbsp;<strong>CFGs</strong>&nbsp;underpin compilers, and&nbsp;<strong>probabilistic/dependency parsing</strong>&nbsp;powers NLP applications. Knowing how grammars and parsing interact is crucial for anyone dealing with language processing, compiler design, or building robust text-driven systems.</p>
+<p>Would you like me to&nbsp;<strong>add a one-page cheat sheet</strong>&nbsp;(table) with grammar types, key algorithms, and real-world IT applications (e.g., regex → logs, CFG → compilers, probabilistic parsing → chatbots)?</p>
+</section>
+<section id="semantic-networks-ontologies-wordnet" class="level3">
+<h3 class="anchored" data-anchor-id="semantic-networks-ontologies-wordnet">2.4.2. Semantic Networks, Ontologies, WordNet</h3>
+<p><strong>Semantic networks, ontologies, and WordNet</strong>&nbsp;are three approaches to representing and organizing knowledge in artificial intelligence and computational linguistics. A&nbsp;<strong>semantic network</strong>&nbsp;is a graph-like structure where concepts are represented as nodes and relationships (such as&nbsp;<em>is-a</em>&nbsp;or&nbsp;<em>part-of</em>) are represented as edges. Originally proposed in psychology to model human memory, semantic networks provide intuitive and flexible ways to visualize connections between ideas, but they lack formal rigor.</p>
+<p>Dog ——is-a——&gt; Mammal ——is-a——&gt; Animal</p>
+<p>Dog ——has-part——&gt; Tail</p>
+<p>Dog ——can——&gt; Bark</p>
+<p>This is a&nbsp;<strong>semantic network</strong>: nodes are concepts (<em>Dog</em>,&nbsp;<em>Mammal</em>,&nbsp;<em>Tail</em>), and edges represent relations (<em>is-a</em>,&nbsp;<em>has-part</em>,&nbsp;<em>can</em>). It's intuitive and visual, but lacks strict logical rules — computers can store and query it, but reasoning is limited.</p>
+<p>In contrast, an&nbsp;<strong>ontology</strong>&nbsp;is a formal, logic-based framework that specifies entities, classes, attributes, and relationships in a given domain using standardized languages such as RDF or OWL. Ontologies are more precise than semantic networks and are widely applied in areas like the Semantic Web, biomedical informatics, and legal informatics to ensure interoperability and machine reasoning across datasets.</p>
+<p>&lt;Class rdf:ID=“Animal”/&gt;</p>
+<p>&lt;Class rdf:ID=“Mammal”&gt;</p>
+<p>&lt;rdfs:subClassOf rdf:resource=“#Animal”/&gt;</p>
+<p>&lt;/Class&gt;</p>
+<p>&lt;Class rdf:ID=“Dog”&gt;</p>
+<p>&lt;rdfs:subClassOf rdf:resource=“#Mammal”/&gt;</p>
+<p>&lt;/Class&gt;</p>
+<p>&lt;ObjectProperty rdf:ID=“hasPart”/&gt;</p>
+<p>&lt;Dog rdf:about=“#Dog”&gt;</p>
+<p>&lt;hasPart rdf:resource=“#Tail”/&gt;</p>
+<p>&lt;/Dog&gt;</p>
+<p>Here, relationships are&nbsp;<strong>formally defined</strong>:</p>
+<ul>
+<li><p><code>Dog</code>&nbsp;is a subclass of&nbsp;<code>Mammal</code>,</p></li>
+<li><p><code>Mammal</code>&nbsp;is a subclass of&nbsp;<code>Animal</code>,</p></li>
+<li><p><code>Dog</code>&nbsp;has a part&nbsp;<code>Tail</code>.</p></li>
+</ul>
+<p><strong>WordNet</strong>&nbsp;sits between these two approaches. It is a large lexical database of English developed at Princeton, where words are grouped into sets of synonyms called&nbsp;<em>synsets</em>&nbsp;and linked through semantic relations such as synonymy, hypernymy (generalization), and meronymy (part–whole). While not a full ontology, WordNet provides a structured lexical-semantic resource that has become fundamental in natural language processing tasks, including word sense disambiguation, semantic similarity measurement, and information retrieval. Together, semantic networks, ontologies, and WordNet illustrate the spectrum of knowledge representation methods, from intuitive graphs, through formal logical models, to richly structured lexical resources used in both research and applied AI.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="im">from</span> nltk.corpus <span class="im">import</span> wordnet <span class="im">as</span> wn</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="co"># Synsets (synonym sets) for 'dog'</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>dog_synsets <span class="op">=</span> wn.synsets(<span class="st">"dog"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="bu">print</span>(dog_synsets[<span class="dv">0</span>].definition())</span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="co"># -&gt; "a member of the genus Canis (probably descended from the common wolf)..."</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a></span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="co"># Hypernym (more general concept)</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="bu">print</span>(dog_synsets[<span class="dv">0</span>].hypernyms())</span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="co"># -&gt; [Synset('canine.n.02'), Synset('domestic_animal.n.01')]</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a></span>
+<span id="cb3-12"><a href="#cb3-12"></a><span class="co"># Meronym (part-of relation)</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="bu">print</span>(dog_synsets[<span class="dv">0</span>].part_meronyms())</span>
+<span id="cb3-14"><a href="#cb3-14"></a><span class="co"># -&gt; [Synset('paw.n.01'), Synset('fang.n.01'), ...]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>a member of the genus Canis (probably descended from the common wolf) that has been domesticated by man since prehistoric times; occurs in many breeds
+[Synset('canine.n.02'), Synset('domestic_animal.n.01')]
+[Synset('flag.n.07')]</code></pre>
+<p>WordNet doesn't describe&nbsp;<em>all</em>&nbsp;world knowledge like an ontology, but it provides&nbsp;<strong>lexical relationships</strong>&nbsp;(synonyms, hypernyms, meronyms) useful in NLP tasks such as semantic similarity, word sense disambiguation, or query expansion.</p>
+<p>Current version of WordNet can be found here: <a href="https://wordnet.princeton.edu" class="uri">https://wordnet.princeton.edu</a></p>
+<p>You can use WordNet inside Python (as above) and there are many options available for the user:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a><span class="im">import</span> nltk</span>
+<span id="cb5-2"><a href="#cb5-2"></a>nltk.download(<span class="st">'wordnet'</span>)</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="im">from</span> nltk.corpus <span class="im">import</span> wordnet <span class="im">as</span> wn</span>
+<span id="cb5-4"><a href="#cb5-4"></a></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="bu">print</span>(wn.synsets(<span class="st">"dog"</span>))</span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="bu">print</span>(wn.synsets(<span class="st">"dog"</span>)[<span class="dv">0</span>].definition())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>[Synset('dog.n.01'), Synset('frump.n.01'), Synset('dog.n.03'), Synset('cad.n.01'), Synset('frank.n.02'), Synset('pawl.n.01'), Synset('andiron.n.01'), Synset('chase.v.01')]
+a member of the genus Canis (probably descended from the common wolf) that has been domesticated by man since prehistoric times; occurs in many breeds</code></pre>
+<p>dog</p>
+<p>├── dog.n.01 → “domestic dog”</p>
+<p>├── frump.n.01 → “unattractive woman”</p>
+<p>├── dog.n.03 → “informal man”</p>
+<p>├── cad.n.01 → “reprehensible man”</p>
+<p>├── frank.n.02 → “sausage”</p>
+<p>├── pawl.n.01 → “ratchet part”</p>
+<p>├── andiron.n.01 → “fireplace support”</p>
+<p>└── chase.v.01 → “to pursue”</p>
+<p><em>Dog</em>&nbsp;has&nbsp;<strong>multiple senses</strong>, and WordNet organizes them as synsets with definitions.</p>
+<p>In 2015, I started my career with&nbsp;<strong>“Słowosieć”</strong>, the Polish equivalent of WordNet <a href="https://cejsh.icm.edu.pl/cejsh/element/bwmeta1.element.desklight-67a7dd2f-c9db-4a11-b02c-dc20340a85c8/c/Filipek-4-1-2016.pdf">(my publication)</a> . At present, it contains&nbsp;<strong>191,000 nouns, verbs, adjectives, and adverbs</strong>,&nbsp;<strong>285,000 senses</strong>, and&nbsp;<strong>over 600,000 relations</strong>. It has already become the&nbsp;<strong>largest wordnet in the world</strong>&nbsp;and continues to expand. What is important to remember is that&nbsp;<strong>many languages have their own WordNet</strong>.</p>
+<table class="table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 22%">
+<col style="width: 32%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Semantic Networks</th>
+<th>Ontologies</th>
+<th>WordNet</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Formality</strong></td>
+<td>Informal, intuitive graphs</td>
+<td>Formal, logic-based</td>
+<td>Semi-formal, ontology-like</td>
+</tr>
+<tr class="even">
+<td><strong>Scope</strong></td>
+<td>General representation of knowledge</td>
+<td>Domain-specific, precise definitions</td>
+<td>Lexical database for English (expanded multilingual)</td>
+</tr>
+<tr class="odd">
+<td><strong>Relations</strong></td>
+<td>Arbitrary (is-a, part-of, causes)</td>
+<td>Strictly defined (subclass, property, domain/range)</td>
+<td>Synonymy, hypernymy, meronymy, etc.</td>
+</tr>
+<tr class="even">
+<td><strong>Applications</strong></td>
+<td>Early AI, knowledge graphs</td>
+<td>Semantic Web, data integration</td>
+<td>NLP tasks, word sense disambiguation</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="distributional-semantics-and-embeddings" class="level3">
+<h3 class="anchored" data-anchor-id="distributional-semantics-and-embeddings">2.4.3. Distributional Semantics and Embeddings</h3>
+<p><strong>Distributional semantics</strong>&nbsp;is a theoretical and computational approach to meaning in natural language, rooted in the idea that&nbsp;<em>words occurring in similar contexts tend to have similar meanings</em>&nbsp;(Harris, 1954; Firth, 1957). Instead of defining meaning in terms of abstract logical structures, distributional models rely on statistical analysis of large corpora. They represent words as high-dimensional vectors derived from co-occurrence patterns, allowing semantic similarity to be measured quantitatively. This approach has proven particularly useful for tasks such as synonym detection, word sense disambiguation, and semantic clustering.</p>
+<p><strong>Embeddings</strong>&nbsp;are the modern, computational implementation of distributional semantics. They map linguistic units—typically words, but also subwords, sentences, or even entire documents—into dense, low-dimensional vector spaces. Early models such as&nbsp;<em>Latent Semantic Analysis</em>&nbsp;(Deerwester et al., 1990) relied on linear algebra techniques like singular value decomposition, while neural network-based approaches such as&nbsp;<em>Word2Vec</em>&nbsp;(Mikolov et al., 2013) and&nbsp;<em>GloVe</em>(Pennington et al., 2014) provided more efficient and context-sensitive representations. More recently, contextual embeddings derived from transformer-based models, such as&nbsp;<em>BERT</em>&nbsp;(Devlin et al., 2019), have advanced the field further by generating dynamic word representations that adapt to the surrounding sentence context.</p>
+<p>Together, distributional semantics and embeddings form the foundation of much of contemporary natural language processing (NLP), enabling systems to approximate human-like semantic reasoning and supporting applications from information retrieval to machine translation and conversational AI.</p>
+</section>
+<section id="embeddings-in-practice" class="level3">
+<h3 class="anchored" data-anchor-id="embeddings-in-practice">2.4.4. Embeddings in practice</h3>
+<p>Why we use embeddings?</p>
+<ul>
+<li><p><strong>Semantic similarity &amp; clustering:</strong>&nbsp;group/compare texts without labels.</p></li>
+<li><p><strong>Semantic search / RAG:</strong>&nbsp;retrieve passages/documents most similar to a query.</p></li>
+<li><p><strong>Classification features:</strong>&nbsp;plug embeddings into classical ML (SVM/LogReg).</p></li>
+<li><p><strong>Deduplication / anomaly detection:</strong>&nbsp;near-duplicate or outlier search.</p></li>
+</ul>
+<p>In the Hugging Face&nbsp;<strong>Transformers</strong>&nbsp;library, embeddings are a fundamental component of every model. Raw text cannot be processed directly by a transformer, so each token is first mapped into a dense numerical vector known as a&nbsp;<strong>token embedding</strong>, while additional&nbsp;<strong>positional embeddings</strong>&nbsp;are added to encode word order and, in some models,&nbsp;<strong>segment embeddings</strong>&nbsp;are used to distinguish sentences. These embeddings form the input layer of the network and are refined during training.</p>
+<p>Importantly, the library allows direct access to embeddings: one can extract token-level representations, contextual hidden states from intermediate layers, or pooled sentence-level embeddings. For example, with BERT, it is possible to obtain vectors for each token in a sentence or create a single sentence embedding by averaging token representations. Hugging Face also provides a convenient&nbsp;<code>feature-extraction</code>&nbsp;pipeline for quick access to embeddings, while the&nbsp;<strong>sentence-transformers</strong>&nbsp;extension builds on this functionality to deliver optimized, ready-to-use sentence embeddings suitable for semantic similarity, clustering, search, and classification tasks. In practice, this means that embeddings in Transformers are not only the model's internal building blocks but also a versatile tool for a wide range of downstream NLP applications.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="im">from</span> transformers <span class="im">import</span> AutoTokenizer, AutoModel</span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="im">import</span> torch</span>
+<span id="cb7-3"><a href="#cb7-3"></a></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="co"># Load model and tokenizer</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>tokenizer <span class="op">=</span> AutoTokenizer.from_pretrained(<span class="st">"bert-base-uncased"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6"></a>model <span class="op">=</span> AutoModel.from_pretrained(<span class="st">"bert-base-uncased"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7"></a></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="co"># Encode text</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a>inputs <span class="op">=</span> tokenizer(<span class="st">"Transformers provide embeddings."</span>, return_tensors<span class="op">=</span><span class="st">"pt"</span>)</span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="co"># Forward pass (get hidden states)</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="cf">with</span> torch.no_grad():</span>
+<span id="cb7-13"><a href="#cb7-13"></a>    outputs <span class="op">=</span> model(<span class="op">**</span>inputs)</span>
+<span id="cb7-14"><a href="#cb7-14"></a></span>
+<span id="cb7-15"><a href="#cb7-15"></a>last_hidden_state <span class="op">=</span> outputs.last_hidden_state  <span class="co"># shape: [batch, seq_len, hidden_dim]</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a>sentence_embedding <span class="op">=</span> last_hidden_state.mean(dim<span class="op">=</span><span class="dv">1</span>)  <span class="co"># simple average pooling</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a><span class="bu">print</span>(sentence_embedding.shape) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>torch.Size([1, 768])</code></pre>
+<p>The notation&nbsp;<strong><code>torch.Size([1, 768])</code></strong>&nbsp;is PyTorch's way of describing the&nbsp;<strong>shape of a tensor</strong>—that is, the dimensions of the numerical array.</p>
+<ul>
+<li><p>The&nbsp;<strong>first number (<code>1</code>)</strong>&nbsp;is the&nbsp;<strong>batch size</strong>: in our example we passed only&nbsp;<strong>one input sentence</strong>&nbsp;to the model. If you had given 10 sentences at once, the first dimension would be&nbsp;<code>10</code>.</p></li>
+<li><p>The&nbsp;<strong>second number (<code>768</code>)</strong>&nbsp;is the&nbsp;<strong>embedding dimension</strong>: BERT-base represents each token or sentence as a vector of length 768. Other models may use different sizes (e.g., BERT-large uses 1024, RoBERTa-base also 768, MiniLM 384).</p></li>
+</ul>
+<p><strong><code>torch.Size([1, 768])</code>&nbsp;means "one embedding vector of size 768"</strong>, i.e.&nbsp;a single sentence (or pooled representation) encoded in a 768-dimensional semantic space.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./Amb_var.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./Application.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-title">2.5. From Theory to Application</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

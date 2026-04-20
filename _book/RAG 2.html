@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kamil Filipek">
+
+<title>Natural Language Processing - Part I - 8.4. Retrieval-Augmented Generation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./LLM_evaluation.html" rel="next">
+<link href="./Fine_tuning.html" rel="prev">
+<link href="./assets/umcs-favicon.ico" rel="icon">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Prompt_engineering.html"><strong>8. Working with LLMs</strong></a></li><li class="breadcrumb-item"><a href="./RAG.html"><span class="chapter-number">33</span>&nbsp; <span class="chapter-title">8.4. Retrieval-Augmented Generation</span></a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./assets/logo-Centrum.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      </a>
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Natural Language Processing - Part I</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text"><strong>1. Language and Machines</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Why_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.1. Why to Analyze Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Natural_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.2. What is the Natural Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Hierarchy_languages.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.3. Hierarchy of Languages</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text"><strong>2. Theoretical Foundations</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Levels_analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.1. Levels of Linguistic Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Approaches_language..html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Lang_machine.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.4. Representing Language for Machines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Application.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.5. From Theory to Application</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text"><strong>3. Basic Data Engineering</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Preprocessing.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.1. Data Preprocessing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Stem_lem.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Stemming and Lemmatization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tokenization.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Tokenization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Ini_da.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.4. Initial Data Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
+ <span class="menu-text"><strong>4. Evolution of Embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Bag_of_words.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.1. Bag of Words</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tf_idf.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.2. TF-IDF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Word2Vec.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.3. Word2Vec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GloVe.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.4. GloVe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./FastText.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.5. FastText</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true">
+ <span class="menu-text"><strong>5. Contextual_embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ELMo.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. ELMo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./BERT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.2. BERT</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GPT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. GPT</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true">
+ <span class="menu-text"><strong>6. Elementary Language Analaysis</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./PoS_and_NER.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.1. PoS &amp; NER</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Keywords_extraction.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.2. Keywords Extraction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Sentiment.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.3. Sentiment Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Emotion_Analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.4. Emotion Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="true">
+ <span class="menu-text"><strong>7. Topic Modeling</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LDA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.1. Latent Dirichlet Allocation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LCA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.2. Latent Class Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./NMF.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.3. Non-negative Matrix Factorization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LSA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.4. Latent Semantic Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text"><strong>8. Working with LLMs</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Prompt_engineering.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.1. Prompt Engineering</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LLM_API.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.2. Working with LLM APIs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Fine_tuning.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.3. Fine-Tuning LLMs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./RAG.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">8.4. Retrieval-Augmented Generation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LLM_evaluation.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.5. Evaluating LLM Outputs</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true">
+ <span class="menu-text"><strong>9. AI Agents</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.1. AI Agents — Concepts and Architectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents_Python.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.2. Building Agents in Python</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./n8n.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.3. Visual Agent Workflows with n8n</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./MultiAgent.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.4. Multi-Agent Systems</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true">
+ <span class="menu-text">Bibliography</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ref.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">References</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">MORE DETAILS</h2>
+   
+  <ul>
+  <li><a href="#the-problem-rag-solves" id="toc-the-problem-rag-solves" class="nav-link active" data-scroll-target="#the-problem-rag-solves">8.4.1. The Problem RAG Solves</a></li>
+  <li><a href="#rag-pipeline-components" id="toc-rag-pipeline-components" class="nav-link" data-scroll-target="#rag-pipeline-components">8.4.2. RAG Pipeline Components</a></li>
+  <li><a href="#chunking-strategies" id="toc-chunking-strategies" class="nav-link" data-scroll-target="#chunking-strategies">8.4.3. Chunking Strategies</a></li>
+  <li><a href="#embedding-and-indexing" id="toc-embedding-and-indexing" class="nav-link" data-scroll-target="#embedding-and-indexing">8.4.4. Embedding and Indexing</a></li>
+  <li><a href="#generation-with-retrieved-context" id="toc-generation-with-retrieved-context" class="nav-link" data-scroll-target="#generation-with-retrieved-context">8.4.5. Generation with Retrieved Context</a></li>
+  <li><a href="#full-rag-pipeline-with-langchain" id="toc-full-rag-pipeline-with-langchain" class="nav-link" data-scroll-target="#full-rag-pipeline-with-langchain">8.4.6. Full RAG Pipeline with LangChain</a></li>
+  <li><a href="#rag-design-decisions" id="toc-rag-design-decisions" class="nav-link" data-scroll-target="#rag-design-decisions">8.4.7. RAG Design Decisions</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-title">8.4. Retrieval-Augmented Generation</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kamil Filipek </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="the-problem-rag-solves" class="level3">
+<h3 class="anchored" data-anchor-id="the-problem-rag-solves">8.4.1. The Problem RAG Solves</h3>
+<p>LLMs have two fundamental limitations for knowledge-intensive tasks:</p>
+<ol type="1">
+<li><strong>Knowledge cutoff</strong> — the model knows nothing about events after its training data ends.</li>
+<li><strong>Hallucination</strong> — when the model lacks knowledge, it often confidently generates plausible but incorrect information.</li>
+</ol>
+<p><strong>Retrieval-Augmented Generation (RAG)</strong>, introduced by Lewis et al.&nbsp;(2020), solves both by combining an LLM with an external knowledge base. Instead of asking the model to recall facts from its weights, RAG <strong>retrieves the relevant documents</strong> at query time and places them in the context window — the model then reasons over real, current, verifiable information.</p>
+<pre><code>User query
+    ↓
+[Retriever] → searches vector database → returns top-k relevant chunks
+    ↓
+[Generator] → LLM receives: query + retrieved chunks → produces grounded answer</code></pre>
+<p>RAG is the dominant architecture for enterprise NLP applications: document Q&amp;A, internal knowledge bases, customer support bots, and legal or medical assistants.</p>
+</section>
+<section id="rag-pipeline-components" class="level3">
+<h3 class="anchored" data-anchor-id="rag-pipeline-components">8.4.2. RAG Pipeline Components</h3>
+<p>A standard RAG pipeline has four stages:</p>
+<p><strong>1. Chunking</strong> — split source documents into manageable pieces<br>
+<strong>2. Embedding</strong> — encode each chunk as a dense vector<br>
+<strong>3. Indexing</strong> — store vectors in a vector database for fast similarity search<br>
+<strong>4. Retrieval + Generation</strong> — at query time, retrieve relevant chunks and pass them to the LLM</p>
+</section>
+<section id="chunking-strategies" class="level3">
+<h3 class="anchored" data-anchor-id="chunking-strategies">8.4.3. Chunking Strategies</h3>
+<p>Chunking decisions directly affect retrieval quality. Too large → chunks contain irrelevant content. Too small → chunks lose context.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># pip install langchain langchain-text-splitters</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="im">from</span> langchain_text_splitters <span class="im">import</span> (</span>
+<span id="cb2-4"><a href="#cb2-4"></a>    RecursiveCharacterTextSplitter,</span>
+<span id="cb2-5"><a href="#cb2-5"></a>    SentenceTransformersTokenTextSplitter</span>
+<span id="cb2-6"><a href="#cb2-6"></a>)</span>
+<span id="cb2-7"><a href="#cb2-7"></a></span>
+<span id="cb2-8"><a href="#cb2-8"></a>document <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="st">Natural language processing (NLP) is a subfield of artificial intelligence</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="st">that focuses on the interaction between computers and human language. It</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a><span class="st">encompasses a wide range of tasks, from basic text processing to complex</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a><span class="st">language understanding.</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a></span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="st">Tokenization is the foundational step in NLP pipelines. It involves splitting</span></span>
+<span id="cb2-15"><a href="#cb2-15"></a><span class="st">raw text into individual tokens — words, subwords, or characters — that serve</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a><span class="st">as the basic units of analysis for downstream models.</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a></span>
+<span id="cb2-18"><a href="#cb2-18"></a><span class="st">Word embeddings represent words as dense vectors in a continuous semantic space.</span></span>
+<span id="cb2-19"><a href="#cb2-19"></a><span class="st">Models such as Word2Vec, GloVe, and FastText learn these representations from</span></span>
+<span id="cb2-20"><a href="#cb2-20"></a><span class="st">large text corpora by exploiting the distributional hypothesis: words that appear</span></span>
+<span id="cb2-21"><a href="#cb2-21"></a><span class="st">in similar contexts tend to have similar meanings.</span></span>
+<span id="cb2-22"><a href="#cb2-22"></a></span>
+<span id="cb2-23"><a href="#cb2-23"></a><span class="st">Transformer architectures, introduced by Vaswani et al. in 2017, revolutionized</span></span>
+<span id="cb2-24"><a href="#cb2-24"></a><span class="st">NLP by replacing recurrent networks with self-attention mechanisms. BERT and GPT</span></span>
+<span id="cb2-25"><a href="#cb2-25"></a><span class="st">are the two dominant Transformer variants, differing primarily in their training</span></span>
+<span id="cb2-26"><a href="#cb2-26"></a><span class="st">objectives and architectures.</span></span>
+<span id="cb2-27"><a href="#cb2-27"></a><span class="st">"""</span></span>
+<span id="cb2-28"><a href="#cb2-28"></a></span>
+<span id="cb2-29"><a href="#cb2-29"></a><span class="co"># Strategy 1: Fixed-size character chunking with overlap</span></span>
+<span id="cb2-30"><a href="#cb2-30"></a>char_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(</span>
+<span id="cb2-31"><a href="#cb2-31"></a>    chunk_size<span class="op">=</span><span class="dv">300</span>,</span>
+<span id="cb2-32"><a href="#cb2-32"></a>    chunk_overlap<span class="op">=</span><span class="dv">50</span>,</span>
+<span id="cb2-33"><a href="#cb2-33"></a>    separators<span class="op">=</span>[<span class="st">"</span><span class="ch">\n\n</span><span class="st">"</span>, <span class="st">"</span><span class="ch">\n</span><span class="st">"</span>, <span class="st">". "</span>, <span class="st">" "</span>]</span>
+<span id="cb2-34"><a href="#cb2-34"></a>)</span>
+<span id="cb2-35"><a href="#cb2-35"></a>char_chunks <span class="op">=</span> char_splitter.split_text(document)</span>
+<span id="cb2-36"><a href="#cb2-36"></a></span>
+<span id="cb2-37"><a href="#cb2-37"></a><span class="bu">print</span>(<span class="ss">f"Character chunking → </span><span class="sc">{</span><span class="bu">len</span>(char_chunks)<span class="sc">}</span><span class="ss"> chunks"</span>)</span>
+<span id="cb2-38"><a href="#cb2-38"></a><span class="cf">for</span> i, chunk <span class="kw">in</span> <span class="bu">enumerate</span>(char_chunks):</span>
+<span id="cb2-39"><a href="#cb2-39"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">  Chunk </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span><span class="bu">len</span>(chunk)<span class="sc">}</span><span class="ss"> chars):</span><span class="ch">\n</span><span class="ss">  </span><span class="sc">{</span>chunk[:<span class="dv">120</span>]<span class="sc">}</span><span class="ss">..."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>Character chunking → 4 chunks
+
+  Chunk 1 (298 chars):
+  Natural language processing (NLP) is a subfield of artificial intelligence
+  that focuses on the interaction between computers ...
+
+  Chunk 2 (287 chars):
+  Tokenization is the foundational step in NLP pipelines. It involves splitting
+  raw text into individual tokens — words, subwords...
+
+  Chunk 3 (312 chars):
+  Word embeddings represent words as dense vectors in a continuous semantic space.
+  Models such as Word2Vec, GloVe, and FastText...
+
+  Chunk 4 (289 chars):
+  Transformer architectures, introduced by Vaswani et al. in 2017, revolutionized
+  NLP by replacing recurrent networks...</code></pre>
+</section>
+<section id="embedding-and-indexing" class="level3">
+<h3 class="anchored" data-anchor-id="embedding-and-indexing">8.4.4. Embedding and Indexing</h3>
+<p>Each chunk is encoded as a dense vector. Similar chunks end up geometrically close in the embedding space — enabling fast nearest-neighbor retrieval.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a><span class="co"># pip install sentence-transformers faiss-cpu</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="im">from</span> sentence_transformers <span class="im">import</span> SentenceTransformer</span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="im">import</span> faiss</span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="co"># Encode chunks</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>encoder <span class="op">=</span> SentenceTransformer(<span class="st">"all-MiniLM-L6-v2"</span>)</span>
+<span id="cb4-9"><a href="#cb4-9"></a>chunk_embeddings <span class="op">=</span> encoder.encode(char_chunks, normalize_embeddings<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb4-10"><a href="#cb4-10"></a></span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="bu">print</span>(<span class="ss">f"Embedding shape: </span><span class="sc">{</span>chunk_embeddings<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)  <span class="co"># (n_chunks, 384)</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="co"># Build FAISS index (cosine similarity via inner product on normalized vectors)</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a>dim <span class="op">=</span> chunk_embeddings.shape[<span class="dv">1</span>]</span>
+<span id="cb4-15"><a href="#cb4-15"></a>index <span class="op">=</span> faiss.IndexFlatIP(dim)   <span class="co"># Inner Product = cosine similarity for normalized vectors</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>index.add(chunk_embeddings.astype(np.float32))</span>
+<span id="cb4-17"><a href="#cb4-17"></a></span>
+<span id="cb4-18"><a href="#cb4-18"></a><span class="bu">print</span>(<span class="ss">f"FAISS index size: </span><span class="sc">{</span>index<span class="sc">.</span>ntotal<span class="sc">}</span><span class="ss"> vectors"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>Embedding shape: (4, 384)
+FAISS index size: 4 vectors</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">def</span> retrieve(query: <span class="bu">str</span>, k: <span class="bu">int</span> <span class="op">=</span> <span class="dv">2</span>) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">str</span>]:</span>
+<span id="cb6-2"><a href="#cb6-2"></a>    query_vec <span class="op">=</span> encoder.encode([query], normalize_embeddings<span class="op">=</span><span class="va">True</span>).astype(np.float32)</span>
+<span id="cb6-3"><a href="#cb6-3"></a>    scores, indices <span class="op">=</span> index.search(query_vec, k)</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    results <span class="op">=</span> []</span>
+<span id="cb6-5"><a href="#cb6-5"></a>    <span class="cf">for</span> score, idx <span class="kw">in</span> <span class="bu">zip</span>(scores[<span class="dv">0</span>], indices[<span class="dv">0</span>]):</span>
+<span id="cb6-6"><a href="#cb6-6"></a>        results.append({<span class="st">"chunk"</span>: char_chunks[idx], <span class="st">"score"</span>: <span class="bu">float</span>(score)})</span>
+<span id="cb6-7"><a href="#cb6-7"></a>    <span class="cf">return</span> results</span>
+<span id="cb6-8"><a href="#cb6-8"></a></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="co"># Test retrieval</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a>queries <span class="op">=</span> [</span>
+<span id="cb6-11"><a href="#cb6-11"></a>    <span class="st">"What is tokenization?"</span>,</span>
+<span id="cb6-12"><a href="#cb6-12"></a>    <span class="st">"How do Transformers work?"</span>,</span>
+<span id="cb6-13"><a href="#cb6-13"></a>    <span class="st">"What are word embeddings?"</span></span>
+<span id="cb6-14"><a href="#cb6-14"></a>]</span>
+<span id="cb6-15"><a href="#cb6-15"></a></span>
+<span id="cb6-16"><a href="#cb6-16"></a><span class="cf">for</span> query <span class="kw">in</span> queries:</span>
+<span id="cb6-17"><a href="#cb6-17"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Query: '</span><span class="sc">{</span>query<span class="sc">}</span><span class="ss">'"</span>)</span>
+<span id="cb6-18"><a href="#cb6-18"></a>    results <span class="op">=</span> retrieve(query, k<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb6-19"><a href="#cb6-19"></a>    <span class="cf">for</span> r <span class="kw">in</span> results:</span>
+<span id="cb6-20"><a href="#cb6-20"></a>        <span class="bu">print</span>(<span class="ss">f"  Score: </span><span class="sc">{</span>r[<span class="st">'score'</span>]<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb6-21"><a href="#cb6-21"></a>        <span class="bu">print</span>(<span class="ss">f"  Chunk: </span><span class="sc">{</span>r[<span class="st">'chunk'</span>][:<span class="dv">120</span>]<span class="sc">}</span><span class="ss">..."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>Query: 'What is tokenization?'
+  Score: 0.7823
+  Chunk: Tokenization is the foundational step in NLP pipelines. It involves splitting
+         raw text into individual tokens — words, subwords...
+
+Query: 'How do Transformers work?'
+  Score: 0.8112
+  Chunk: Transformer architectures, introduced by Vaswani et al. in 2017, revolutionized
+         NLP by replacing recurrent networks...
+
+Query: 'What are word embeddings?'
+  Score: 0.8341
+  Chunk: Word embeddings represent words as dense vectors in a continuous semantic space.
+         Models such as Word2Vec, GloVe, and FastText...</code></pre>
+</section>
+<section id="generation-with-retrieved-context" class="level3">
+<h3 class="anchored" data-anchor-id="generation-with-retrieved-context">8.4.5. Generation with Retrieved Context</h3>
+<p>The final step: pass the retrieved chunks to the LLM as context, along with the user’s question.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a><span class="im">import</span> anthropic</span>
+<span id="cb8-2"><a href="#cb8-2"></a></span>
+<span id="cb8-3"><a href="#cb8-3"></a>client <span class="op">=</span> anthropic.Anthropic()</span>
+<span id="cb8-4"><a href="#cb8-4"></a></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="kw">def</span> rag_answer(query: <span class="bu">str</span>, k: <span class="bu">int</span> <span class="op">=</span> <span class="dv">2</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb8-6"><a href="#cb8-6"></a>    <span class="co"># Retrieve relevant chunks</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>    chunks <span class="op">=</span> retrieve(query, k<span class="op">=</span>k)</span>
+<span id="cb8-8"><a href="#cb8-8"></a>    context <span class="op">=</span> <span class="st">"</span><span class="ch">\n\n</span><span class="st">---</span><span class="ch">\n\n</span><span class="st">"</span>.join([c[<span class="st">"chunk"</span>] <span class="cf">for</span> c <span class="kw">in</span> chunks])</span>
+<span id="cb8-9"><a href="#cb8-9"></a></span>
+<span id="cb8-10"><a href="#cb8-10"></a>    prompt <span class="op">=</span> <span class="ss">f"""Answer the question using ONLY the context provided below.</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="ss">If the answer is not in the context, say "I don't have enough information to answer this."</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="ss">CONTEXT:</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="sc">{</span>context<span class="sc">}</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a></span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="ss">QUESTION: </span><span class="sc">{</span>query<span class="sc">}</span></span>
+<span id="cb8-17"><a href="#cb8-17"></a></span>
+<span id="cb8-18"><a href="#cb8-18"></a><span class="ss">ANSWER:"""</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a></span>
+<span id="cb8-20"><a href="#cb8-20"></a>    message <span class="op">=</span> client.messages.create(</span>
+<span id="cb8-21"><a href="#cb8-21"></a>        model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,</span>
+<span id="cb8-22"><a href="#cb8-22"></a>        max_tokens<span class="op">=</span><span class="dv">256</span>,</span>
+<span id="cb8-23"><a href="#cb8-23"></a>        messages<span class="op">=</span>[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: prompt}]</span>
+<span id="cb8-24"><a href="#cb8-24"></a>    )</span>
+<span id="cb8-25"><a href="#cb8-25"></a>    <span class="cf">return</span> message.content[<span class="dv">0</span>].text</span>
+<span id="cb8-26"><a href="#cb8-26"></a></span>
+<span id="cb8-27"><a href="#cb8-27"></a></span>
+<span id="cb8-28"><a href="#cb8-28"></a>questions <span class="op">=</span> [</span>
+<span id="cb8-29"><a href="#cb8-29"></a>    <span class="st">"What is tokenization and why is it important?"</span>,</span>
+<span id="cb8-30"><a href="#cb8-30"></a>    <span class="st">"What is the difference between BERT and GPT?"</span>,</span>
+<span id="cb8-31"><a href="#cb8-31"></a>    <span class="st">"Who invented the Python programming language?"</span>   <span class="co"># out-of-context</span></span>
+<span id="cb8-32"><a href="#cb8-32"></a>]</span>
+<span id="cb8-33"><a href="#cb8-33"></a></span>
+<span id="cb8-34"><a href="#cb8-34"></a><span class="cf">for</span> q <span class="kw">in</span> questions:</span>
+<span id="cb8-35"><a href="#cb8-35"></a>    <span class="bu">print</span>(<span class="ss">f"Q: </span><span class="sc">{</span>q<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-36"><a href="#cb8-36"></a>    <span class="bu">print</span>(<span class="ss">f"A: </span><span class="sc">{</span>rag_answer(q)<span class="sc">}</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>Q: What is tokenization and why is it important?
+A: Tokenization is the foundational step in NLP pipelines that involves splitting raw text
+   into individual tokens — words, subwords, or characters — which serve as the basic units
+   of analysis for downstream models.
+
+Q: What is the difference between BERT and GPT?
+A: BERT and GPT are the two dominant Transformer variants. They differ primarily in their
+   training objectives and architectures.
+
+Q: Who invented the Python programming language?
+A: I don't have enough information to answer this. The provided context covers NLP topics
+   but does not mention the Python programming language or its inventor.</code></pre>
+<p>The last answer correctly refuses to hallucinate — a key benefit of grounded RAG over pure LLM generation.</p>
+</section>
+<section id="full-rag-pipeline-with-langchain" class="level3">
+<h3 class="anchored" data-anchor-id="full-rag-pipeline-with-langchain">8.4.6. Full RAG Pipeline with LangChain</h3>
+<p>LangChain provides a higher-level abstraction that wires chunking, embedding, vector store, and generation into a single chain:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a><span class="co"># pip install langchain langchain-anthropic langchain-community chromadb</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="im">from</span> langchain_anthropic <span class="im">import</span> ChatAnthropic</span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="im">from</span> langchain_community.vectorstores <span class="im">import</span> Chroma</span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="im">from</span> langchain_community.embeddings <span class="im">import</span> SentenceTransformerEmbeddings</span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="im">from</span> langchain_text_splitters <span class="im">import</span> RecursiveCharacterTextSplitter</span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="im">from</span> langchain.chains <span class="im">import</span> RetrievalQA</span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="im">from</span> langchain.schema <span class="im">import</span> Document</span>
+<span id="cb10-9"><a href="#cb10-9"></a></span>
+<span id="cb10-10"><a href="#cb10-10"></a><span class="co"># Documents</span></span>
+<span id="cb10-11"><a href="#cb10-11"></a>docs <span class="op">=</span> [Document(page_content<span class="op">=</span>document, metadata<span class="op">=</span>{<span class="st">"source"</span>: <span class="st">"nlp_textbook"</span>})]</span>
+<span id="cb10-12"><a href="#cb10-12"></a></span>
+<span id="cb10-13"><a href="#cb10-13"></a><span class="co"># Chunk</span></span>
+<span id="cb10-14"><a href="#cb10-14"></a>splitter <span class="op">=</span> RecursiveCharacterTextSplitter(chunk_size<span class="op">=</span><span class="dv">300</span>, chunk_overlap<span class="op">=</span><span class="dv">50</span>)</span>
+<span id="cb10-15"><a href="#cb10-15"></a>chunks <span class="op">=</span> splitter.split_documents(docs)</span>
+<span id="cb10-16"><a href="#cb10-16"></a></span>
+<span id="cb10-17"><a href="#cb10-17"></a><span class="co"># Embed + index</span></span>
+<span id="cb10-18"><a href="#cb10-18"></a>embeddings <span class="op">=</span> SentenceTransformerEmbeddings(model_name<span class="op">=</span><span class="st">"all-MiniLM-L6-v2"</span>)</span>
+<span id="cb10-19"><a href="#cb10-19"></a>vectorstore <span class="op">=</span> Chroma.from_documents(chunks, embeddings)</span>
+<span id="cb10-20"><a href="#cb10-20"></a></span>
+<span id="cb10-21"><a href="#cb10-21"></a><span class="co"># LLM</span></span>
+<span id="cb10-22"><a href="#cb10-22"></a>llm <span class="op">=</span> ChatAnthropic(model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>, max_tokens<span class="op">=</span><span class="dv">256</span>)</span>
+<span id="cb10-23"><a href="#cb10-23"></a></span>
+<span id="cb10-24"><a href="#cb10-24"></a><span class="co"># Chain</span></span>
+<span id="cb10-25"><a href="#cb10-25"></a>qa_chain <span class="op">=</span> RetrievalQA.from_chain_type(</span>
+<span id="cb10-26"><a href="#cb10-26"></a>    llm<span class="op">=</span>llm,</span>
+<span id="cb10-27"><a href="#cb10-27"></a>    chain_type<span class="op">=</span><span class="st">"stuff"</span>,                        <span class="co"># stuff = concatenate all chunks into context</span></span>
+<span id="cb10-28"><a href="#cb10-28"></a>    retriever<span class="op">=</span>vectorstore.as_retriever(search_kwargs<span class="op">=</span>{<span class="st">"k"</span>: <span class="dv">2</span>}),</span>
+<span id="cb10-29"><a href="#cb10-29"></a>    return_source_documents<span class="op">=</span><span class="va">True</span></span>
+<span id="cb10-30"><a href="#cb10-30"></a>)</span>
+<span id="cb10-31"><a href="#cb10-31"></a></span>
+<span id="cb10-32"><a href="#cb10-32"></a>result <span class="op">=</span> qa_chain.invoke(<span class="st">"What are Transformer architectures?"</span>)</span>
+<span id="cb10-33"><a href="#cb10-33"></a><span class="bu">print</span>(<span class="st">"Answer:"</span>, result[<span class="st">"result"</span>])</span>
+<span id="cb10-34"><a href="#cb10-34"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Source chunks used:"</span>)</span>
+<span id="cb10-35"><a href="#cb10-35"></a><span class="cf">for</span> doc <span class="kw">in</span> result[<span class="st">"source_documents"</span>]:</span>
+<span id="cb10-36"><a href="#cb10-36"></a>    <span class="bu">print</span>(<span class="ss">f"  - </span><span class="sc">{</span>doc<span class="sc">.</span>page_content[:<span class="dv">80</span>]<span class="sc">}</span><span class="ss">..."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>Answer: Transformer architectures were introduced by Vaswani et al. in 2017 and
+        revolutionized NLP by replacing recurrent networks with self-attention mechanisms.
+        BERT and GPT are the two dominant Transformer variants.
+
+Source chunks used:
+  - Transformer architectures, introduced by Vaswani et al. in 2017, revolutionized NLP...
+  - Natural language processing (NLP) is a subfield of artificial intelligence...</code></pre>
+</section>
+<section id="rag-design-decisions" class="level3">
+<h3 class="anchored" data-anchor-id="rag-design-decisions">8.4.7. RAG Design Decisions</h3>
+<table class="table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 32%">
+<col style="width: 51%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Decision</th>
+<th>Options</th>
+<th>Guidance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Chunk size</td>
+<td>128–512 tokens</td>
+<td>Larger for dense prose, smaller for structured data</td>
+</tr>
+<tr class="even">
+<td>Overlap</td>
+<td>10–20% of chunk size</td>
+<td>Prevents splitting mid-sentence</td>
+</tr>
+<tr class="odd">
+<td>Embedding model</td>
+<td>MiniLM, BGE, OpenAI</td>
+<td>MiniLM is fast; BGE is accurate; OpenAI is convenient</td>
+</tr>
+<tr class="even">
+<td>Vector store</td>
+<td>FAISS, Chroma, Pinecone, Weaviate</td>
+<td>FAISS for local, Pinecone/Weaviate for production</td>
+</tr>
+<tr class="odd">
+<td>Top-k retrieval</td>
+<td>2–5</td>
+<td>More chunks = more context but more noise</td>
+</tr>
+<tr class="even">
+<td>Reranking</td>
+<td>Cross-encoder reranker</td>
+<td>Add after retrieval for higher precision</td>
+</tr>
+<tr class="odd">
+<td>Prompting</td>
+<td>Cite sources, refuse if not found</td>
+<td>Prevents hallucination on out-of-scope queries</td>
+</tr>
+</tbody>
+</table>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./Fine_tuning.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">8.3. Fine-Tuning LLMs</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./LLM_evaluation.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-title">8.5. Evaluating LLM Outputs</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
