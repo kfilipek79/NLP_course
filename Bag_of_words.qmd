@@ -1,0 +1,111 @@
+---
+title: "4.1. Bag of Words"
+author: "Kamil Filipek"
+format: html
+editor: visual
+---
+
+### 4.1.1. History of BoW
+
+The **bag-of-words (BoW)** representation arose from early information-retrieval practice and quantitative linguistics: regularities like **Zipf's law** implied that simple term counts carry systematic signal, while **Luhn** showed that term frequency can drive automatic indexing and abstracting. These ideas crystallized in IR through the **vector space model** with **term weighting** and **inverse document frequency**---downweighting ubiquitous terms and yielding the classic **tf--idf**scheme. Standard preprocessing (stop-word removal, stemming/lemmatization, n-grams) made BoW a durable workhorse for text categorization and ranking, and despite the rise of neural embeddings it remains a transparent, competitive baseline and a key ingredient in modern sparse/ hybrid retrieval. (Zipf, 1949; Luhn, 1957).
+
+### 4.1.2. Sparse vs. Dense Vectors
+
+However, to understand BoW it is necessary to introduce the issue of so-called **sparse vs. dense vectors**. These are concepts that recur in NLP across many contexts, so we will spend a moment on them now.
+
+The concept of the two families of vectors is succinctly explained here ([https://medium.com/\@imeshadilshani212/words-as-vectors-sparse-vectors-vs-dense-vectors](https://medium.com/@imeshadilshani212/words-as-vectors-sparse-vectors-vs-dense-vectors?utm_source=chatgpt.com)), so what I present below is a synthesis of knowledge drawn from multiple sources.
+
+Briefly, **dense vectors** are low- to medium-dimensional continuous representations (typically 128--1024 dimensions) in which most components are non-zero and are **learned** from data (e.g., word/sentence/document embeddings). They encode semantic similarity geometrically---nearby vectors tend to have related meanings---so cosine similarity or dot products approximate semantic relatedness. Dense vectors support **neural retrieval** (k-NN over embeddings), clustering, and downstream models that benefit from graded similarity and generalization. Their main drawbacks are **lower interpretability**, the need for training/inference infrastructure, and possible loss of fine-grained lexical distinctions.
+
+By contrast, **sparse vectors** are very high-dimensional representations with **mostly zero entries**---canonical examples are **bag-of-words** or **tf-idf** over a vocabulary VV (one dimension per term). They are **transparent** (each coordinate corresponds to a token), easy to store/compute with compressed sparse formats, and pair naturally with linear models and lexical retrieval (e.g., BM25). Their limitations are the lack of word order and limited semantic sharing (synonyms are orthogonal unless engineered). In practice, modern IR/NLP systems often use **hybrid retrieval**, fusing sparse (lexical precision) and dense (semantic recall) signals.
+
+**Suggested sources:** Manning, Raghavan & Schütze (2008); Jurafsky & Martin (3rd ed. draft); Salton & Buckley (1988, tf--idf); Mikolov et al. (2013, word2vec); Pennington et al. (2014, GloVe).
+
+### 4.1.3. Python Implementation
+
+``` python
+import re
+import numpy as np
+import pandas as pd
+
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
+from sklearn.preprocessing import normalize
+from sklearn.metrics.pairwise import cosine_similarity
+
+docs = [
+    "The bag-of-words model uses simple term counts for indexing and retrieval.",
+    "TF-IDF downweights ubiquitous terms and boosts informative ones.",
+    "Sparse vectors are high-dimensional with many zeros; TF-IDF is a classic example.",
+    "Dense vectors are low-dimensional continuous representations that encode similarity.",
+    "Hybrid retrieval fuses sparse lexical precision with dense semantic recall."
+]
+
+def simple_preprocess(text: str) -> str:
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9\s\-]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+docs_pp = [simple_preprocess(d) for d in docs]
+
+bow = CountVectorizer(
+    stop_words="english",
+    ngram_range=(1, 2),
+    min_df=1
+)
+X_bow = bow.fit_transform(docs_pp)
+vocab_bow = bow.get_feature_names_out()
+
+tfidf = TfidfVectorizer(
+    stop_words="english",
+    ngram_range=(1, 2),
+    norm="l2",
+    use_idf=True,
+    smooth_idf=True,
+    sublinear_tf=True
+)
+X_tfidf = tfidf.fit_transform(docs_pp)
+vocab_tfidf = tfidf.get_feature_names_out()
+
+k = 4
+svd = TruncatedSVD(n_components=k, random_state=42)
+X_dense = svd.fit_transform(X_tfidf)
+X_dense = normalize(X_dense)
+
+S_sparse = cosine_similarity(X_tfidf)
+S_dense = cosine_similarity(X_dense)
+
+alpha = 0.6
+S_hybrid = alpha * S_sparse + (1 - alpha) * S_dense
+
+def top_k_similar(sim_matrix, query_doc_idx: int, k: int = 3):
+    sims = sim_matrix[query_doc_idx].copy()
+    sims[query_doc_idx] = -1
+    order = np.argsort(sims)[::-1][:k]
+    return list(zip(order, sims[order]))
+
+q = 0
+print("BoW shape:", X_bow.shape, "nnz:", X_bow.nnz)
+print("TF-IDF shape:", X_tfidf.shape, "nnz:", X_tfidf.nnz)
+print("Dense shape:", X_dense.shape, "explained_var_sum:", svd.explained_variance_ratio_.sum())
+
+print("\nTop similar to D1 (sparse TF-IDF):", top_k_similar(S_sparse, q))
+print("Top similar to D1 (dense LSA):", top_k_similar(S_dense, q))
+print("Top similar to D1 (hybrid):", top_k_similar(S_hybrid, q))
+
+df_tfidf = pd.DataFrame(
+    X_tfidf.toarray(),
+    columns=vocab_tfidf,
+    index=[f"D{i+1}" for i in range(len(docs))]
+)
+compact = []
+for i in range(len(docs)):
+    r = df_tfidf.iloc[i]
+    compact.append(r[r > 0].sort_values(ascending=False).head(6))
+compact_df = pd.DataFrame(compact).fillna(0)
+compact_df.index = [f"D{i+1}" for i in range(len(docs))]
+
+print("\nCompact TF-IDF view (top weights per doc):")
+print(compact_df)
+```

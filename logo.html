@@ -1,0 +1,20 @@
+<style>
+.header-logo-below {
+  text-align: center;   /* logo na środku */
+  margin: 15px 0;       /* odstępy od tekstu */
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // znajdź podtytuł w banerze tytułowym
+  const subtitle = document.querySelector(".quarto-title-banner .subtitle");
+  if (subtitle) {
+    const logoDiv = document.createElement("div");
+    logoDiv.className = "header-logo-below";
+    logoDiv.innerHTML = '<img src="logo-Centrum.png" width="140">';
+    // wstaw logo zaraz po podtytule
+    subtitle.insertAdjacentElement("afterend", logoDiv);
+  }
+});
+</script>

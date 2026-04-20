@@ -1,0 +1,106 @@
+---
+title: "Sources"
+author: Kamil Filipek
+---
+
+## Complete Bibliography
+
+The references below cover all sources cited or recommended across the chapters of this course. They are organized by thematic area corresponding to the course structure.
+
+------------------------------------------------------------------------
+
+### Language, Machines, and Theoretical Foundations
+
+-   **Chomsky, N.** (1957). *Syntactic Structures*. Mouton.
+-   **Jurafsky, D., & Martin, J. H.** (2025). *Speech and Language Processing* (3rd ed. draft). Stanford University. https://web.stanford.edu/\~jurafsky/slp3/
+-   **Manning, C. D., & Schütze, H.** (1999). *Foundations of Statistical Natural Language Processing*. MIT Press.
+-   **Russell, S., & Norvig, P.** (2010). *Artificial Intelligence: A Modern Approach* (3rd ed.). Prentice Hall.
+
+------------------------------------------------------------------------
+
+### Basic Data Engineering and Preprocessing
+
+-   **Bird, S., Klein, E., & Loper, E.** (2009). *Natural Language Processing with Python*. O'Reilly Media. https://www.nltk.org/book/
+-   **Bostrom, K., & Durrett, G.** (2020). Byte Pair Encoding is Suboptimal for Language Model Pretraining. *Findings of EMNLP*.
+-   **Sennrich, R., Haddow, B., & Birch, A.** (2016). Neural Machine Translation of Rare Words with Subword Units. *ACL*.
+
+------------------------------------------------------------------------
+
+### Evolution of Embeddings
+
+-   **Harris, Z. S.** (1954). Distributional Structure. *Word*, 10(2--3), 146--162.
+-   **Mikolov, T., Chen, K., Corrado, G., & Dean, J.** (2013). Efficient Estimation of Word Representations in Vector Space. *ICLR*. arXiv:1301.3781
+-   **Mikolov, T., Sutskever, I., Chen, K., Corrado, G., & Dean, J.** (2013). Distributed Representations of Words and Phrases and their Compositionality. *NeurIPS*.
+-   **Pennington, J., Socher, R., & Manning, C. D.** (2014). GloVe: Global Vectors for Word Representation. *EMNLP*.
+-   **Bojanowski, P., Grave, E., Joulin, A., & Mikolov, T.** (2017). Enriching Word Vectors with Subword Information. *Transactions of the ACL*, 5, 135--146.
+
+------------------------------------------------------------------------
+
+### Contextual Embeddings
+
+-   **Peters, M. E., et al.** (2018). Deep Contextualized Word Representations. *NAACL*. arXiv:1802.05365
+-   **Vaswani, A., et al.** (2017). Attention Is All You Need. *NeurIPS*.
+-   **Devlin, J., Chang, M.-W., Lee, K., & Toutanova, K.** (2019). BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. *NAACL*. arXiv:1810.04805
+-   **Radford, A., Narasimhan, K., Salimans, T., & Sutskever, I.** (2018). Improving Language Understanding by Generative Pre-Training. OpenAI.
+-   **Radford, A., et al.** (2019). Language Models are Unsupervised Multitask Learners. OpenAI.
+-   **Brown, T. B., et al.** (2020). Language Models are Few-Shot Learners. *NeurIPS*. arXiv:2005.14165
+-   **Liu, Y., et al.** (2019). RoBERTa: A Robustly Optimized BERT Pretraining Approach. arXiv:1907.11692
+-   **Sanh, V., Debut, L., Chaumond, J., & Wolf, T.** (2019). DistilBERT, a distilled version of BERT. *NeurIPS EMC2 Workshop*.
+
+------------------------------------------------------------------------
+
+### Elementary Language Analysis
+
+-   **Ekman, P.** (1972). Universals and Cultural Differences in Facial Expressions of Emotion. *Nebraska Symposium on Motivation*. University of Nebraska Press.
+-   **Ekman, P.** (2003). *Emotions Revealed*. Times Books.
+-   **Russell, J. A.** (1980). A Circumplex Model of Affect. *Journal of Personality and Social Psychology*, 39(6), 1161--1178.
+-   **Plutchik, R.** (1980). *Emotion: A Psychoevolutionary Synthesis*. Harper and Row.
+-   **Barrett, L. F.** (2017). *How Emotions Are Made: The Secret Life of the Brain*. Houghton Mifflin.
+-   **Barrett, L. F., Adolphs, R., Marsella, S., Martinez, A. M., & Pollak, S. D.** (2019). Emotional Expressions Reconsidered: Challenges to Inferring Emotion from Human Facial Movements. *Psychological Science in the Public Interest*, 20(1), 1--68.
+-   **Crawford, K.** (2021). *Atlas of AI: Power, Politics, and the Planetary Costs of Artificial Intelligence*. Yale University Press.
+-   **Hutto, C. J., & Gilbert, E.** (2014). VADER: A Parsimonious Rule-based Model for Sentiment Analysis of Social Media Text. *ICWSM*.
+-   **Mohammad, S. M., & Turney, P. D.** (2013). Crowdsourcing a Word-Emotion Association Lexicon. *Computational Intelligence*, 29(3), 436--465.
+-   **Campos, R., et al.** (2020). YAKE! Keyword Extraction from Single Documents using Multiple Local Features. *Information Sciences*, 509, 257--289.
+-   **Grootendorst, M.** (2020). KeyBERT: Minimal keyword extraction with BERT. Zenodo. https://doi.org/10.5281/zenodo.4461265
+
+------------------------------------------------------------------------
+
+### Topic Modeling
+
+-   **Deerwester, S., Dumais, S. T., Furnas, G. W., Landauer, T. K., & Harshman, R.** (1990). Indexing by Latent Semantic Analysis. *Journal of the American Society for Information Science*, 41(6), 391--407.
+-   **Lazarsfeld, P. F., & Henry, N. W.** (1968). *Latent Structure Analysis*. Houghton Mifflin.
+-   **Lee, D. D., & Seung, H. S.** (1999). Learning the Parts of Objects by Non-Negative Matrix Factorization. *Nature*, 401, 788--791.
+-   **Blei, D. M., Ng, A. Y., & Jordan, M. I.** (2003). Latent Dirichlet Allocation. *Journal of Machine Learning Research*, 3, 993--1022.
+-   **Řehůřek, R., & Sojka, P.** (2010). Software Framework for Topic Modelling with Large Corpora. *LREC Workshop on New Challenges for NLP Frameworks*.
+
+------------------------------------------------------------------------
+
+### Working with LLMs
+
+-   **Ouyang, L., et al.** (2022). Training Language Models to Follow Instructions with Human Feedback. *NeurIPS*. arXiv:2203.02155
+-   **Wei, J., et al.** (2022). Chain-of-Thought Prompting Elicits Reasoning in Large Language Models. *NeurIPS*. arXiv:2201.11903
+-   **Kojima, T., Gu, S. S., Reid, M., Matsuo, Y., & Iwasawa, Y.** (2022). Large Language Models are Zero-Shot Reasoners. *NeurIPS*. arXiv:2205.11916
+-   **Lewis, P., et al.** (2020). Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. *NeurIPS*. arXiv:2005.11401
+-   **Hu, E. J., et al.** (2022). LoRA: Low-Rank Adaptation of Large Language Models. *ICLR*. arXiv:2106.09685
+-   **Dettmers, T., Pagnoni, A., Holtzman, A., & Zettlemoyer, L.** (2023). QLoRA: Efficient Finetuning of Quantized LLMs. *NeurIPS*. arXiv:2305.14314
+-   **Papineni, K., Roukos, S., Ward, T., & Zhu, W.-J.** (2002). BLEU: a Method for Automatic Evaluation of Machine Translation. *ACL*.
+-   **Lin, C.-Y.** (2004). ROUGE: A Package for Automatic Evaluation of Summaries. *ACL Workshop on Text Summarization*.
+-   **Zhang, T., et al.** (2020). BERTScore: Evaluating Text Generation with BERT. *ICLR*. arXiv:1904.09675
+
+------------------------------------------------------------------------
+
+### AI Agents
+
+-   **Sutton, R. S., & Barto, A. G.** (1998). *Reinforcement Learning: An Introduction*. MIT Press.
+-   **Bond, A. H., & Gasser, L.** (1988). *Readings in Distributed Artificial Intelligence*. Morgan Kaufmann.
+-   **Nakano, R., et al.** (2021). WebGPT: Browser-assisted question-answering with human feedback. arXiv:2112.09332
+-   **Yao, S., et al.** (2023). ReAct: Synergizing Reasoning and Acting in Language Models. *ICLR*. arXiv:2210.03629
+-   **Park, J. S., et al.** (2023). Generative Agents: Interactive Simulacra of Human Behavior. *UIST*. arXiv:2304.03442
+-   **Wu, Q., et al.** (2023). AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation. arXiv:2308.08155
+-   **Hong, S., et al.** (2023). MetaGPT: Meta Programming for a Multi-Agent Collaborative Framework. arXiv:2308.00352
+-   **Weng, L.** (2023). LLM-powered Autonomous Agents. *Lilian Weng's Blog*. https://lilianweng.github.io/posts/2023-06-23-agent/
+-   **n8n.io.** (2024). *n8n Documentation*. https://docs.n8n.io
+
+------------------------------------------------------------------------
+
+*All URLs verified as of April 2025. arXiv preprint versions are cited where journal versions are not yet available.*

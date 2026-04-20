@@ -1,0 +1,338 @@
+---
+title: "9.3. Visual Agent Workflows with n8n"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 9.3.1. What is n8n?
+
+**n8n** (pronounced "nodemation") is an open-source, self-hostable workflow automation platform that lets you build complex, multi-step processes through a **visual node-based interface** — without writing a full application. Think of it as a programmable canvas where each node is an action (call an API, transform data, send an email, query a database) and edges between nodes represent the data flow.
+
+For NLP and AI workflows, n8n is particularly powerful because it:
+
+-   Integrates natively with **Claude, OpenAI, HuggingFace**, and other AI APIs
+-   Provides an **AI Agent node** with built-in tool use and memory
+-   Supports **webhooks** — trigger a workflow from any external system
+-   Runs **locally or on your server** — data never leaves your infrastructure
+-   Requires **no coding** for standard integrations, and supports JavaScript for custom logic
+
+```
+[Trigger]  →  [AI Agent]  →  [Tools]  →  [Output]
+  Webhook       Claude         Search       Email
+  Schedule      GPT-4          Database     Slack
+  Form          Custom         Calculator   Google Sheets
+```
+
+### 9.3.2. Installing n8n
+
+``` bash
+# Option 1: npx (no install needed, requires Node.js 18+)
+npx n8n
+
+# Option 2: npm global install
+npm install -g n8n
+n8n start
+
+# Option 3: Docker (recommended for production)
+docker run -it --rm \
+  --name n8n \
+  -p 5678:5678 \
+  -v ~/.n8n:/home/node/.n8n \
+  docker.n8n.io/n8nio/n8n
+
+# Access the editor at: http://localhost:5678
+```
+
+After starting, open `http://localhost:5678` in your browser to access the visual workflow editor.
+
+### 9.3.3. Core Concepts
+
+**Nodes** are the building blocks of every workflow. n8n provides 400+ built-in integrations:
+
+| Category | Examples |
+|---|---|
+| Triggers | Webhook, Schedule, Form, Chat Message |
+| AI | Claude (Anthropic), OpenAI, HuggingFace, Ollama |
+| Data | HTTP Request, GraphQL, RSS Feed |
+| Storage | Google Sheets, Airtable, Postgres, MongoDB |
+| Communication | Gmail, Slack, Telegram, Microsoft Teams |
+| Code | Code (JavaScript/Python), Function |
+
+**The AI Agent node** is n8n's most powerful feature for LLM workflows. It:
+
+-   Connects to any LLM (Claude, GPT-4, local models via Ollama)
+-   Has built-in tool use — attach any other node as a tool
+-   Supports memory (window buffer, vector store)
+-   Handles the ReAct loop automatically
+
+### 9.3.4. Building a Sentiment Analysis Workflow
+
+**Workflow:** User submits text via a form → Claude analyzes sentiment → result saved to Google Sheets → user receives email.
+
+This is the JSON export of the n8n workflow (importable via *Import from JSON* in the editor):
+
+``` json
+{
+  "name": "Sentiment Analysis Pipeline",
+  "nodes": [
+    {
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "parameters": {
+        "formTitle": "Sentiment Analyzer",
+        "formFields": {
+          "values": [
+            {"fieldLabel": "Text to analyze", "fieldType": "textarea", "requiredField": true},
+            {"fieldLabel": "Your email",       "fieldType": "email",    "requiredField": true}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Analyze Sentiment",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "messages": {
+          "values": [{
+            "role": "user",
+            "content": "Analyze the sentiment of the following text. Return JSON with keys: sentiment (positive/negative/neutral/mixed), score (-1 to 1), explanation (one sentence).\n\nText: {{ $json.text }}"
+          }]
+        }
+      }
+    },
+    {
+      "name": "Parse JSON Response",
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "language": "javascript",
+        "jsCode": "const response = JSON.parse($input.first().json.content[0].text);\nreturn [{ json: { ...response, email: $('Form Trigger').first().json.email, original_text: $('Form Trigger').first().json.text, timestamp: new Date().toISOString() } }];"
+      }
+    },
+    {
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "sheetId": "YOUR_SHEET_ID",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp":     "={{ $json.timestamp }}",
+            "text":          "={{ $json.original_text }}",
+            "sentiment":     "={{ $json.sentiment }}",
+            "score":         "={{ $json.score }}",
+            "explanation":   "={{ $json.explanation }}"
+          }
+        }
+      }
+    },
+    {
+      "name": "Send Result by Email",
+      "type": "n8n-nodes-base.gmail",
+      "parameters": {
+        "sendTo":  "={{ $json.email }}",
+        "subject": "Your Sentiment Analysis Result",
+        "message": "Sentiment: {{ $json.sentiment }} (score: {{ $json.score }})\n\n{{ $json.explanation }}"
+      }
+    }
+  ],
+  "connections": {
+    "Form Trigger":       {"main": [[{"node": "Analyze Sentiment",    "type": "main", "index": 0}]]},
+    "Analyze Sentiment":  {"main": [[{"node": "Parse JSON Response",  "type": "main", "index": 0}]]},
+    "Parse JSON Response":{"main": [[{"node": "Save to Google Sheets","type": "main", "index": 0}]]},
+    "Save to Google Sheets":{"main":[[{"node": "Send Result by Email","type": "main", "index": 0}]]}
+  }
+}
+```
+
+### 9.3.5. Building an NLP AI Agent in n8n
+
+The **AI Agent node** handles the full ReAct loop automatically. You define the agent's tools by connecting other nodes, and n8n manages the reasoning–action–observation cycle.
+
+**Workflow:** Slack message triggers an NLP research agent that searches Wikipedia, analyzes sentiment, and replies in the channel.
+
+``` json
+{
+  "name": "NLP Research Agent",
+  "nodes": [
+    {
+      "name": "Slack Trigger",
+      "type": "n8n-nodes-base.slackTrigger",
+      "parameters": {
+        "trigger": "message",
+        "channelId": "YOUR_CHANNEL_ID"
+      }
+    },
+    {
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "parameters": {
+        "agentType": "toolsAgent",
+        "systemMessage": "You are an NLP research assistant. Use your tools to answer questions accurately. Always cite your sources.",
+        "promptType": "define",
+        "text": "={{ $json.text }}"
+      }
+    },
+    {
+      "name": "Wikipedia Tool",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://en.wikipedia.org/api/rest_v1/page/summary/{{ $json.query }}",
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Claude Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "maxTokens": 1024
+      }
+    },
+    {
+      "name": "Window Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "parameters": {
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "name": "Reply in Slack",
+      "type": "n8n-nodes-base.slack",
+      "parameters": {
+        "operation": "message",
+        "channel":   "={{ $('Slack Trigger').item.json.channel }}",
+        "text":      "={{ $json.output }}"
+      }
+    }
+  ]
+}
+```
+
+In the visual editor, the AI Agent node shows its connected sub-nodes:
+
+```
+[AI Agent]
+  ├── 🔧 Tools:   [Wikipedia Tool]  [HTTP Request]
+  ├── 🧠 Model:   [Claude Sonnet]
+  └── 💾 Memory:  [Window Buffer (10 turns)]
+```
+
+### 9.3.6. Scheduled NLP Monitoring Workflow
+
+**Use case:** Every morning, fetch new papers from arXiv on NLP topics, summarize them with Claude, and send a digest email.
+
+``` json
+{
+  "name": "Daily NLP Digest",
+  "nodes": [
+    {
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "parameters": {
+        "rule": {"interval": [{"field": "cronExpression", "expression": "0 7 * * 1-5"}]}
+      }
+    },
+    {
+      "name": "Fetch arXiv NLP Papers",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://export.arxiv.org/api/query?search_query=cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=5",
+        "method": "GET"
+      }
+    },
+    {
+      "name": "Parse XML",
+      "type": "n8n-nodes-base.xml",
+      "parameters": {"operation": "toJson"}
+    },
+    {
+      "name": "Summarize Each Paper",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "parameters": {
+        "model": "claude-haiku-4-5-20251001",
+        "messages": {
+          "values": [{
+            "role": "user",
+            "content": "Summarize this NLP paper in 2 sentences for a researcher audience:\n\nTitle: {{ $json.title }}\nAbstract: {{ $json.summary }}"
+          }]
+        }
+      }
+    },
+    {
+      "name": "Aggregate and Send",
+      "type": "n8n-nodes-base.gmail",
+      "parameters": {
+        "sendTo":  "your@email.com",
+        "subject": "Daily NLP Digest — {{ $now.format('YYYY-MM-DD') }}",
+        "message": "={{ $json.allItems.map(i => '• ' + i.title + '\\n' + i.summary).join('\\n\\n') }}"
+      }
+    }
+  ]
+}
+```
+
+### 9.3.7. Calling n8n Workflows via API
+
+n8n workflows can be triggered programmatically from Python — useful for integrating n8n into larger data pipelines:
+
+``` python
+import requests
+
+N8N_BASE_URL = "http://localhost:5678"
+WEBHOOK_URL  = f"{N8N_BASE_URL}/webhook/sentiment-analysis"
+
+def analyze_via_n8n(text: str, email: str) -> dict:
+    response = requests.post(
+        WEBHOOK_URL,
+        json={"text": text, "email": email},
+        headers={"Content-Type": "application/json"}
+    )
+    return response.json()
+
+
+# Batch processing via n8n
+texts = [
+    "The new model significantly outperforms all baselines.",
+    "Results were disappointing — accuracy dropped by 15%.",
+    "The experiment produced mixed results across datasets."
+]
+
+for text in texts:
+    result = analyze_via_n8n(text, "researcher@university.edu")
+    print(f"Text     : {text[:50]}")
+    print(f"Sentiment: {result.get('sentiment')} ({result.get('score')})\n")
+```
+
+```
+Text     : The new model significantly outperforms all baselines.
+Sentiment: positive (0.87)
+
+Text     : Results were disappointing — accuracy dropped by 15%.
+Sentiment: negative (-0.74)
+
+Text     : The experiment produced mixed results across datasets.
+Sentiment: mixed (0.02)
+```
+
+### 9.3.8. n8n vs. Python Agents — When to Use Which
+
+| Criterion | n8n | Python (custom) |
+|---|---|---|
+| Technical skill required | Low — visual interface | High — full programming |
+| Setup time | Minutes | Hours to days |
+| Customisation | Limited to available nodes | Unlimited |
+| Debugging | Visual execution trace | Standard debugging tools |
+| Performance | Moderate (Node.js runtime) | High |
+| Best for | Business automation, prototyping, non-technical teams | Research, complex logic, production systems |
+| Hosting | Self-host or n8n.cloud | Your own infrastructure |
+
+::: callout-note
+**Key references**
+
+-   n8n.io. (2024). *n8n Documentation*. https://docs.n8n.io
+-   n8n.io. (2024). *AI Agent Node*. https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.agent/
+-   Zapier. (2023). *Workflow Automation Comparison*. Internal whitepaper.
+:::

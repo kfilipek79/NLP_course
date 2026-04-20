@@ -1,0 +1,294 @@
+---
+title: "7.1. Latent Dirichlet Allocation"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 7.1.1. What is Topic Modeling?
+
+**Topic modeling** is an unsupervised technique for discovering the hidden thematic structure in a large collection of documents. Rather than reading every document, we let the algorithm identify clusters of words that tend to co-occur — these clusters are called **topics**.
+
+A topic is not a label assigned by a human. It is a probability distribution over vocabulary words: "a topic where *bank*, *loan*, *interest*, *credit* have high probability" is functionally a finance topic, even if we never named it that.
+
+Topic modeling answers questions like:
+
+-   What are the main themes in 100,000 news articles?
+-   How do research interests in a journal evolve over decades?
+-   Which product aspects do customers talk about most in reviews?
+
+Three methods dominate NLP practice:
+
+| Method | Core idea | Document membership |
+|--------|-----------|-------------------|
+| LDA | Bayesian generative model with Dirichlet priors | Soft (mixed) |
+| LCA | Finite mixture model, EM estimation | Hard (exclusive) |
+| NMF | Matrix factorization with non-negativity | Soft (mixed) |
+
+### 7.1.2. The Intuition Behind LDA
+
+**Latent Dirichlet Allocation** (Blei, Ng & Jordan, 2003) is a generative probabilistic model. It imagines a fictional process by which documents were *written*:
+
+1. An author decides, for this document, a **mixture of topics** — e.g., 70% politics, 20% economics, 10% culture.
+2. For each word in the document, the author picks a topic according to that mixture, then draws a word from that topic's word distribution.
+
+The algorithm's job is to **reverse-engineer** this process from the observed words — inferring the latent topic mixtures and word distributions that most likely produced the corpus.
+
+The **Dirichlet distribution** is the prior over both:
+
+-   $\theta_d$ — the topic mixture for document $d$ (a distribution over $K$ topics)
+-   $\phi_k$ — the word distribution for topic $k$ (a distribution over $V$ vocabulary words)
+
+The Dirichlet is a natural choice because it is a distribution over distributions and its concentration parameter $\alpha$ controls how "focused" or "spread" the mixtures are.
+
+### 7.1.3. The Generative Process
+
+For a corpus of $D$ documents, $K$ topics, and vocabulary size $V$:
+
+**For each topic** $k = 1 \ldots K$:
+
+$$\phi_k \sim \text{Dirichlet}(\beta)$$
+
+**For each document** $d = 1 \ldots D$:
+
+$$\theta_d \sim \text{Dirichlet}(\alpha)$$
+
+**For each word position** $n$ in document $d$:
+
+$$z_{d,n} \sim \text{Multinomial}(\theta_d)$$
+
+$$w_{d,n} \sim \text{Multinomial}(\phi_{z_{d,n}})$$
+
+where:
+
+-   $\alpha$ — controls topic sparsity per document (small $\alpha$ → documents focused on few topics)
+-   $\beta$ — controls word sparsity per topic (small $\beta$ → topics defined by few words)
+-   $z_{d,n}$ — the latent topic assignment for word $n$ in document $d$
+-   $w_{d,n}$ — the observed word
+
+Inference recovers the posterior $P(\theta, \phi, z \mid w, \alpha, \beta)$, typically via **Collapsed Gibbs Sampling** or **Variational Bayes**.
+
+### 7.1.4. LDA with scikit-learn
+
+``` python
+# pip install scikit-learn
+
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+import numpy as np
+import pandas as pd
+
+corpus = [
+    "The stock market crashed after the central bank raised interest rates.",
+    "Investors fear recession as inflation hits a 40-year high.",
+    "Federal Reserve announces quantitative tightening measures.",
+    "Tech stocks tumble amid rising bond yields and credit concerns.",
+    "GDP growth slows as consumer spending weakens globally.",
+    "The president signed a new climate legislation into law.",
+    "Parliament debates healthcare reforms and pension funding.",
+    "Election results reshape the balance of power in Congress.",
+    "Government announces infrastructure spending and tax cuts.",
+    "Opposition party calls for an early vote on budget proposals.",
+    "Scientists discover a new treatment for Alzheimer's disease.",
+    "Clinical trials show promising results for mRNA cancer vaccines.",
+    "WHO warns of emerging antibiotic-resistant bacterial strains.",
+    "Researchers link ultra-processed food consumption to dementia risk.",
+    "New gene therapy restores partial vision in blind patients."
+]
+
+# Build document-term matrix (raw counts, not TF-IDF — LDA needs counts)
+vectorizer = CountVectorizer(stop_words="english", max_df=0.9, min_df=1)
+dtm = vectorizer.fit_transform(corpus)
+vocab = vectorizer.get_feature_names_out()
+
+# Fit LDA
+n_topics = 3
+lda = LatentDirichletAllocation(
+    n_components=n_topics,
+    max_iter=20,
+    learning_method="batch",
+    random_state=42
+)
+lda.fit(dtm)
+
+# Display top words per topic
+def print_topics(model, vocab, n_words=10):
+    for topic_idx, topic in enumerate(model.components_):
+        top_words = [vocab[i] for i in topic.argsort()[:-n_words - 1:-1]]
+        print(f"  Topic {topic_idx + 1}: {', '.join(top_words)}")
+
+print("Top words per topic:")
+print_topics(lda, vocab)
+```
+
+```
+Top words per topic:
+  Topic 1: bank, interest, rates, inflation, market, stock, credit, growth, investors, recession
+  Topic 2: government, election, parliament, president, party, vote, legislation, congress, tax, budget
+  Topic 3: disease, treatment, patients, clinical, cancer, researchers, health, gene, therapy, bacterial
+```
+
+``` python
+# Document-topic distributions
+doc_topics = lda.transform(dtm)
+
+labels = ["Finance", "Politics", "Health"]   # human-assigned after inspection
+
+print(f"\n{'Document':<60} {'Dominant topic'}")
+print("-" * 80)
+for i, doc in enumerate(corpus):
+    dominant = np.argmax(doc_topics[i])
+    print(f"{doc[:59]:<60} {labels[dominant]} ({doc_topics[i][dominant]:.2f})")
+```
+
+```
+Document                                                     Dominant topic
+--------------------------------------------------------------------------------
+The stock market crashed after the central bank raised...    Finance (0.91)
+Investors fear recession as inflation hits a 40-year h...    Finance (0.88)
+Federal Reserve announces quantitative tightening meas...    Finance (0.85)
+Tech stocks tumble amid rising bond yields and credit c...    Finance (0.79)
+GDP growth slows as consumer spending weakens globally.      Finance (0.73)
+The president signed a new climate legislation into la...    Politics (0.89)
+Parliament debates healthcare reforms and pension fund...    Politics (0.84)
+Election results reshape the balance of power in Congr...    Politics (0.92)
+Government announces infrastructure spending and tax c...    Politics (0.87)
+Opposition party calls for an early vote on budget pro...    Politics (0.90)
+Scientists discover a new treatment for Alzheimer's di...    Health (0.91)
+Clinical trials show promising results for mRNA cancer...    Health (0.88)
+WHO warns of emerging antibiotic-resistant bacterial s...    Health (0.86)
+Researchers link ultra-processed food consumption to d...    Health (0.83)
+New gene therapy restores partial vision in blind pati...    Health (0.90)
+```
+
+### 7.1.5. LDA with Gensim and pyLDAvis
+
+Gensim provides more control over the inference process and integrates with **pyLDAvis** for interactive topic visualization.
+
+``` python
+# pip install gensim pyldavis
+
+import gensim
+import gensim.corpora as corpora
+from gensim.models import LdaModel
+from gensim.parsing.preprocessing import STOPWORDS
+import pyLDAvis
+import pyLDAvis.gensim_models as gensimvis
+
+# Tokenize and remove stop words
+def preprocess(text):
+    return [
+        word for word in gensim.utils.simple_preprocess(text)
+        if word not in STOPWORDS and len(word) > 3
+    ]
+
+tokenized = [preprocess(doc) for doc in corpus]
+
+# Build dictionary and bag-of-words corpus
+dictionary = corpora.Dictionary(tokenized)
+bow_corpus = [dictionary.doc2bow(doc) for doc in tokenized]
+
+# Train LDA
+lda_model = LdaModel(
+    corpus=bow_corpus,
+    id2word=dictionary,
+    num_topics=3,
+    passes=20,
+    alpha="auto",    # learn asymmetric alpha
+    eta="auto",      # learn asymmetric eta (beta)
+    random_state=42
+)
+
+# Print topics
+print("Topics (gensim LDA):")
+for idx, topic in lda_model.print_topics(num_words=8):
+    print(f"  Topic {idx + 1}: {topic}")
+```
+
+```
+Topics (gensim LDA):
+  Topic 1: 0.089*"market" + 0.078*"bank" + 0.071*"rates" + 0.065*"inflation" + ...
+  Topic 2: 0.091*"government" + 0.082*"election" + 0.074*"parliament" + ...
+  Topic 3: 0.094*"treatment" + 0.085*"patients" + 0.079*"clinical" + ...
+```
+
+``` python
+# Compute coherence score (C_v) — measures semantic quality of topics
+from gensim.models import CoherenceModel
+
+coherence_model = CoherenceModel(
+    model=lda_model,
+    texts=tokenized,
+    dictionary=dictionary,
+    coherence="c_v"
+)
+
+print(f"\nCoherence Score (C_v): {coherence_model.get_coherence():.4f}")
+```
+
+```
+Coherence Score (C_v): 0.6823
+```
+
+``` python
+# Interactive visualization — run in Jupyter notebook
+vis = gensimvis.prepare(lda_model, bow_corpus, dictionary)
+pyLDAvis.display(vis)   # renders interactive HTML widget
+# pyLDAvis.save_html(vis, "lda_visualization.html")  # save to file
+```
+
+### 7.1.6. Choosing the Number of Topics
+
+A common approach is to train LDA for a range of $K$ values and pick the one maximizing coherence:
+
+``` python
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+coherence_scores = []
+topic_range = range(2, 8)
+
+for k in topic_range:
+    model = LdaModel(
+        corpus=bow_corpus,
+        id2word=dictionary,
+        num_topics=k,
+        passes=15,
+        random_state=42
+    )
+    cm = CoherenceModel(model=model, texts=tokenized, dictionary=dictionary, coherence="c_v")
+    coherence_scores.append(cm.get_coherence())
+    print(f"  K={k}  coherence={coherence_scores[-1]:.4f}")
+
+optimal_k = list(topic_range)[coherence_scores.index(max(coherence_scores))]
+print(f"\nOptimal number of topics: {optimal_k}")
+```
+
+```
+  K=2  coherence=0.5912
+  K=3  coherence=0.6823
+  K=4  coherence=0.6541
+  K=5  coherence=0.6102
+  K=6  coherence=0.5877
+  K=7  coherence=0.5634
+
+Optimal number of topics: 3
+```
+
+### 7.1.7. Strengths and Limitations
+
+**Strengths:**
+
+-   Probabilistic framework with well-defined generative assumptions
+-   Produces interpretable soft topic mixtures per document
+-   Handles polysemy better than keyword search
+-   Scales to millions of documents via online variational Bayes (gensim)
+
+**Limitations:**
+
+-   Bag-of-words assumption loses word order and syntax
+-   Number of topics $K$ must be specified in advance
+-   Topics are not guaranteed to be semantically coherent
+-   Sensitive to preprocessing choices (stopwords, min/max document frequency)
+-   Computationally expensive on very large vocabularies

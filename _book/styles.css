@@ -1,0 +1,12 @@
+/* Ukryj tekstowy tytuł w sidebarze */
+#quarto-sidebar .sidebar-title { 
+  display: none; 
+}
+
+/* Stylowanie logo w sidebarze */
+#quarto-sidebar .sidebar-logo {
+  display: block;
+  max-width: 250px;   /* kontrola maksymalnej szerokości */
+  height: auto;       /* zachowanie proporcji */
+  margin: 10px auto;  /* wyśrodkowanie w pionie */
+}

@@ -1,0 +1,4 @@
+- source: project
+  quarto-pub:
+    - id: a96b8ef5-cc11-480e-a529-f04fd52f10e2
+      url: 'https://kfilipek.quarto.pub/natural-language-processing---part-i'

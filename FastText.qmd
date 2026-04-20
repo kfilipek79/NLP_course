@@ -1,0 +1,124 @@
+---
+title: "4.5. FastText"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 4.5.1. Short Introduction to FastText
+
+Facebook AI Research developed FastText in 2016 as an extension of Word2Vec that incorporates subword information into distributed word representations. Like Word2Vec, FastText is an unsupervised model that learns dense vector embeddings by predicting contextual relationships. However, its crucial innovation lies in representing words as compositions of character n-grams rather than as atomic units. In standard Word2Vec, each word corresponds to a single vector. In FastText, a word is represented as the sum (or average) of vectors associated with its character n-grams.
+
+::: callout-note
+For example, the word:
+
+**where**
+
+with *n*-grams of length 3--6 may be decomposed into:
+
+**\<wh, whe, her, ere, re\>**
+:::
+
+This design allows FastText to:
+
+-   Capture **morphological regularities** (e.g., suffixes, prefixes),
+
+-   Produce embeddings for **rare words**,
+
+-   Generate vectors for **out-of-vocabulary (OOV)** words,
+
+-   Perform particularly well in **morphologically rich languages** (e.g., Polish).
+
+From a statistical perspective, FastText remains a predictive model similar to Word2Vec (Skip-gram or CBOW), but it enriches the representational layer by incorporating subword structure. This makes it especially useful in computational social science and multilingual NLP contexts.
+
+### 4.5.2 The Essence of FastText
+
+#### Structural Objective
+
+Like Word2Vec, FastText optimizes a predictive objective:
+
+$$
+\text{maximize } P(\text{context} \mid \text{word})
+$$
+
+However, the internal representation differs.
+
+::: callout-note
+Instead of learning a single vector $v_w$ for each word $w$, FastText defines:
+
+$$
+v_w = \sum_{g \in G_w} z_g
+$$
+
+where:
+
+-   $G_w$ --- set of character *n*-grams in word $w$\
+-   $z_g$ --- vector representation of an *n*-gram
+:::
+
+Thus, prediction is performed not from a single word embedding but from a **composition of subword vectors**.
+
+------------------------------------------------------------------------
+
+#### Conceptual Difference from Word2Vec
+
+| Feature                   | Word2Vec            | FastText                             |
+|---------------------------|---------------------|--------------------------------------|
+| Representation unit       | Whole word          | Character *n*-grams                  |
+| OOV handling              | No                  | Yes                                  |
+| Morphological sensitivity | Limited             | Strong                               |
+| Best suited for           | Large clean corpora | Morphologically rich / noisy corpora |
+
+### 4.5.3. Python Implementation
+
+``` python
+# pip install gensim nltk
+
+import nltk
+from nltk.tokenize import word_tokenize
+from gensim.models import FastText
+
+nltk.download("punkt")
+
+# -------------------------------------------------
+# 1. Prepare corpus
+# -------------------------------------------------
+text = """
+FastText extends Word2Vec by incorporating subword information.
+It represents words as bags of character n-grams.
+This improves performance on rare and morphologically complex words.
+"""
+
+sentences = [word_tokenize(sentence.lower()) 
+             for sentence in nltk.sent_tokenize(text)]
+
+print("Tokenized corpus:")
+print(sentences)
+
+# -------------------------------------------------
+# 2. Train FastText model
+# -------------------------------------------------
+model = FastText(
+    sentences,
+    vector_size=100,
+    window=5,
+    min_count=1,
+    workers=4,
+    sg=1   # Skip-gram
+)
+
+# -------------------------------------------------
+# 3. Inspect embeddings
+# -------------------------------------------------
+print("\nVector for 'fasttext':")
+print(model.wv['fasttext'][:10])
+
+print("\nMost similar to 'subword':")
+print(model.wv.most_similar("subword", topn=5))
+
+# -------------------------------------------------
+# 4. OOV Example
+# -------------------------------------------------
+print("\nVector for unseen word 'morphologicality':")
+print(model.wv['morphologicality'][:10])
+```

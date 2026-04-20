@@ -1,0 +1,70 @@
+---
+title: "2.3. Ambiguity and Variability in Natural Language"
+author: Kamil Filipek
+---
+
+### 2.3.1. Lexical Ambiguity
+
+Lexical ambiguity arises when a **single word has more than one possible meaning**, leading to uncertainty in interpretation depending on the context in which it appears. For example, the mentioned before *bank* may refer either to a financial institution or to the side of a river, and only surrounding linguistic or situational cues allow a listener or reader to determine the intended sense. This phenomenon is central to semantics and pragmatics, as it highlights the dependency of meaning on disambiguation processes. In natural language processing (NLP), lexical ambiguity represents a persistent challenge, since **computational systems must accurately infer which sense of a word applies in a given text to avoid misinterpretation and error propagation in downstream tasks such as translation or sentiment analysis**.
+
+From a cognitive and linguistic perspective, lexical ambiguity is not merely an obstacle but also a resource of natural languages, enriching communication through metaphor, humor, and wordplay.
+
+-   **Human speakers resolve ambiguity by drawing on contextual knowledge, shared conventions, and probabilistic expectations about word usage**.
+
+-   **Computational approaches attempt to mimic these mechanisms using techniques such as word sense disambiguation, distributional semantics, and large-scale pretrained language models (Navigli, 2009; Jurafsky & Martin, 2023)**.
+
+Understanding and addressing lexical ambiguity is therefore not only a theoretical concern for linguists but also a practical requirement for advancing human--machine communication.
+
+👉 **Large language models (LLMs) and modern NLP pipelines attempt to address lexical ambiguity through [context-sensitive embeddings (e.g., BERT, GPT)]{.underline}, which represent words not in isolation but as dependent on their surrounding words**. This approach has markedly improved performance in tasks such as machine translation and question answering, though challenges remain in domains with low resource data, figurative language, or domain-specific jargon (Pilehvar & Camacho-Collados, 2019). Real-world examples show that resolving lexical ambiguity is essential not only for linguistic accuracy but also for building trustworthy AI systems in healthcare, law, and customer service, where misinterpretation may carry material consequences.
+
+### 2.3.2. Syntactic Ambiguity
+
+Syntactic ambiguity occurs when a **sentence or phrase can be parsed in more than one way due to its grammatical structure**, leading to multiple possible interpretations.
+
+| Example                                     |
+|---------------------------------------------|
+| ***I saw the man with the telescope***      |
+| The speaker used a telescope to see the man |
+| The man being observed had a telescope      |
+
+This type of ambiguity arises from structural features such as prepositional phrase attachment, scope of modifiers, or coordination, and it is a central problem in syntax, semantics, and psycholinguistics. **From a linguistic perspective, syntactic ambiguity demonstrates how surface forms can underdetermine meaning, requiring additional contextual or pragmatic information for proper interpretation.**
+
+In computational linguistics and NLP, syntactic ambiguity poses **serious challenges** for tasks like parsing, machine translation, and question answering... A parser that assigns multiple valid syntactic trees to a single sentence must employ disambiguation strategies to select the most plausible interpretation.
+
+Traditional approaches rely on **i. probabilistic context-free grammars (PCFGs)** or **ii. dependency parsing with statistical models**, while modern systems increasingly use deep learning architectures that incorporate **iii. contextual embeddings** to guide syntactic choices (Kübler, McDonald, & Nivre, 2009; Jurafsky & Martin, 2023). Errors in resolving syntactic ambiguity can propagate across applications, leading to mistranslations, incoherent responses in dialogue systems, or inaccurate information extraction.
+
+Addressing syntactic ambiguity is therefore critical for both theoretical linguistics and practical NLP systems, especially in domains where precision is essential, such as legal or medical texts.
+
+### 2.3.3. Semantic and Pragmatic Ambiguities
+
+Semantic ambiguity arises when a **sentence or phrase allows multiple interpretations because the meanings of its words or combinations of words can be understood in more than one way**. Unlike lexical ambiguity, which is tied to individual words, semantic ambiguity often results from broader compositional meaning. For instance, *Visiting relatives can be boring* may mean that the act of visiting relatives is boring, or that relatives who are visiting are boring. Such ambiguities highlight the complexity of semantic composition, where the interaction of words within a sentence leads to interpretive uncertainty (Pustejovsky, 1995).
+
+**In NLP, semantic ambiguity is particularly problematic for tasks such as semantic role labeling, textual entailment, and machine translation, where the correct interpretation depends on grasping the intended meaning of entire propositions.**
+
+Pragmatic ambiguity occurs when a **sentence has a clear literal meaning, but its intended interpretation varies depending on context, speaker intention, or shared knowledge**. For example, the utterance *Can you open the window?* is literally a question about ability, but pragmatically it is usually interpreted as a polite request. Similarly, irony, metaphor, or underspecified reference (e.g., *They said it will rain tomorrow*---who are *they*?) introduce pragmatic ambiguity, which requires background knowledge and inference for resolution (Levinson, 1983).
+
+In computational systems, pragmatic ambiguity presents challenges for dialogue modeling, sentiment detection, and human--computer interaction, since models must go beyond syntax and semantics to incorporate contextual, cultural, and situational information. Recent work with large language models demonstrates progress in handling pragmatic cues, but robust resolution remains a significant open problem in AI.
+
+| **Type of Ambiguity** | **Source**                                                                   | **Example**                                                                   | **Linguistic Focus**           | **NLP Challenges & Applications**                                                                             |
+|-----------------------|------------------------------------------------------------------------------|-------------------------------------------------------------------------------|--------------------------------|---------------------------------------------------------------------------------------------------------------|
+| **Lexical**           | A single word has multiple meanings (polysemy or homonymy).                  | *Bank* = financial institution / river side                                   | Semantics, lexicon             | Word sense disambiguation, machine translation, sentiment analysis (e.g., *critical* = negative vs. positive) |
+| **Syntactic**         | Multiple possible sentence structures (different parses).                    | *I saw the man with the telescope* (who has the telescope?)                   | Syntax, grammar                | Parsing, machine translation, information extraction; errors propagate to downstream tasks                    |
+| **Semantic**          | Multiple interpretations of sentence meaning due to compositional semantics. | *Visiting relatives can be boring* (act of visiting vs. relatives themselves) | Semantics, meaning composition | Semantic role labeling, entailment, question answering; crucial in disambiguating propositions                |
+| **Pragmatic**         | Interpretation depends on context, speaker intention, or shared knowledge.   | *Can you open the window?* (ability vs. polite request)                       | Pragmatics, context, discourse | Dialogue systems, sentiment detection, irony/metaphor understanding; essential in human--machine interaction  |
+
+**References:**
+
+-   Navigli, R. (2009). Word sense disambiguation: A survey. *ACM Computing Surveys (CSUR)*, 41(2), 1--69.
+
+-   Jurafsky, D., & Martin, J. H. (2023). *Speech and Language Processing* (3rd ed., draft).
+
+-   Pilehvar, M. T., & Camacho-Collados, J. (2019). Embeddings in natural language processing: Theory and advances in word representations. *Synthesis Lectures on Human Language Technologies*, 12(2), 1--175.
+
+-   Kübler, S., McDonald, R., & Nivre, J. (2009). *Dependency Parsing*. Morgan & Claypool.
+
+-   Pustejovsky, J. (1995). *The Generative Lexicon*. MIT Press.
+
+```{=html}
+<!-- -->
+```
+-   Levinson, S. C. (1983). *Pragmatics*. Cambridge University Press.

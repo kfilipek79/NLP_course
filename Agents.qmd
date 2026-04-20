@@ -1,0 +1,91 @@
+---
+title: "9.1. AI Agents — Concepts and Architectures"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 9.1.1. What is an AI Agent?
+
+An **AI agent** is a system that perceives its environment, reasons about it, and takes actions to achieve a goal — going beyond a single prompt–response cycle. Where a standard LLM answers a question and stops, an agent can **plan**, **use tools**, **observe results**, and **iterate** until the task is complete.
+
+The term originates in reinforcement learning and autonomous systems research (Russell & Norvig, 2010), but the emergence of powerful LLMs has created a new class of **language-model-based agents** that use natural language as the medium for both reasoning and action.
+
+A language-based agent typically has four components:
+
+| Component | Role | Example |
+|---|---|---|
+| **Brain** | LLM that reasons and decides | Claude, GPT-4 |
+| **Memory** | Stores context and past actions | Conversation history, vector DB |
+| **Tools** | External capabilities the agent can invoke | Search, calculator, database, API |
+| **Action loop** | Repeats observe → reason → act until done | ReAct loop |
+
+### 9.1.2. A Brief History
+
+-   **1950s–80s** — Classical AI agents: rule-based expert systems, symbolic planners (STRIPS, SHAKEY robot). Brittle, domain-specific, require handcrafted knowledge.
+
+-   **1990s–2000s** — Reinforcement learning agents (Sutton & Barto, 1998): learn from interaction with an environment via reward signals. Dominated games and robotics.
+
+-   **2017–2022** — Transformer-based NLP enables tool-augmented LLMs: WebGPT (Nakano et al., 2021) adds web search; InstructGPT aligns models to follow instructions.
+
+-   **2022** — **ReAct** (Yao et al., 2022): a prompting framework that interleaves reasoning traces and actions, dramatically improving agent reliability on multi-step tasks.
+
+-   **2023** — **Generative Agents** (Park et al., 2023): 25 LLM-powered agents simulate a social world — the first demonstration of emergent social behavior in agent communities.
+
+-   **2024–present** — **Agentic frameworks** (LangChain, LlamaIndex, AutoGen, CrewAI) make agent construction accessible; commercial products embed agents in every knowledge-work context.
+
+### 9.1.3. The ReAct Framework
+
+**ReAct** (Reason + Act, Yao et al. 2022) is the dominant prompting strategy for language agents. It structures the agent's output as alternating **Thought** and **Action** steps:
+
+```
+Thought: I need to find the current population of Warsaw.
+Action: search("Warsaw population 2024")
+Observation: Warsaw has approximately 1.86 million inhabitants (2024).
+
+Thought: Now I have the population. I should also find the area to compute density.
+Action: search("Warsaw area km2")
+Observation: Warsaw covers 517.24 km².
+
+Thought: I can now calculate: 1,860,000 / 517.24 ≈ 3,596 people/km².
+Action: finish("Warsaw's population density is approximately 3,596 people per km².")
+```
+
+The key insight: forcing the model to write its reasoning *before* the action dramatically reduces errors compared to acting immediately. The observation from each action is fed back into the context, enabling multi-step planning grounded in real results.
+
+### 9.1.4. Agent Memory
+
+Agents need different types of memory to function effectively over long tasks:
+
+| Type | What it stores | Implementation |
+|---|---|---|
+| **In-context** | Current task history | Message list passed to LLM |
+| **Episodic** | Past interactions and outcomes | Vector DB (retrieved by similarity) |
+| **Semantic** | General knowledge about the domain | Knowledge base, RAG |
+| **Procedural** | How to perform recurring tasks | System prompt, few-shot examples |
+
+For most practical agents, in-context memory (the conversation history) plus a RAG-based semantic store is sufficient. Episodic memory becomes important for long-running agents that need to learn from past failures.
+
+### 9.1.5. Agent Taxonomies
+
+**By autonomy level:**
+
+-   **Level 1 — Prompt chains**: a fixed sequence of LLM calls, no branching. Reliable but inflexible.
+-   **Level 2 — Router agents**: the LLM decides which tool or sub-chain to call. First true decision-making.
+-   **Level 3 — ReAct agents**: iterative reason-act-observe loop. Handles multi-step tasks.
+-   **Level 4 — Multi-agent systems**: multiple specialized agents collaborate, delegate, and verify each other.
+
+**By specialization:**
+
+-   **Generalist agents**: answer any question, use any tool (ChatGPT with plugins)
+-   **Task agents**: scoped to a single domain (coding agent, research agent, SQL agent)
+-   **Orchestrators vs. workers**: one agent decomposes the task and delegates subtasks to specialized worker agents
+
+::: callout-note
+**Key references**
+
+-   Yao, S., et al. (2022). ReAct: Synergizing Reasoning and Acting in Language Models. *arXiv:2210.03629*.
+-   Park, J. S., et al. (2023). Generative Agents: Interactive Simulacra of Human Behavior. *UIST 2023*.
+-   Russell, S., & Norvig, P. (2010). *Artificial Intelligence: A Modern Approach* (3rd ed.). Prentice Hall.
+-   Nakano, R., et al. (2021). WebGPT: Browser-assisted question-answering with human feedback. *arXiv:2112.09332*.
+:::

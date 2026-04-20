@@ -1,0 +1,140 @@
+{
+  "index.qmd": {
+    "index.html": "2cdda49f"
+  },
+  "Why_Language.qmd": {
+    "Why_Language.html": "afdc9513"
+  },
+  "Natural_Language.qmd": {
+    "Natural_Language.html": "3c88da15"
+  },
+  "about.qmd": {
+    "about.html": "7d27e186"
+  },
+  "EDA_in_NLP.qmd": {
+    "EDA_in_NLP.html": "c2d763fa"
+  },
+  "Advanced_analysis.qmd": {
+    "Advanced_analysis.html": "91a148e7"
+  },
+  "Hierarchy_languages.qmd": {
+    "Hierarchy_languages.html": "a068cdc3"
+  },
+  "Levels_analysis.qmd": {
+    "Levels_analysis.html": "4c06a4f1"
+  },
+  "Approaches_language.qmd": {
+    "Approaches_language.html": "039d2e2d"
+  },
+  "Amb_var.qmd": {
+    "Amb_var.html": "d65ee039"
+  },
+  "Lang_machine.qmd": {
+    "Lang_machine.html": "c5b772e3"
+  },
+  "Application.qmd": {
+    "Application.html": "1057fde3"
+  },
+  "Approaches_language..qmd": {
+    "Approaches_language..html": "7da5aa84"
+  },
+  "ref.qmd": {
+    "ref.html": "6a48108b"
+  },
+  "Preprocessing.qmd": {
+    "Preprocessing.html": "ac8f6aea"
+  },
+  "Tokenization.qmd": {
+    "Tokenization.html": "68a9bf4a"
+  },
+  "Ini_da.qmd": {
+    "Ini_da.html": "b014a75f"
+  },
+  "Stem_lem.qmd": {
+    "Stem_lem.html": "10f3c6d9"
+  },
+  "Adn_analysis.qmd": {
+    "Adn_analysis.html": "ac664771"
+  },
+  "Bag_of_words.qmd": {
+    "Bag_of_words.html": "6f81840e"
+  },
+  "Tf_idf.qmd": {
+    "Tf_idf.html": "36968db4"
+  },
+  "Word2Vec.qmd": {
+    "Word2Vec.html": "296dd964"
+  },
+  "GloVe.qmd": {
+    "GloVe.html": "1daca1d3"
+  },
+  "FastText.qmd": {
+    "FastText.html": "79cdfbbf"
+  },
+  "Contextual_embeddings.qmd": {
+    "Contextual_embeddings.html": "351d4b09"
+  },
+  "PoS_and_NER.qmd": {
+    "PoS_and_NER.html": "43c41a0b"
+  },
+  "Keywords_extraction.qmd": {
+    "Keywords_extraction.html": "a8d658a2"
+  },
+  "Semntiment.qmd": {
+    "Semntiment.html": "e0ecdcc7"
+  },
+  "Emotion_Analysis.qmd": {
+    "Emotion_Analysis.html": "950a103e"
+  },
+  "ELMo.qmd": {
+    "ELMo.html": "80d4eec2"
+  },
+  "BERT.qmd": {
+    "BERT.html": "d247fe95"
+  },
+  "GPT.qmd": {
+    "GPT.html": "b33d5dcc"
+  },
+  "Sentiment.qmd": {
+    "Sentiment.html": "4be6cdc3"
+  },
+  "LDA.qmd": {
+    "LDA.html": "3392e782"
+  },
+  "LCA.qmd": {
+    "LCA.html": "e27a1380"
+  },
+  "NMF.qmd": {
+    "NMF.html": "cf449e2c"
+  },
+  "LSA.qmd": {
+    "LSA.html": "8d71b43d"
+  },
+  "RAG.qmd": {
+    "RAG.html": "d8741621"
+  },
+  "Prompt_engineering.qmd": {
+    "Prompt_engineering.html": "077629fe"
+  },
+  "LLM_API.qmd": {
+    "LLM_API.html": "d0e5e1f3"
+  },
+  "Fine_tuning.qmd": {
+    "Fine_tuning.html": "4059cd11"
+  },
+  "LLM_evaluation.qmd": {
+    "LLM_evaluation.html": "ec448bef"
+  },
+  "Agents.qmd": {
+    "Agents.html": "c782223a"
+  },
+  "Agents_Python.qmd": {
+    "Agents_Python.html": "869803a2"
+  },
+  "n8n.qmd": {
+    "n8n.html": "168a2069"
+  },
+  "MultiAgent.qmd": {
+    "MultiAgent.html": "dd06211a"
+  }
+}

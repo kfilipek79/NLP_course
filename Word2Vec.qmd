@@ -1,0 +1,117 @@
+---
+title: "4.3. Word2Vec"
+author: Kamil Filipek
+---
+
+### 4.3.1. Short Introduction to W2V
+
+**Word2vec** is a natural language processing technique designed to generate vector representations of words. These vectors encode semantic information by learning from the contexts in which words appear within large text corpora. The algorithm derives these representations **by modeling patterns of word co-occurrence**. As a result, words that tend to appear in similar contexts are mapped to nearby points in a high-dimensional vector space.
+
+::: callout-note
+#### Word Embedding in NLP
+
+Word embedding in Natural Language Processing (NLP) refers to a method for representing words as dense numerical vectors in a continuous, low-dimensional vector space.
+
+$$
+f : \mathcal{V} \rightarrow \mathbb{R}^d
+$$
+
+where:
+
+-   $\mathcal{V}$ denotes the vocabulary,
+-   $\mathbb{R}^d$ represents a $d$-dimensional real vector space,
+-   $d$ is the dimensionality of the embedding space.
+
+The function assigns each discrete word $w \in \mathcal{V}$ a vector representation\
+$f(w) \in \mathbb{R}^d$.
+:::
+
+### 4.3.2. Advantage of W2V
+
+The main advantage of **Word2Vec (W2V)** over earlier approaches lies in its shift from sparse, symbolic representations of words to dense, distributed semantic representations learned directly from data. Traditional methods such as one-hot encoding or Bag-of-Words models treated words as independent units without capturing relationships between them. These representations were high-dimensional and sparse, and they encoded no information about semantic similarity. **Word2Vec, by contrast, learns low-dimensional continuous vectors in which words that occur in similar contexts are positioned close to one another in vector space.** This operationalizes the distributional hypothesis and enables the model to capture graded semantic relationships rather than mere co-occurrence counts.
+
+A second major advantage concerns both computational efficiency and representational power. Earlier count-based models relied on large co-occurrence matrices, which were expensive to compute and store. **Word2Vec introduced efficient training strategies such as negative sampling and hierarchical softmax, making it feasible to train on very large corpora.** Moreover, the learned embeddings exhibit meaningful geometric structure, allowing the model to capture syntactic and semantic regularities---including analogical relations---through simple vector arithmetic. This combination of scalability and semantic expressiveness marked a significant step forward in representation learning for natural language processing.
+
+### 4.3.3. Shortcomings of W2V
+
+Despite its conceptual and empirical significance, **Word2Vec (W2V)** has several important limitations.
+
+First, W2V produces **static embeddings**, meaning that each word is assigned a single vector regardless of context. As a result, the model cannot properly represent polysemy or contextual variation. For example, the word *bank* receives one fixed vector whether it refers to a financial institution or a riverbank. This limitation becomes particularly salient in linguistically rich or domain-specific corpora, where contextual nuance is crucial.
+
+Second, Word2Vec relies on relatively **local context windows**, which restrict its ability to model long-range dependencies and discourse-level structure. The architecture captures distributional similarity but does not encode syntactic hierarchy or deeper compositional semantics. Moreover, embeddings learned from large corpora often reproduce and amplify **social and cultural biases** present in the training data, raising well-documented ethical concerns (e.g., gender or racial bias in vector associations). Finally, W2V does not generate contextualized representations and therefore cannot dynamically adapt meaning during inference, a limitation that later transformer-based models were designed to address.
+
+### 4.3.4. W2V Implementation in Python
+
+We can use Gensim library. It is not new but it was quite strong:
+
+``` python
+from gensim.models import Word2Vec
+from gensim.utils import simple_preprocess
+
+# ----------------------------
+# 1) Prepare a corpus
+# ----------------------------
+texts = [
+    "Word2Vec learns vector representations of words from contexts.",
+    "Distributional semantics assumes similar contexts imply similar meaning.",
+    "Neural embeddings can capture relationships between words.",
+    "We can query nearest neighbors in the embedding space.",
+    "Word2Vec can be trained with skip gram or CBOW.",
+]
+
+# Tokenize (lowercase, remove punctuation, keep alphabetic tokens)
+sentences = [simple_preprocess(t, deacc=True) for t in texts]
+
+# ----------------------------
+# 2) Train Word2Vec
+# ----------------------------
+# Key params:
+# - vector_size: embedding dimensionality (e.g., 100–300 in real tasks)
+# - window: context window size
+# - sg: 1 = Skip-gram, 0 = CBOW
+# - min_count: ignore words with total frequency < min_count
+# - workers: parallelism
+model = Word2Vec(
+    sentences=sentences,
+    vector_size=50,
+    window=5,
+    sg=1,          # Skip-gram
+    min_count=1,
+    workers=4,
+    epochs=200,
+)
+
+wv = model.wv  # keyed vectors
+
+# ----------------------------
+# 3) Inspect vectors / similarity
+# ----------------------------
+print("Vector for 'word2vec' (first 10 dims):")
+print(wv["word2vec"][:10])
+
+print("\nCosine similarity(word2vec, embeddings):")
+print(wv.similarity("word2vec", "embeddings"))
+
+print("\nMost similar to 'contexts':")
+print(wv.most_similar("contexts", topn=5))
+
+# ----------------------------
+# 4) Analogy (toy corpus -> may be unstable)
+#   Example format: a - b + c ≈ ?
+# ----------------------------
+# This will often work better on large corpora; here it's just for API demo.
+try:
+    print("\nAnalogy example: 'vector' - 'word' + 'meaning' ≈ ?")
+    print(wv.most_similar(positive=["vector", "meaning"], negative=["word"], topn=5))
+except KeyError as e:
+    print("\nAnalogy failed (word missing):", e)
+
+# ----------------------------
+# 5) Save / load
+# ----------------------------
+model.save("w2v_model.gensim")
+loaded = Word2Vec.load("w2v_model.gensim")
+
+print("\nLoaded model OK. Most similar to 'neural':")
+print(loaded.wv.most_similar("neural", topn=5))
+```

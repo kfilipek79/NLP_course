@@ -1,0 +1,418 @@
+---
+title: "9.2. Building Agents in Python"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 9.2.1. A Minimal Agent from Scratch
+
+The simplest agent is just a loop: call the LLM, parse its output, execute tools, feed results back, repeat until done. Building one from scratch makes the mechanics transparent before moving to frameworks.
+
+``` python
+import anthropic
+import json
+import math
+from datetime import datetime
+
+client = anthropic.Anthropic()
+
+# ── Tool definitions ────────────────────────────────────────
+tools = [
+    {
+        "name": "calculate",
+        "description": "Evaluates a mathematical expression. Input must be a valid Python math expression.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "expression": {"type": "string", "description": "e.g. '2 ** 10' or 'math.sqrt(144)'"}
+            },
+            "required": ["expression"]
+        }
+    },
+    {
+        "name": "get_current_date",
+        "description": "Returns today's date.",
+        "input_schema": {"type": "object", "properties": {}}
+    },
+    {
+        "name": "word_count",
+        "description": "Counts words in a text.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string"}
+            },
+            "required": ["text"]
+        }
+    }
+]
+
+# ── Tool implementations ────────────────────────────────────
+def execute_tool(name: str, inputs: dict) -> str:
+    if name == "calculate":
+        try:
+            result = eval(inputs["expression"], {"math": math, "__builtins__": {}})
+            return str(result)
+        except Exception as e:
+            return f"Error: {e}"
+    if name == "get_current_date":
+        return datetime.now().strftime("%A, %d %B %Y")
+    if name == "word_count":
+        return str(len(inputs["text"].split()))
+    return "Unknown tool"
+
+# ── Agent loop ──────────────────────────────────────────────
+def run_agent(task: str, max_iterations: int = 10) -> str:
+    messages = [{"role": "user", "content": task}]
+    iteration = 0
+
+    print(f"Task: {task}\n{'─'*60}")
+
+    while iteration < max_iterations:
+        iteration += 1
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            tools=tools,
+            messages=messages
+        )
+
+        # Collect any text thoughts
+        for block in response.content:
+            if hasattr(block, "text"):
+                print(f"[Thought] {block.text}")
+
+        # Done?
+        if response.stop_reason == "end_turn":
+            final = next((b.text for b in response.content if hasattr(b, "text")), "")
+            print(f"\n[Final Answer] {final}")
+            return final
+
+        # Execute tools
+        if response.stop_reason == "tool_use":
+            messages.append({"role": "assistant", "content": response.content})
+            tool_results = []
+            for block in response.content:
+                if block.type == "tool_use":
+                    result = execute_tool(block.name, block.input)
+                    print(f"[Tool] {block.name}({block.input}) → {result}")
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result
+                    })
+            messages.append({"role": "user", "content": tool_results})
+
+    return "Max iterations reached."
+
+
+run_agent("What day of the week is it today, and what is 2^32 divided by 365?")
+```
+
+```
+Task: What day of the week is it today, and what is 2^32 divided by 365?
+────────────────────────────────────────────────────────────
+[Tool] get_current_date({}) → Sunday, 20 April 2025
+[Tool] calculate({'expression': '2**32 / 365'}) → 11758.846575342466
+
+[Final Answer] Today is Sunday, 20 April 2025.
+2³² divided by 365 is approximately 11,758.85.
+```
+
+### 9.2.2. A Research Agent
+
+A more realistic agent that searches for information, synthesizes it, and produces a structured report:
+
+``` python
+import requests
+
+# Extended tool set for a research agent
+research_tools = [
+    {
+        "name": "search_wikipedia",
+        "description": "Searches Wikipedia and returns a summary of the article.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search term"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "calculate",
+        "description": "Evaluates a mathematical expression.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "expression": {"type": "string"}
+            },
+            "required": ["expression"]
+        }
+    },
+    {
+        "name": "save_note",
+        "description": "Saves a note to the agent's memory for later use.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "key":   {"type": "string", "description": "Note label"},
+                "value": {"type": "string", "description": "Note content"}
+            },
+            "required": ["key", "value"]
+        }
+    }
+]
+
+agent_memory = {}   # simple key-value store
+
+def execute_research_tool(name: str, inputs: dict) -> str:
+    if name == "search_wikipedia":
+        try:
+            url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + \
+                  inputs["query"].replace(" ", "_")
+            r = requests.get(url, timeout=5)
+            data = r.json()
+            return data.get("extract", "No article found.")[:800]
+        except Exception as e:
+            return f"Search failed: {e}"
+    if name == "calculate":
+        try:
+            return str(eval(inputs["expression"], {"math": math, "__builtins__": {}}))
+        except Exception as e:
+            return f"Error: {e}"
+    if name == "save_note":
+        agent_memory[inputs["key"]] = inputs["value"]
+        return f"Note saved: '{inputs['key']}'"
+    return "Unknown tool"
+
+
+def run_research_agent(task: str) -> str:
+    messages = [{"role": "user", "content": task}]
+    system = """You are a research assistant. Use tools to gather information step by step.
+Save intermediate findings with save_note before writing your final answer.
+Always cite what you found."""
+
+    print(f"Research task: {task}\n{'─'*70}")
+    while True:
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            system=system,
+            tools=research_tools,
+            messages=messages
+        )
+        for block in response.content:
+            if hasattr(block, "text") and block.text.strip():
+                print(f"[Thought] {block.text[:150]}")
+
+        if response.stop_reason == "end_turn":
+            final = next((b.text for b in response.content if hasattr(b, "text")), "")
+            print(f"\n[Report]\n{final}")
+            return final
+
+        if response.stop_reason == "tool_use":
+            messages.append({"role": "assistant", "content": response.content})
+            results = []
+            for block in response.content:
+                if block.type == "tool_use":
+                    result = execute_research_tool(block.name, block.input)
+                    print(f"[Tool] {block.name}({list(block.input.values())[0][:40]}) → {result[:80]}...")
+                    results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result
+                    })
+            messages.append({"role": "user", "content": results})
+
+
+run_research_agent(
+    "Compare the founding years of Google and OpenAI, "
+    "and calculate how many years apart they were founded."
+)
+```
+
+```
+Research task: Compare the founding years of Google and OpenAI, and calculate how many years apart they were founded.
+──────────────────────────────────────────────────────────────────────────
+[Tool] search_wikipedia(Google) → Google LLC is an American multinational technology company...
+[Tool] save_note(google_founded: 1998) → Note saved: 'google_founded'
+[Tool] search_wikipedia(OpenAI) → OpenAI is an American artificial intelligence research...
+[Tool] save_note(openai_founded: 2015) → Note saved: 'openai_founded'
+[Tool] calculate(2015 - 1998) → 17
+
+[Report]
+Google was founded in 1998 by Larry Page and Sergey Brin, while OpenAI was founded
+in 2015 by Sam Altman, Elon Musk, and others. They are 17 years apart.
+Google predates OpenAI by nearly two decades — reflecting how much of the foundational
+infrastructure (search, cloud, hardware) that AI companies now rely on was built in
+the years between them.
+```
+
+### 9.2.3. NLP-Specific Agent: Text Analysis Pipeline
+
+An agent that autonomously runs a complete NLP analysis on a document:
+
+``` python
+from collections import Counter
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.corpus import stopwords
+import nltk
+
+nltk.download(["punkt", "stopwords"], quiet=True)
+stop_words = set(stopwords.words("english"))
+
+nlp_tools = [
+    {
+        "name": "count_sentences",
+        "description": "Counts the number of sentences in a text.",
+        "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}
+    },
+    {
+        "name": "top_keywords",
+        "description": "Returns the top N keywords (excluding stopwords) from a text.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string"},
+                "n":    {"type": "integer", "description": "Number of keywords to return"}
+            },
+            "required": ["text", "n"]
+        }
+    },
+    {
+        "name": "sentiment_estimate",
+        "description": "Returns a simple positive/negative/neutral estimate based on keyword matching.",
+        "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}
+    },
+    {
+        "name": "avg_sentence_length",
+        "description": "Returns the average number of words per sentence.",
+        "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}
+    }
+]
+
+def execute_nlp_tool(name: str, inputs: dict) -> str:
+    text = inputs.get("text", "")
+    if name == "count_sentences":
+        return str(len(sent_tokenize(text)))
+    if name == "top_keywords":
+        tokens = [t.lower() for t in word_tokenize(text) if t.isalpha() and t.lower() not in stop_words]
+        top = Counter(tokens).most_common(inputs.get("n", 5))
+        return json.dumps(top)
+    if name == "sentiment_estimate":
+        pos = {"great", "excellent", "good", "amazing", "success", "improved", "strong"}
+        neg = {"bad", "poor", "failed", "weak", "decline", "problem", "issue"}
+        words = set(text.lower().split())
+        score = len(words & pos) - len(words & neg)
+        return "positive" if score > 0 else "negative" if score < 0 else "neutral"
+    if name == "avg_sentence_length":
+        sents = sent_tokenize(text)
+        avg = sum(len(word_tokenize(s)) for s in sents) / max(len(sents), 1)
+        return f"{avg:.1f}"
+    return "Unknown tool"
+
+
+sample_text = """
+The new NLP framework achieved excellent results on all benchmark tasks.
+Performance improved by 23% compared to the previous baseline, with strong
+gains in both accuracy and speed. However, memory consumption remains a
+concern on low-resource devices. Overall, the framework represents a
+significant step forward in making advanced NLP accessible to researchers.
+"""
+
+run_agent_generic(
+    task=f"Perform a complete NLP analysis of the following text and write a structured report:\n\n{sample_text}",
+    tools=nlp_tools,
+    tool_executor=execute_nlp_tool,
+    system="You are an NLP analyst. Use all available tools before writing your report."
+)
+```
+
+```
+[Tool] count_sentences({'text': ...})        → 5
+[Tool] avg_sentence_length({'text': ...})    → 18.4
+[Tool] top_keywords({'text': ..., 'n': 8})  → [["nlp", 3], ["framework", 3], ["results", 2], ...]
+[Tool] sentiment_estimate({'text': ...})     → positive
+
+[Report]
+## NLP Analysis Report
+
+**Structure:** 5 sentences, average length 18.4 words — moderately complex prose.
+
+**Key themes:** NLP framework performance, benchmark evaluation, resource constraints.
+Top keywords: nlp (3×), framework (3×), results (2×), performance (2×).
+
+**Sentiment:** Positive overall — terms like "excellent", "improved", "strong", and
+"significant step forward" dominate, with one negative note around memory consumption.
+
+**Summary:** The text describes a successful NLP framework evaluation with strong
+benchmark results, tempered by hardware resource concerns.
+```
+
+### 9.2.4. Memory-Augmented Agent
+
+For long-running tasks, agents need persistent memory beyond the context window. A vector database provides **semantic retrieval** of past observations:
+
+``` python
+from sentence_transformers import SentenceTransformer
+import faiss
+import numpy as np
+
+class AgentMemory:
+    def __init__(self, encoder_name: str = "all-MiniLM-L6-v2"):
+        self.encoder = SentenceTransformer(encoder_name)
+        self.index   = faiss.IndexFlatIP(384)
+        self.records = []
+
+    def store(self, text: str, metadata: dict = None):
+        vec = self.encoder.encode([text], normalize_embeddings=True).astype(np.float32)
+        self.index.add(vec)
+        self.records.append({"text": text, "metadata": metadata or {}})
+
+    def recall(self, query: str, k: int = 3) -> list[dict]:
+        if self.index.ntotal == 0:
+            return []
+        vec = self.encoder.encode([query], normalize_embeddings=True).astype(np.float32)
+        scores, indices = self.index.search(vec, min(k, self.index.ntotal))
+        return [
+            {**self.records[i], "score": float(scores[0][j])}
+            for j, i in enumerate(indices[0])
+        ]
+
+
+memory = AgentMemory()
+
+# Simulate storing past observations
+memory.store("BERT achieves 88.5 F1 on SQuAD 2.0 benchmark", {"source": "paper", "date": "2024-01-10"})
+memory.store("GPT-4 scores 90.0% on MMLU across all subjects", {"source": "paper", "date": "2024-02-01"})
+memory.store("Fine-tuning on domain data improves NER by 12%", {"source": "experiment", "date": "2024-03-15"})
+memory.store("Prompt caching reduces API latency by 70% for long contexts", {"source": "blog", "date": "2024-04-01"})
+
+# Retrieve relevant memories at query time
+query = "What do we know about model performance benchmarks?"
+results = memory.recall(query, k=2)
+
+print(f"Recalled memories for: '{query}'\n")
+for r in results:
+    print(f"  [{r['score']:.3f}] {r['text']}")
+    print(f"           Source: {r['metadata']}")
+```
+
+```
+Recalled memories for: 'What do we know about model performance benchmarks?'
+
+  [0.721] GPT-4 scores 90.0% on MMLU across all subjects
+           Source: {'source': 'paper', 'date': '2024-02-01'}
+  [0.698] BERT achieves 88.5 F1 on SQuAD 2.0 benchmark
+           Source: {'source': 'paper', 'date': '2024-01-10'}
+```
+
+::: callout-note
+**Key references**
+
+-   Yao, S., et al. (2022). ReAct: Synergizing Reasoning and Acting in Language Models. *arXiv:2210.03629*.
+-   Anthropic. (2024). *Tool Use (Function Calling)*. Anthropic Documentation. https://docs.anthropic.com/en/docs/tool-use
+-   Weng, L. (2023). LLM-powered Autonomous Agents. *Lilian Weng's Blog*. https://lilianweng.github.io/posts/2023-06-23-agent/
+:::

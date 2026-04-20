@@ -1,0 +1,155 @@
+---
+title: "4.2. TF-IDF"
+author: Kamil Filipek
+---
+
+### 4.2.1. Term Frequency--Inverse Document Frequency
+
+TF-IDF (Term Frequency--Inverse Document Frequency) is a statistical method used to estimate the relative importance of a term within a specific document compared to a broader corpus. It integrates two complementary metrics:
+
+1.  **Term Frequency (TF):**\
+    Captures how frequently a given term occurs in a document. Terms that appear more often are assumed to contribute more substantially to the document's thematic content.
+
+$$
+TF(t,d) = \frac{\text{Number of times term } t \text{ appears in document } d}
+{\text{Total number of terms in document } d}
+$$
+
+Where:
+
+-   $t$ --- term,
+-   $d$ --- document.
+
+Equivalently, in compact mathematical notation:
+
+$$
+TF(t,d) = \frac{f_{t,d}}{\sum_{t' \in d} f_{t',d}}
+$$
+
+2.  **Inverse Document Frequency (IDF):**\
+    Adjusts for the overall distribution of a term across the corpus by down-weighting terms that occur in many documents and up-weighting those that are rare. Words that appear in fewer documents are considered more discriminative and semantically informative.
+
+$$
+IDF(t,D) = \log \left( \frac{\text{Total number of documents in corpus } D}
+{\text{Number of documents containing term } t} \right)
+$$
+
+In compact mathematical notation:
+
+$$
+IDF(t,D) = \log \left( \frac{N}{df_t} \right)
+$$
+
+where:
+
+-   $f_{t,d}$ is the raw count of term $t$ in document $d$,
+-   $\sum_{t' \in d} f_{t',d}$ is the total number of terms in document $d$,
+-   $N$ is the total number of documents in corpus $D$,
+-   $df_t$ is the document frequency of term $t$.
+
+By combining local prominence (within-document frequency) with global distinctiveness (across-document rarity), TF-IDF emphasizes terms that are both salient in a particular text and specific to it relative to the corpus.
+
+### 4.2.2. Text to TF-IDF
+
+Let's play with the example:
+
+#### Corpus
+
+D1: data science uses statistics and algorithms\
+D2: big data requires scalable infrastructure\
+D3: statistics is essential for scientific research
+
+Now we extract words from documents: algorithms, and, big, data, essential, for, infrastructure, is, requires, research, scalable, science, scientific, statistics, uses
+
+| Term           | D1  | D2  | D3  |
+|----------------|-----|-----|-----|
+| algorithms     | 1   | 0   | 0   |
+| and            | 1   | 0   | 0   |
+| big            | 0   | 1   | 0   |
+| data           | 1   | 1   | 0   |
+| essential      | 0   | 0   | 1   |
+| for            | 0   | 0   | 1   |
+| infrastructure | 0   | 1   | 0   |
+| is             | 0   | 0   | 1   |
+| requires       | 0   | 1   | 0   |
+| research       | 0   | 0   | 1   |
+| scalable       | 0   | 1   | 0   |
+| science        | 1   | 0   | 0   |
+| scientific     | 0   | 0   | 1   |
+| statistics     | 1   | 0   | 1   |
+| uses           | 1   | 0   | 0   |
+
+------------------------------------------------------------------------
+
+#### Document Frequencies (df)
+
+Example:
+
+-   df(data) = 2
+
+-   df(statistics) = 2
+
+-   df(big) = 1
+
+------------------------------------------------------------------------
+
+#### IDF (using log(N/df), N=3)
+
+-   If df=1 → log(3/1) ≈ 1.098
+
+-   If df=2 → log(3/2) ≈ 0.405
+
+------------------------------------------------------------------------
+
+#### Final TF--IDF Vector (for "data")
+
+-   D1 ≈ 0.0675
+
+-   D2 ≈ 0.081
+
+-   D3 = 0
+
+Thus, each document becomes a **15-dimensional vector** in feature space.
+
+### 4.2.3. Python implementation
+
+``` python
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import pandas as pd
+
+# Corpus
+documents = [
+    "Data science uses statistics and algorithms.",
+    "Big data requires scalable infrastructure.",
+    "Statistics is essential for scientific research."
+]
+
+# Initialize vectorizer
+vectorizer = TfidfVectorizer(lowercase=True)
+
+# Fit and transform
+tfidf_matrix = vectorizer.fit_transform(documents)
+
+# Convert to DataFrame for readability
+df = pd.DataFrame(
+    tfidf_matrix.toarray(),
+    columns=vectorizer.get_feature_names_out(),
+    index=["D1", "D2", "D3"]
+)
+
+print("TF-IDF Matrix:")
+print(df)
+
+# Cosine similarity
+similarity = cosine_similarity(tfidf_matrix)
+
+sim_df = pd.DataFrame(
+    similarity,
+    columns=["D1", "D2", "D3"],
+    index=["D1", "D2", "D3"]
+)
+
+print("\nCosine Similarity Matrix:")
+print(sim_df)
+```

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kamil Filipek">
+
+<title>3.1. Data Engineering</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Data_eng_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Data_eng_files/libs/quarto-html/quarto.js"></script>
+<script src="Data_eng_files/libs/quarto-html/popper.min.js"></script>
+<script src="Data_eng_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Data_eng_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Data_eng_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Data_eng_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Data_eng_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Data_eng_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Data_eng_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">3.1. Data Engineering</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kamil Filipek </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>In the context of NLP,&nbsp;<strong>data engineering</strong>&nbsp;is responsible for the entire lifecycle of text and speech data, from acquisition to the moment it’s ready for use by models. This is a crucial, often invisible, stage that ensures machine learning (ML) and large language models (LLM) receive high-quality data, which directly impacts their performance and accuracy. Data engineering could undoubtedly be the subject of an entire book. While this text won’t cover it in that much detail, it is impossible to move on to further NLP analysis without addressing a few key data engineering steps. <strong>The purpose of this chapter is to familiarize the reader with the fundamental methods and techniques of data engineering that are essential for more advanced work in the field of NLP.</strong></p>
+<p><strong>3.1. Initial Preprocessing</strong></p>
+<p>Let’s assume we have already acquired the text data [see table below for potential data sources]. Now let’s look at a few basic text processing tasks, emphasizing that, depending on the goal of the analysis, not all steps should be included in our work.</p>
+<p><strong>3.1.1. Lowercases</strong></p>
+<p>To proceed to the preliminary analysis stage, it is essential to convert the text to lowercase. Although letter case may occasionally carry meaning, in most NLP applications it is insignificant. Lowercasing ensures that words such as&nbsp;<em>Apple</em>and&nbsp;<em>apple</em>&nbsp;are treated as the same token, thereby reducing unnecessary duplication in the vocabulary. This process improves consistency, lowers the dimensionality of the text representation, and facilitates more efficient analysis. As a result, in our descriptive statistics words will not appear as separate entities.</p>
+<p>In python transformacja do lowercase jest bardzo prosta:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example text</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="st">"Apple is Different from apple."</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Converting to lowercase</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>lower_text <span class="op">=</span> text.lower()</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(lower_text)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>apple is different from apple.</code></pre>
+<p><img src="graphics/bulb.png" class="img-fluid" width="22"> <strong>Remember that a text object can be much larger than a single sentence; for example, it can be an entire book uploaded from a .txt file.</strong></p>
+<p>If you are working with a&nbsp;<strong>list of strings</strong>&nbsp;(e.g., a dataset), you can apply the same operation with a list comprehension:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>texts <span class="op">=</span> [<span class="st">"Natural Language Processing"</span>, <span class="st">"AI Open Tool"</span>, <span class="st">"Descriptive Statistics"</span>]</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>lower_texts <span class="op">=</span> [t.lower() <span class="cf">for</span> t <span class="kw">in</span> texts]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(lower_texts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>['natural language processing', 'ai open tool', 'descriptive statistics']</code></pre>
+<p><strong>3.1.2. Stopwords</strong></p>
+<p>Stopwords are common words such as&nbsp;<em>the</em>,&nbsp;<em>is</em>, or&nbsp;<em>and</em>&nbsp;that occur very frequently in a language but usually carry little semantic meaning. Removing them helps reduce noise in the data, decreases the size of the vocabulary, and improves the efficiency of text processing. In many NLP tasks, eliminating stopwords allows algorithms to focus on the more informative terms that contribute to the actual meaning of the text.</p>
+<p><strong>1.2. Exploratory Data Analysis</strong></p>
+<p>In the context of&nbsp;<strong>text corpora</strong>, Exploratory Data Analysis (EDA) focuses on examining linguistic structures and distributions before applying more advanced natural language processing techniques.</p>
+<p>Standard methods include&nbsp;<strong>tokenization</strong>&nbsp;at different levels (characters, words, sentences),&nbsp;<strong>frequency analysis</strong>&nbsp;of tokens,&nbsp;<strong>n-gram extraction</strong>, and&nbsp;<strong>visualization</strong>&nbsp;of distributions through word clouds or Zipf plots. These methods help identify vocabulary richness, stylistic variation, and anomalies such as noisy characters, rare tokens, or stopword dominance. For instance, word frequency distributions often follow&nbsp;<strong>Zipf’s law</strong>, and deviations can indicate corpus bias or preprocessing issues. Collocation analysis (e.g., bigrams like&nbsp;<em>artificial intelligence</em>&nbsp;or&nbsp;<em>climate change</em>) reveals multiword expressions that function as meaningful units. In Python, such analyses can be performed with&nbsp;<strong>NLTK</strong>,&nbsp;<strong>spaCy</strong>, and&nbsp;<strong>wordcloud</strong>, offering rapid insights into the structural and semantic characteristics of textual data (Manning &amp; Schütze, 1999; Jurafsky &amp; Martin, 2023).</p>
+<p><strong>1.2. Structure and Representation of Text</strong></p>
+<p>In natural language processing, the distinction between&nbsp;<strong>unstructured</strong>&nbsp;and&nbsp;<strong>semi-structured textual data</strong>&nbsp;is fundamental.</p>
+<ul>
+<li><p><strong>Unstructured</strong> text refers to free-form content such as novels, social media posts, or transcribed speech, where linguistic meaning is conveyed without explicit organizational markers beyond the linguistic units themselves.</p></li>
+<li><p><strong>Semi-structured</strong> text, by contrast, embeds linguistic material within a predefined schema or markup, as in&nbsp;<strong>tables, XML tags, or JSON objects</strong>, which provide contextual cues that can be exploited computationally.</p></li>
+</ul>
+<p>A critical first step in analyzing either type of data is&nbsp;<strong>tokenization</strong>, which can be carried out at different levels - splitting into:</p>
+<p>- <strong>characters</strong>&nbsp;(useful in languages without clear word boundaries, e.g., Chinese),&nbsp;</p>
+<p><strong>- words</strong>&nbsp;(the most common unit in information retrieval and sentiment analysis), or&nbsp;</p>
+<p><strong>- sentences</strong>&nbsp;(often applied in discourse analysis or machine translation).</p>
+<p>The&nbsp;<strong>formatting and document structure</strong>&nbsp;of a text play an equally important role. For instance, recognizing&nbsp;<strong>paragraph boundaries</strong>&nbsp;can guide topic segmentation, while the alignment of rows and columns in&nbsp;<strong>tables</strong>&nbsp;supports relation extraction. Similarly, XML or JSON provide hierarchical, machine-readable metadata that enriches the raw linguistic signal with structural meaning. Thus, effective text processing requires both sensitivity to tokenization choices and an awareness of the broader representational framework in which the text is embedded (Manning &amp; Schütze, 1999; Jurafsky &amp; Martin, 2023).</p>
+<table class="table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 39%">
+<col style="width: 49%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Aspect</strong></th>
+<th><strong>Unstructured Text</strong></th>
+<th><strong>Semi-structured Text</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Definition</strong></td>
+<td>Content written in free form, without a formal schema or metadata.</td>
+<td>Text that contains natural language but is embedded in a defined structure (e.g., tags, key–value pairs).</td>
+</tr>
+<tr class="even">
+<td><strong>Examples</strong></td>
+<td>Social media posts, newspaper articles, novels, conversation transcripts.</td>
+<td><strong>XML</strong>&nbsp;documents (e.g., PubMed articles),&nbsp;<strong>JSON</strong>&nbsp;files with product reviews, system logs with metadata fields, tables (Excel, CSV).</td>
+</tr>
+<tr class="odd">
+<td><strong>Tokenization</strong></td>
+<td>Typically at the&nbsp;<strong>word</strong>&nbsp;and&nbsp;<strong>sentence</strong>&nbsp;levels; in languages without spaces – at the&nbsp;<strong>character</strong>level.</td>
+<td>Tokenization may also include&nbsp;<strong>fields</strong>&nbsp;(e.g., keys in JSON),&nbsp;<strong>table elements</strong>, or&nbsp;<strong>XML tags</strong>.</td>
+</tr>
+<tr class="even">
+<td><strong>Role of structure</strong></td>
+<td>Structure emerges mainly from writing conventions (e.g., paragraph divisions).</td>
+<td>Structure is imposed by the format (e.g., XML hierarchy, rows and columns in tables).</td>
+</tr>
+<tr class="odd">
+<td><strong>Advantages for NLP</strong></td>
+<td>Rich semantic and contextual content; suitable for qualitative analysis and training large language models.</td>
+<td>Facilitates automatic information extraction; metadata supports classification and data integration.</td>
+</tr>
+<tr class="even">
+<td><strong>Challenges</strong></td>
+<td>High ambiguity, lack of clear unit boundaries (e.g., sentences, words).</td>
+<td>Requires interpreting both content and structure; prone to formatting errors (e.g., unclosed XML tags).</td>
+</tr>
+<tr class="odd">
+<td><strong>Typical NLP applications</strong></td>
+<td>Sentiment analysis, named entity recognition (NER), machine translation.</td>
+<td>Semantic search in XML documents, information extraction from medical tables, data analytics from APIs (JSON).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>1.3. Contextual Layers and Metadata</strong></p>
+<ul>
+<li><p>Document-level information: author, timestamp, genre, domain</p></li>
+<li><p>Linguistic layers: morphology, syntax, semantics, pragmatics</p></li>
+<li><p>Importance of preserving context in corpora for interpretation</p></li>
+</ul>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

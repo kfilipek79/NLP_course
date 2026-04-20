@@ -1,0 +1,47 @@
+---
+title: "2.5. From Theory to Application"
+author: Kamil Filipek
+---
+
+### 2.5.1. Why Linguistic Theory Still Matters in NLP
+
+Despite the dominance of data-driven approaches and the remarkable success of large language models, linguistic theory remains indispensable for Natural Language Processing. Linguistics provides a systematic understanding of the structure and variability of human languages, offering conceptual tools to model phenomena such as syntax, semantics, and pragmatics that are often only approximated by statistical learning. **Without theoretical grounding, NLP systems risk overfitting to surface-level regularities, reproducing biases, or failing in out-of-distribution contexts** (Chomsky, 1965; Jurafsky & Martin, 2023). Moreover, insights from linguistic theory help in designing interpretable representations, guiding annotation schemes, and ensuring cross-linguistic generalizability beyond English-centric benchmarks (Bender, 2009; Haspelmath, 2021). In this sense, linguistic theory does not compete with machine learning but complements it---providing the conceptual scaffolding necessary for building more robust, transparent, and socially responsible language technologies.
+
+### 2.5.2. Limits of Purely Statistical Approaches
+
+Purely statistical approaches to language, including many current large-scale neural models, excel at pattern recognition but struggle with deeper linguistic generalization. These systems are trained on massive text corpora, learning to predict the most probable sequence of tokens. While this yields impressive fluency, it does not guarantee an understanding of meaning, reference, or communicative intent (Bender & Koller, 2020). In practice, statistical models often fail when confronted with inputs outside their training distribution, revealing their reliance on memorized associations rather than systematic reasoning.
+
+A central limitation concerns **multilinguality**. Most NLP models are trained on disproportionately large amounts of English or other high-resource languages, which biases their performance across linguistic contexts (Joshi et al., 2020). For low-resource languages, purely statistical learning cannot compensate for the absence of sufficient textual data, leading to poor coverage, hallucinations, or incorrect transfer from unrelated languages. This imbalance perpetuates digital inequality and highlights the need for theoretical and typological insights to guide model design in multilingual settings.
+
+Another limitation lies in **lack of interpretability**. Statistical models, particularly deep neural networks, operate as black boxes with millions or billions of parameters. Their predictions are difficult to explain in terms of underlying linguistic structures, which complicates debugging, error analysis, and trust in real-world applications (Lipton, 2018). Moreover, without interpretability, biases and stereotypes embedded in training data can propagate unchecked, raising ethical and societal concerns.
+
+Finally, purely statistical approaches face challenges in **compositionality and reasoning**. Human language is productive and recursive: new sentences are constantly generated from finite rules. Statistical models often fail to generalize compositional structures (e.g., understanding nested clauses or scope in logical operators) unless explicitly guided by linguistic constraints (Lake & Baroni, 2018). This limits their ability to support robust inference, dialogue consistency, or domain transfer.
+
+Taken together, these limitations suggest that statistical learning, though powerful, is insufficient on its own. Addressing multilingual inequality, interpretability, and compositional reasoning requires a stronger integration of linguistic theory, cognitive insights, and socially responsible design.
+
+| **Limitation**                         | **Description**                                                                                                                                                                                          | **Key References**     |
+|----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|
+| **Out-of-distribution generalization** | Models rely on memorized associations from training data and often fail when confronted with novel or unexpected inputs. They capture surface-level patterns without deeper semantic understanding.      | Bender & Koller (2020) |
+| **Multilingual inequality**            | Training data is heavily skewed toward English and a few high-resource languages, leading to poor performance in low-resource contexts. Purely statistical learning cannot compensate for data scarcity. | Joshi et al. (2020)    |
+| **Lack of interpretability**           | Neural networks function as black boxes with millions of parameters. Predictions cannot easily be mapped to linguistic structures, complicating debugging, trust, and bias detection.                    | Lipton (2018)          |
+| **Compositionality and reasoning**     | Human language is recursive and generative, but statistical models often fail to capture compositional rules, leading to errors in logical inference, nested clauses, or scope phenomena.                | Lake & Baroni (2018)   |
+
+### 2.5.3. Towards Hybrid Models
+
+The limitations of purely statistical approaches highlight the need for hybrid models that integrate the strengths of machine learning with insights from linguistic theory and cognitive science. Hybrid approaches aim to combine the pattern-recognition capacity of statistical systems with the structured, rule-based reasoning that has long been central to linguistics and symbolic AI. By doing so, they offer a path toward models that are both powerful and interpretable.
+
+One advantage of hybrid systems is their potential to **improve generalization**. Whereas purely statistical models often fail with out-of-distribution inputs, linguistically informed constraints---such as syntactic parsers, morphological analyzers, or semantic role labeling---can provide scaffolding that ensures outputs remain consistent with human language structures (Marcus, 2020). This reduces the risk of brittle performance and supports more robust cross-domain applications.
+
+Hybrid models also address the **multilingual challenge**. By integrating knowledge of typology and grammar, systems can better handle the diversity of human languages, particularly low-resource ones. Approaches such as rule-guided transfer learning or leveraging universal dependencies show how linguistic structure can inform statistical learning in a way that benefits underrepresented languages (Ponti et al., 2019).
+
+Another key advantage is **interpretability**. Embedding explicit linguistic knowledge into model architectures allows for more transparent decision-making. For example, models that incorporate syntactic trees or semantic frames produce outputs that can be analyzed in terms of established linguistic categories, making errors easier to diagnose and biases easier to identify (Friedrich & Palmer, 2014).
+
+Finally, hybrid systems open the door to **cognitive plausibility** and **human--AI collaboration**. By aligning models with how humans represent and process language, hybrid approaches not only achieve better performance but also support applications in education, healthcare, and communication technologies that demand reliability and explainability.
+
+In this sense, hybrid models are not a step backward to symbolic AI, but a step forward toward **integrative architectures**that recognize the value of both data-driven learning and theoretical insights. They hold the promise of building NLP systems that are more accurate, fair, and socially responsible.
+
+Research has shown that such hybrid models improve **fluency and accuracy**, particularly in low-resource scenarios (Chen et al., 2017; Stahlberg & Byrne, 2019). They also reduce common translation errors such as wrong word order in typologically different languages (e.g., English--Japanese).
+
+-   **Chen, B., Huang, H., Chiang, D., & Knight, K. (2017).** Improved Neural Machine Translation with a Syntax-Aware Encoder and Decoder. *Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (ACL 2017)*, 1936--1945
+
+-   **Stahlberg, F., & Byrne, B. (2019).** On NMT search errors and model errors: Cat got your tongue? *Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL 2019)*, 335--346. 

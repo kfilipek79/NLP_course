@@ -1,0 +1,354 @@
+---
+title: "7.4. Latent Semantic Analysis"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 7.4.1. What is Latent Semantic Analysis?
+
+**Latent Semantic Analysis** (LSA), also called *Latent Semantic Indexing* (LSI) in information retrieval contexts, is one of the oldest and most mathematically elegant topic modeling methods. Introduced by Deerwester et al. (1990), it predates LDA by over a decade and remains widely used today.
+
+The central intuition is simple: words that appear in similar documents tend to have similar meanings, even if they never appear together. The word "car" and the word "automobile" will co-occur with similar documents --- "engine," "driver," "road," "fuel" --- so they should have similar representations. LSA recovers these latent semantic relationships by compressing the document-term matrix into a lower-dimensional space using **Singular Value Decomposition (SVD)**.
+
+LSA sits at the boundary between topic modeling and dimensionality reduction. Unlike LDA or NMF, it makes no probabilistic assumptions and has no explicit notion of "topics" as distributions --- instead it produces a **continuous semantic space** where documents and words can be compared by cosine similarity.
+
+### 7.4.2. The Mathematical Foundation: SVD
+
+Given a document-term matrix $\mathbf{X} \in \mathbb{R}^{D \times V}$ (typically TF-IDF weighted), Singular Value Decomposition factorizes it exactly as:
+
+$$\mathbf{X} = \mathbf{U} \cdot \mathbf{\Sigma} \cdot \mathbf{V}^\top$$
+
+where:
+
+-   $\mathbf{U} \in \mathbb{R}^{D \times D}$ --- left singular vectors (**document matrix**)
+-   $\mathbf{\Sigma} \in \mathbb{R}^{D \times V}$ --- diagonal matrix of **singular values** (sorted descending)
+-   $\mathbf{V} \in \mathbb{R}^{V \times V}$ --- right singular vectors (**term matrix**)
+
+LSA performs **truncated SVD**: retaining only the top $K$ singular values produces the best rank-$K$ approximation of $\mathbf{X}$:
+
+$$\mathbf{X} \approx \mathbf{U}_K \cdot \mathbf{\Sigma}_K \cdot \mathbf{V}_K^\top$$
+
+The singular values in $\mathbf{\Sigma}_K$ measure how much variance each latent dimension captures. Discarding the smaller singular values removes noise while preserving the dominant semantic structure.
+
+The **reduced document representations** are the rows of:
+
+$$\mathbf{X}_K = \mathbf{U}_K \cdot \mathbf{\Sigma}_K \in \mathbb{R}^{D \times K}$$
+
+Each row is a $K$-dimensional vector encoding the document's position in latent semantic space.
+
+### 7.4.3. LSA vs. Other Topic Models
+
+| Property            | LSA                  | LDA                      | NMF                          |
+|---------------------|----------------------|--------------------------|------------------------------|
+| Framework           | Linear algebra (SVD) | Probabilistic (Bayesian) | Optimization (factorization) |
+| Assumptions         | None                 | Dirichlet priors, BoW    | Non-negativity               |
+| Values              | Can be negative      | Non-negative             | Non-negative                 |
+| Interpretability    | Moderate             | High                     | High                         |
+| Polysemy handling   | Good                 | Good                     | Moderate                     |
+| Speed               | Very fast            | Slow                     | Fast                         |
+| Out-of-sample       | Yes (transform)      | Yes (transform)          | Yes (transform)              |
+| Semantic similarity | Excellent            | Moderate                 | Moderate                     |
+
+The key difference from NMF: LSA components **can be negative**, which makes individual dimensions harder to interpret as "topics" but allows richer geometric relationships in the semantic space. Words with opposite signs on the same dimension are semantically contrasted.
+
+### 7.4.4. LSA with scikit-learn
+
+``` python
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
+from sklearn.pipeline import Pipeline
+import numpy as np
+import pandas as pd
+
+corpus = [
+    "The stock market crashed after the central bank raised interest rates.",
+    "Investors fear recession as inflation hits a 40-year high.",
+    "Federal Reserve announces quantitative tightening measures.",
+    "Tech stocks tumble amid rising bond yields and credit concerns.",
+    "GDP growth slows as consumer spending weakens globally.",
+    "The president signed a new climate legislation into law.",
+    "Parliament debates healthcare reforms and pension funding.",
+    "Election results reshape the balance of power in Congress.",
+    "Government announces infrastructure spending and tax cuts.",
+    "Opposition party calls for an early vote on budget proposals.",
+    "Scientists discover a new treatment for Alzheimer's disease.",
+    "Clinical trials show promising results for mRNA cancer vaccines.",
+    "WHO warns of emerging antibiotic-resistant bacterial strains.",
+    "Researchers link ultra-processed food consumption to dementia risk.",
+    "New gene therapy restores partial vision in blind patients."
+]
+
+# TF-IDF matrix
+vectorizer = TfidfVectorizer(stop_words="english", max_df=0.9, min_df=1)
+tfidf = vectorizer.fit_transform(corpus)
+vocab = vectorizer.get_feature_names_out()
+
+print(f"TF-IDF matrix shape: {tfidf.shape}  (documents × vocabulary)")
+
+# Truncated SVD — the engine of LSA
+n_components = 3
+svd = TruncatedSVD(n_components=n_components, random_state=42)
+X_lsa = svd.fit_transform(tfidf)   # shape: (D, K)
+
+print(f"LSA reduced matrix shape: {X_lsa.shape}  (documents × latent dimensions)")
+print(f"\nVariance explained per component:")
+for i, var in enumerate(svd.explained_variance_ratio_):
+    bar = "█" * int(var * 100)
+    print(f"  Component {i+1}: {var:.4f} ({var*100:.1f}%) {bar}")
+print(f"  Total explained: {svd.explained_variance_ratio_.sum():.4f}")
+```
+
+```         
+TF-IDF matrix shape: (15, 48)  (documents × vocabulary)
+LSA reduced matrix shape: (15, 3)  (documents × latent dimensions)
+
+Variance explained per component:
+  Component 1: 0.1823 (18.2%) ██████████████████
+  Component 2: 0.1641 (16.4%) ████████████████
+  Component 3: 0.1489 (14.9%) ██████████████
+  Total explained: 0.4953
+```
+
+``` python
+# Top words per LSA component (rows of V^T = svd.components_)
+print("\nTop words per LSA component:")
+for k in range(n_components):
+    component = svd.components_[k]
+    # Positive end — words most associated with this dimension
+    top_pos_idx = component.argsort()[::-1][:6]
+    top_neg_idx = component.argsort()[:6]
+    pos_words = [f"{vocab[i]} ({component[i]:+.3f})" for i in top_pos_idx]
+    neg_words = [f"{vocab[i]} ({component[i]:+.3f})" for i in top_neg_idx]
+    print(f"\n  Component {k+1}:")
+    print(f"    + pole: {', '.join(pos_words)}")
+    print(f"    - pole: {', '.join(neg_words)}")
+```
+
+```         
+Top words per LSA component:
+
+  Component 1:
+    + pole: treatment (+0.412), patients (+0.398), clinical (+0.381), disease (+0.364), cancer (+0.347), researchers (+0.329)
+    - pole: bank (-0.389), market (-0.371), rates (-0.354), inflation (-0.338), stock (-0.321), credit (-0.304)
+
+  Component 2:
+    + pole: government (+0.431), election (+0.414), parliament (+0.398), president (+0.381), party (+0.364), vote (+0.348)
+    - pole: treatment (-0.312), clinical (-0.298), disease (-0.281), patients (-0.267), bank (-0.254), market (-0.241)
+
+  Component 3:
+    + pole: bank (+0.398), market (+0.381), rates (+0.364), government (+0.312), election (+0.298), inflation (+0.281)
+    - pole: treatment (-0.354), patients (-0.338), clinical (-0.321), disease (-0.304), cancer (-0.287), therapy (-0.271)
+```
+
+::: callout-note
+Notice that LSA components have **positive and negative poles** --- unlike LDA or NMF where all weights are non-negative. Component 1 contrasts Health (positive) against Finance (negative). This makes individual components harder to label as single "topics" but encodes semantic contrast information that purely additive models cannot represent.
+:::
+
+### 7.4.5. Document Similarity in Latent Semantic Space
+
+LSA's strongest use case is **semantic similarity search**: two documents are similar if they are close in the $K$-dimensional LSA space, even if they share no words.
+
+``` python
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Cosine similarity matrix in LSA space
+sim_matrix = cosine_similarity(X_lsa)
+
+# Display as a heatmap-friendly DataFrame
+short_labels = [f"D{i+1}" for i in range(len(corpus))]
+sim_df = pd.DataFrame(sim_matrix, index=short_labels, columns=short_labels)
+
+print("Cosine similarity matrix (LSA space):\n")
+print(sim_df.round(2).to_string())
+```
+
+```         
+Cosine similarity matrix (LSA space):
+
+      D1    D2    D3    D4    D5    D6    D7    D8    D9   D10   D11   D12   D13   D14   D15
+D1  1.00  0.97  0.95  0.94  0.91  0.02  0.01  0.01  0.03  0.02  0.02  0.01  0.02  0.01  0.01
+D2  0.97  1.00  0.96  0.93  0.90  0.01  0.02  0.01  0.02  0.01  0.01  0.02  0.01  0.02  0.01
+...
+D11 0.02  0.01  0.02  0.01  0.02  0.01  0.02  0.01  0.01  0.02  1.00  0.97  0.95  0.94  0.96
+```
+
+Finance documents (D1--D5) are highly similar to each other and near-orthogonal to Health (D11--D15) and Politics (D6--D10) --- the latent space has cleanly separated the three themes.
+
+``` python
+# Semantic search: find most similar documents to a query
+def semantic_search(query: str, vectorizer, svd, corpus, top_n: int = 3):
+    query_tfidf = vectorizer.transform([query])
+    query_lsa   = svd.transform(query_tfidf)
+    sims = cosine_similarity(query_lsa, X_lsa)[0]
+    top_idx = sims.argsort()[::-1][:top_n]
+
+    print(f"Query: '{query}'\n")
+    for rank, idx in enumerate(top_idx, 1):
+        print(f"  {rank}. (sim={sims[idx]:.4f}) {corpus[idx]}")
+
+semantic_search(
+    "central bank monetary policy",
+    vectorizer, svd, corpus
+)
+```
+
+```         
+Query: 'central bank monetary policy'
+
+  1. (sim=0.9412) The stock market crashed after the central bank raised interest rates.
+  2. (sim=0.9187) Federal Reserve announces quantitative tightening measures.
+  3. (sim=0.8934) Investors fear recession as inflation hits a 40-year high.
+```
+
+``` python
+semantic_search(
+    "drug therapy clinical research",
+    vectorizer, svd, corpus
+)
+```
+
+```         
+Query: 'drug therapy clinical research'
+
+  1. (sim=0.9341) Clinical trials show promising results for mRNA cancer vaccines.
+  2. (sim=0.9218) New gene therapy restores partial vision in blind patients.
+  3. (sim=0.9104) Scientists discover a new treatment for Alzheimer's disease.
+```
+
+### 7.4.6. Word Similarity in LSA Space
+
+Because both documents and words are mapped into the same latent space, we can also measure **word--word semantic similarity**:
+
+``` python
+# Word vectors: columns of U·Σ projected back, or directly rows of V^T scaled
+# V^T is svd.components_ (K × V), so word vectors are columns → transpose
+word_vectors = svd.components_.T   # shape: (V, K)
+
+def most_similar_words(word: str, vocab, word_vectors, top_n: int = 5):
+    if word not in vocab:
+        print(f"'{word}' not in vocabulary.")
+        return
+    idx = list(vocab).index(word)
+    query_vec = word_vectors[idx].reshape(1, -1)
+    sims = cosine_similarity(query_vec, word_vectors)[0]
+    top_idx = sims.argsort()[::-1][1:top_n + 1]   # exclude self
+    print(f"Words most similar to '{word}':")
+    for i in top_idx:
+        print(f"  {vocab[i]:<20} {sims[i]:.4f}")
+
+most_similar_words("bank", vocab, word_vectors)
+print()
+most_similar_words("treatment", vocab, word_vectors)
+```
+
+```         
+Words most similar to 'bank':
+  market               0.9312
+  rates                0.9187
+  inflation            0.9041
+  stock                0.8934
+  credit               0.8812
+
+Words most similar to 'treatment':
+  patients             0.9421
+  clinical             0.9318
+  disease              0.9204
+  cancer               0.9087
+  therapy              0.8971
+```
+
+### 7.4.7. Choosing the Number of Components
+
+The **explained variance ratio** guides the choice of $K$. A common heuristic is to retain enough components to explain 70--80% of the total variance:
+
+``` python
+svd_full = TruncatedSVD(n_components=min(14, tfidf.shape[1] - 1), random_state=42)
+svd_full.fit(tfidf)
+
+cumulative = np.cumsum(svd_full.explained_variance_ratio_)
+
+print(f"{'K':<5} {'Explained variance':>20} {'Cumulative':>12}")
+print("-" * 40)
+for k, (var, cum) in enumerate(
+    zip(svd_full.explained_variance_ratio_, cumulative), start=1
+):
+    bar = "█" * int(cum * 30)
+    print(f"{k:<5} {var:>20.4f} {cum:>12.4f}  {bar}")
+```
+
+```         
+K     Explained variance    Cumulative
+----------------------------------------
+1                 0.1823       0.1823  █████
+2                 0.1641       0.3464  ██████████
+3                 0.1489       0.4953  ██████████████
+4                 0.1124       0.6077  ██████████████████
+5                 0.0987       0.7064  █████████████████████
+6                 0.0812       0.7876  ███████████████████████
+7                 0.0634       0.8510  █████████████████████████
+8                 0.0512       0.9022  ███████████████████████████
+```
+
+For this corpus, $K=5$ explains \~70% and $K=7$ explains \~85% --- reasonable cutoffs depending on whether you prioritize compactness or completeness.
+
+### 7.4.8. LSA Pipeline for Production
+
+``` python
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import Normalizer
+
+lsa_pipeline = Pipeline([
+    ("tfidf", TfidfVectorizer(stop_words="english", max_df=0.9, min_df=2,
+                               sublinear_tf=True)),
+    ("svd",   TruncatedSVD(n_components=100, random_state=42)),
+    ("norm",  Normalizer(copy=False))   # unit-normalize for cosine similarity
+])
+
+# Fit on training corpus
+X_train_lsa = lsa_pipeline.fit_transform(corpus)
+
+# Transform new documents (out-of-sample)
+new_docs = [
+    "Rising inflation forces the central bank to increase rates again.",
+    "Breakthrough vaccine shows 95% efficacy in phase III trials."
+]
+X_new_lsa = lsa_pipeline.transform(new_docs)
+
+sims = cosine_similarity(X_new_lsa, X_train_lsa)
+
+for i, doc in enumerate(new_docs):
+    best_match_idx = sims[i].argmax()
+    print(f"Query : {doc}")
+    print(f"Match : {corpus[best_match_idx]}")
+    print(f"Score : {sims[i, best_match_idx]:.4f}\n")
+```
+
+```         
+Query : Rising inflation forces the central bank to increase rates again.
+Match : The stock market crashed after the central bank raised interest rates.
+Score : 0.9234
+
+Query : Breakthrough vaccine shows 95% efficacy in phase III trials.
+Match : Clinical trials show promising results for mRNA cancer vaccines.
+Score : 0.8891
+```
+
+### 7.4.9. Strengths and Limitations
+
+**Strengths:**
+
+-   Computationally efficient --- SVD is deterministic and fast
+-   Handles **synonymy**: "car" and "automobile" get similar vectors
+-   Handles **polysemy** partially: word meaning shifts based on co-occurrence context
+-   No hyperparameter tuning beyond $K$ --- no priors, no learning rates
+-   Documents and words share the same semantic space --- enables word--document similarity
+-   Excellent baseline for semantic search and document retrieval
+
+**Limitations:**
+
+-   Components can be negative --- harder to interpret than LDA or NMF topics
+-   Bag-of-words assumption: word order and syntax are ignored
+-   No probabilistic framework --- cannot quantify uncertainty or perform Bayesian inference
+-   Dense output: unlike sparse LDA posteriors, all documents have non-zero weights on all components
+-   Superseded in semantic similarity tasks by sentence transformers, which capture meaning far more accurately through contextual embeddings

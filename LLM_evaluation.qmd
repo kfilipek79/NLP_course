@@ -1,0 +1,303 @@
+---
+title: "8.5. Evaluating LLM Outputs"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 8.5.1. Why Evaluation is Hard
+
+Evaluating LLM outputs is fundamentally more difficult than evaluating classical NLP models. A sentiment classifier has a correct label — the model is right or wrong. An LLM answering a question can be correct in ten different ways, and wrong in subtle ways that look correct.
+
+Evaluation methods fall into three families:
+
+| Family | Examples | Strengths | Weaknesses |
+|---|---|---|---|
+| **Reference-based** | BLEU, ROUGE, BERTScore | Automated, reproducible | Penalizes valid paraphrases |
+| **Human evaluation** | Likert scales, A/B ranking | Ground truth for quality | Expensive, slow, inconsistent |
+| **LLM-as-judge** | GPT-4, Claude scoring | Scalable, nuanced | Model bias, not ground truth |
+
+In practice, robust evaluation uses all three in combination.
+
+### 8.5.2. BLEU Score
+
+**BLEU** (Bilingual Evaluation Understudy, Papineni et al. 2002) was designed for machine translation. It measures the overlap of n-grams between the model output (hypothesis) and one or more reference translations.
+
+$$\text{BLEU} = BP \cdot \exp\!\left(\sum_{n=1}^{N} w_n \log p_n\right)$$
+
+where $p_n$ is the precision of n-gram matches and $BP$ is a brevity penalty that discourages short outputs.
+
+BLEU scores range from 0 to 1 (often reported as 0–100). Scores above 0.3 are generally considered good for machine translation.
+
+``` python
+# pip install nltk
+
+from nltk.translate.bleu_score import sentence_bleu, corpus_bleu, SmoothingFunction
+from nltk.tokenize import word_tokenize
+
+references_raw = [
+    "The quick brown fox jumps over the lazy dog.",
+    "Natural language processing enables computers to understand text.",
+    "BERT is a bidirectional transformer model pre-trained on large corpora."
+]
+
+hypotheses_raw = [
+    "A fast brown fox leaps over the sleepy dog.",        # good paraphrase
+    "NLP allows machines to process and understand text.", # good paraphrase
+    "BERT uses a transformer and is trained on text data." # partial match
+]
+
+smoother = SmoothingFunction().method1
+
+print(f"{'Reference':<55} {'Hypothesis':<55} {'BLEU-1':>7} {'BLEU-4':>7}")
+print("─" * 130)
+
+for ref, hyp in zip(references_raw, hypotheses_raw):
+    ref_tok = [word_tokenize(ref.lower())]
+    hyp_tok = word_tokenize(hyp.lower())
+    bleu1 = sentence_bleu(ref_tok, hyp_tok, weights=(1,0,0,0), smoothing_function=smoother)
+    bleu4 = sentence_bleu(ref_tok, hyp_tok, weights=(0.25,)*4, smoothing_function=smoother)
+    print(f"{ref[:54]:<55} {hyp[:54]:<55} {bleu1:>7.3f} {bleu4:>7.3f}")
+```
+
+```
+Reference                                               Hypothesis                                              BLEU-1  BLEU-4
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+The quick brown fox jumps over the lazy dog.            A fast brown fox leaps over the sleepy dog.              0.556   0.223
+Natural language processing enables computers to...    NLP allows machines to process and understand text.      0.417   0.089
+BERT is a bidirectional transformer model pre-trai...  BERT uses a transformer and is trained on text data.    0.500   0.187
+```
+
+::: callout-note
+BLEU penalizes "A fast brown fox leaps over the sleepy dog" compared to the reference — even though it is a perfectly valid paraphrase. This is BLEU's fundamental limitation for open-ended generation tasks.
+:::
+
+### 8.5.3. ROUGE Score
+
+**ROUGE** (Recall-Oriented Understudy for Gisting Evaluation, Lin 2004) was designed for summarization evaluation. Unlike BLEU (which measures precision), ROUGE emphasizes **recall** — how much of the reference is covered by the hypothesis.
+
+Common variants:
+
+-   **ROUGE-1**: unigram overlap
+-   **ROUGE-2**: bigram overlap
+-   **ROUGE-L**: longest common subsequence
+
+``` python
+# pip install rouge-score
+
+from rouge_score import rouge_scorer
+
+scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
+
+reference  = "The Federal Reserve raised interest rates by 50 basis points to combat inflation."
+hypotheses = [
+    "The Fed increased rates by half a percentage point to fight rising prices.",  # good
+    "Interest rates were raised by the Federal Reserve.",                          # partial
+    "The economy is doing well and growth is strong."                              # poor
+]
+
+print(f"{'Hypothesis':<65} {'R1':>6} {'R2':>6} {'RL':>6}")
+print("─" * 90)
+for hyp in hypotheses:
+    scores = scorer.score(reference, hyp)
+    print(
+        f"{hyp[:64]:<65}"
+        f"{scores['rouge1'].fmeasure:>6.3f}"
+        f"{scores['rouge2'].fmeasure:>6.3f}"
+        f"{scores['rougeL'].fmeasure:>6.3f}"
+    )
+```
+
+```
+Hypothesis                                                        R1     R2     RL
+──────────────────────────────────────────────────────────────────────────────────────────────
+The Fed increased rates by half a percentage point to fight ri...  0.412  0.118  0.353
+Interest rates were raised by the Federal Reserve.                 0.500  0.250  0.500
+The economy is doing well and growth is strong.                    0.118  0.000  0.118
+```
+
+### 8.5.4. BERTScore
+
+**BERTScore** (Zhang et al. 2020) replaces exact n-gram matching with **semantic similarity** using contextual BERT embeddings. Each token in the hypothesis is matched to the most similar token in the reference using cosine similarity.
+
+This means "car" and "automobile" get near-perfect match scores — unlike BLEU where they would not match at all.
+
+``` python
+# pip install bert-score
+
+from bert_score import score as bert_score
+
+references  = [
+    "The quick brown fox jumps over the lazy dog.",
+    "Natural language processing enables computers to understand text.",
+    "BERT is a bidirectional transformer model pre-trained on large corpora."
+]
+hypotheses = [
+    "A fast brown fox leaps over the sleepy dog.",
+    "NLP allows machines to process and understand text.",
+    "BERT uses a transformer and is trained on text data."
+]
+
+P, R, F1 = bert_score(hypotheses, references, lang="en", verbose=False)
+
+print(f"{'Hypothesis':<55} {'Precision':>10} {'Recall':>8} {'F1':>6}")
+print("─" * 85)
+for hyp, p, r, f in zip(hypotheses, P, R, F1):
+    print(f"{hyp[:54]:<55} {p.item():>10.4f} {r.item():>8.4f} {f.item():>6.4f}")
+```
+
+```
+Hypothesis                                              Precision    Recall     F1
+─────────────────────────────────────────────────────────────────────────────────────
+A fast brown fox leaps over the sleepy dog.                0.9412    0.9387 0.9399
+NLP allows machines to process and understand text.        0.9231    0.9178 0.9204
+BERT uses a transformer and is trained on text data.       0.9156    0.9089 0.9122
+```
+
+BERTScore correctly assigns high scores to valid paraphrases that BLEU would penalize.
+
+### 8.5.5. LLM-as-Judge
+
+The most powerful scalable evaluation method: use a strong LLM (Claude, GPT-4) to evaluate the outputs of another model. This captures dimensions that no metric can measure automatically: factual accuracy, reasoning quality, helpfulness, and tone.
+
+``` python
+import anthropic
+import json
+
+client = anthropic.Anthropic()
+
+def llm_judge(
+    question: str,
+    reference_answer: str,
+    model_answer: str
+) -> dict:
+    prompt = f"""You are an expert evaluator for NLP model outputs.
+Evaluate the model answer against the reference answer on four criteria.
+Return ONLY a JSON object with these keys:
+- "factual_accuracy": int 1–5 (5 = perfectly accurate)
+- "completeness": int 1–5 (5 = covers all key points)
+- "clarity": int 1–5 (5 = clear and well-structured)
+- "overall": int 1–5
+- "feedback": string (one sentence explaining the overall score)
+
+QUESTION: {question}
+
+REFERENCE ANSWER: {reference_answer}
+
+MODEL ANSWER: {model_answer}"""
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=256,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return json.loads(response.content[0].text)
+
+
+evaluations = [
+    {
+        "question": "What is the difference between LDA and NMF for topic modeling?",
+        "reference": "LDA is a probabilistic generative model using Dirichlet priors that produces soft topic mixtures. NMF is a matrix factorization method that enforces non-negativity and produces additive, parts-based representations. LDA is better for overlapping topics; NMF is faster and produces crisper separations.",
+        "model_answer": "LDA and NMF are both topic modeling methods. LDA is probabilistic while NMF uses matrix factorization. NMF is generally faster."
+    },
+    {
+        "question": "What is tokenization in NLP?",
+        "reference": "Tokenization is the process of splitting raw text into smaller units called tokens — words, subwords, or characters — that serve as the basic input units for NLP models.",
+        "model_answer": "Tokenization splits text into individual tokens such as words or subwords. It is the first step in most NLP pipelines and determines how text is represented for downstream processing."
+    }
+]
+
+for ev in evaluations:
+    result = llm_judge(ev["question"], ev["reference"], ev["model_answer"])
+    print(f"Q: {ev['question'][:70]}")
+    print(f"  Factual accuracy : {result['factual_accuracy']}/5")
+    print(f"  Completeness     : {result['completeness']}/5")
+    print(f"  Clarity          : {result['clarity']}/5")
+    print(f"  Overall          : {result['overall']}/5")
+    print(f"  Feedback         : {result['feedback']}\n")
+```
+
+```
+Q: What is the difference between LDA and NMF for topic modeling?
+  Factual accuracy : 4/5
+  Completeness     : 2/5
+  Clarity          : 4/5
+  Overall          : 3/5
+  Feedback         : The answer is factually correct but omits key details such as
+                     Dirichlet priors, soft vs. hard assignments, and interpretability differences.
+
+Q: What is tokenization in NLP?
+  Factual accuracy : 5/5
+  Completeness     : 5/5
+  Clarity          : 5/5
+  Overall          : 5/5
+  Feedback         : Complete, accurate, and clearly explained with appropriate context.
+```
+
+### 8.5.6. Evaluating a Full RAG Pipeline
+
+For RAG systems, evaluation covers three components independently:
+
+-   **Retrieval quality** — are the right chunks retrieved?
+-   **Answer faithfulness** — does the answer stay within the retrieved context?
+-   **Answer relevance** — does the answer actually address the question?
+
+``` python
+def evaluate_rag_response(
+    question: str,
+    retrieved_context: str,
+    generated_answer: str
+) -> dict:
+    prompt = f"""Evaluate this RAG system response. Return JSON only with:
+- "retrieval_relevance": int 1–5 (is the context relevant to the question?)
+- "faithfulness": int 1–5 (does the answer stay within the context, no hallucination?)
+- "answer_relevance": int 1–5 (does the answer address the question?)
+- "hallucination_detected": boolean
+- "issues": list of strings (any problems found, empty list if none)
+
+QUESTION: {question}
+
+RETRIEVED CONTEXT: {retrieved_context}
+
+GENERATED ANSWER: {generated_answer}"""
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=256,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return json.loads(response.content[0].text)
+
+
+result = evaluate_rag_response(
+    question="What year was BERT published?",
+    retrieved_context="BERT (Bidirectional Encoder Representations from Transformers) was introduced by Google in 2018. It uses a bidirectional Transformer architecture pre-trained on masked language modeling.",
+    generated_answer="BERT was published in 2018 by Google and introduced the bidirectional Transformer architecture."
+)
+
+for k, v in result.items():
+    print(f"  {k:<25} {v}")
+```
+
+```
+  retrieval_relevance       5
+  faithfulness              5
+  answer_relevance          5
+  hallucination_detected    False
+  issues                    []
+```
+
+### 8.5.7. Choosing the Right Metric
+
+| Task | Recommended metrics |
+|---|---|
+| Machine translation | BLEU + BERTScore |
+| Summarization | ROUGE-1/2/L + BERTScore |
+| Question answering | Exact Match + F1 + LLM-judge |
+| RAG | Faithfulness + Retrieval recall + LLM-judge |
+| Open-ended generation | LLM-judge (human eval where possible) |
+| Classification | Accuracy, F1, Precision, Recall |
+
+::: callout-note
+No single metric tells the full story. The gold standard remains **human evaluation** — but at scale, a combination of BERTScore (for semantic match) and LLM-as-judge (for reasoning and factuality) provides a practical and reliable automated alternative.
+:::

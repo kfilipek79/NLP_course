@@ -1,0 +1,294 @@
+---
+title: "2.4. Representing Language for Machines"
+author: Kamil Filipek
+---
+
+### 2.4.1. Formal Grammars and Parsing
+
+**Formal grammars** are mathematical models used to define the syntax of programming languages and, by extension, to describe aspects of natural language. They consist of a set of production rules that specify how valid strings in a language can be formed. The **Chomsky hierarchy** is the standard classification:
+
+-   **Type 3: Regular grammars** -- the simplest, used in **regex engines**, **lexical analyzers**, and tokenization (e.g., recognizing identifiers, keywords, or numbers in source code).
+-   **Type 2: Context-free grammars (CFGs)** -- widely applied in **programming language compilers**, where they describe nested structures like loops, conditionals, or function calls. CFGs form the basis of parser generators such as **Yacc** or **ANTLR**.
+-   **Type 1: Context-sensitive grammars** -- more powerful but less practical computationally; relevant in natural language analysis or advanced type systems.
+-   **Type 0: Unrestricted grammars** -- theoretical interest, equivalent to **Turing machines**, rarely applied in practice.
+
+Below Python code illustrates how a **Type 3 regular grammar** can be implemented using **regular expressions (regex) \[**a **formal way of describing text patterns** using a compact, rule-based syntax\].
+
+| Example                          |
+|----------------------------------|
+| \\d+ \[regex\]                   |
+| \[meaning\] "one more digit"     |
+| **Example**                      |
+| \[abc\] \[regex\]                |
+| \[meaning\] "one of: a, b, or c" |
+
+``` python
+import re
+
+# Simple lexer for identifiers, integers, and +, -, *, /, parentheses
+TOKEN_SPEC = [
+    ("INT",       r"\d+"),
+    ("ID",        r"[A-Za-z_]\w*"),
+    ("PLUS",      r"\+"),
+    ("MINUS",     r"-"),
+    ("STAR",      r"\*"),
+    ("SLASH",     r"/"),
+    ("LPAREN",    r"\("),
+    ("RPAREN",    r"\)"),
+    ("SKIP",      r"[ \t\n]+"),
+    ("MISMATCH",  r"."),
+]
+
+# It builds one big regular expression out of all the token patterns.Each pair is a token type and the regex that matches it.
+master = re.compile("|".join(f"(?P<{name}>{pat})" for name, pat in TOKEN_SPEC))
+
+def lex(code: str):
+    for m in master.finditer(code):
+        kind = m.lastgroup
+        if kind == "SKIP":
+            continue
+        if kind == "MISMATCH":
+            raise SyntaxError(f"Unexpected {m.group()!r}")
+        yield (kind, m.group())
+
+print(list(lex("sum1 + 23*(x - y)")))
+```
+
+```         
+[('ID', 'sum1'), ('PLUS', '+'), ('INT', '23'), ('STAR', '*'), ('LPAREN', '('), ('ID', 'x'), ('MINUS', '-'), ('ID', 'y'), ('RPAREN', ')')]
+```
+
+**How it works?**
+
+-   `TOKEN_SPEC` defines a set of regex patterns, each with a name:
+    -   `"INT"` → integers (`\d+`)
+    -   `"ID"` → identifiers (`[A-Za-z_]\w*`)
+    -   `"PLUS"`, `"MINUS"`, `"STAR"`, `"SLASH"`, etc. → arithmetic operators
+    -   `"LPAREN"`, `"RPAREN"` → parentheses
+    -   `"SKIP"` → whitespace (ignored)
+    -   `"MISMATCH"` → anything else (triggers an error)
+-   `master = re.compile(... )` builds one **big regex** with named groups.
+-   `lex(code)` walks through the input, matches the regex, and yields `(TOKEN_TYPE, value)` pairs.
+
+👉 That line dynamically builds **one master regular expression** that can recognize *all token types at once*. Thanks to named groups, the lexer knows *what kind of token* was matched (INT, ID, PLUS, etc.), not just the text.
+
+**Once again**
+
+Imagine the input: ***"sum1 + 23\*(x - y)"***
+
+The lexer output:
+
+\[
+
+('ID', 'sum1'),
+
+('PLUS', '+'),
+
+('INT', '23'),
+
+('STAR', '\*'),
+
+('LPAREN', '('),
+
+('ID', 'x'),
+
+('MINUS', '-'),
+
+('ID', 'y'),
+
+('RPAREN', ')')
+
+\]
+
+👉 Tokens we get are the **lexer\'s output**, ready to be consumed by the parser.
+
+**Parsing** is the process of analyzing input (e.g., code, text, or data) according to a grammar in order to build a structural representation, such as a **parse tree** or **abstract syntax tree (AST)**. For IT specialists, parsing is central to:
+
+-   **Compilers & Interpreters** -- converting source code into executable instructions, ensuring syntax is correct before semantic analysis and optimization.
+-   **Data Processing Pipelines** -- interpreting structured input like JSON, XML, or domain-specific languages.
+-   **Natural Language Processing (NLP)** -- analyzing user queries, chatbots, or search engines, where parsing helps extract intent and relationships between entities.
+
+Common parsing approaches:
+
+-   **Top-down (recursive descent)** -- intuitive, hand-coded parsers for simpler grammars.
+-   **Bottom-up (shift--reduce, LR parsers)** -- efficient for programming languages; used in compiler construction.
+-   **Probabilistic/Statistical parsers** -- assign probabilities to multiple interpretations, key in NLP.
+-   **Neural parsers** -- machine learning--based, leveraging embeddings and graph models for robust handling of natural language.
+
+👉 For IT practice: **Regular grammars** cover pattern matching (regex), **CFGs** underpin compilers, and **probabilistic/dependency parsing** powers NLP applications. Knowing how grammars and parsing interact is crucial for anyone dealing with language processing, compiler design, or building robust text-driven systems.
+
+Would you like me to **add a one-page cheat sheet** (table) with grammar types, key algorithms, and real-world IT applications (e.g., regex → logs, CFG → compilers, probabilistic parsing → chatbots)?
+
+### 2.4.2. Semantic Networks, Ontologies, WordNet
+
+**Semantic networks, ontologies, and WordNet** are three approaches to representing and organizing knowledge in artificial intelligence and computational linguistics. A **semantic network** is a graph-like structure where concepts are represented as nodes and relationships (such as *is-a* or *part-of*) are represented as edges. Originally proposed in psychology to model human memory, semantic networks provide intuitive and flexible ways to visualize connections between ideas, but they lack formal rigor.
+
+Dog ------is-a------\> Mammal ------is-a------\> Animal
+
+Dog ------has-part------\> Tail
+
+Dog ------can------\> Bark
+
+This is a **semantic network**: nodes are concepts (*Dog*, *Mammal*, *Tail*), and edges represent relations (*is-a*, *has-part*, *can*). It\'s intuitive and visual, but lacks strict logical rules --- computers can store and query it, but reasoning is limited.
+
+In contrast, an **ontology** is a formal, logic-based framework that specifies entities, classes, attributes, and relationships in a given domain using standardized languages such as RDF or OWL. Ontologies are more precise than semantic networks and are widely applied in areas like the Semantic Web, biomedical informatics, and legal informatics to ensure interoperability and machine reasoning across datasets.
+
+\<Class rdf:ID="Animal"/\>
+
+\<Class rdf:ID="Mammal"\>
+
+\<rdfs:subClassOf rdf:resource="#Animal"/\>
+
+\</Class\>
+
+\<Class rdf:ID="Dog"\>
+
+\<rdfs:subClassOf rdf:resource="#Mammal"/\>
+
+\</Class\>
+
+\<ObjectProperty rdf:ID="hasPart"/\>
+
+\<Dog rdf:about="#Dog"\>
+
+\<hasPart rdf:resource="#Tail"/\>
+
+\</Dog\>
+
+Here, relationships are **formally defined**:
+
+-   `Dog` is a subclass of `Mammal`,
+
+-   `Mammal` is a subclass of `Animal`,
+
+-   `Dog` has a part `Tail`.
+
+**WordNet** sits between these two approaches. It is a large lexical database of English developed at Princeton, where words are grouped into sets of synonyms called *synsets* and linked through semantic relations such as synonymy, hypernymy (generalization), and meronymy (part--whole). While not a full ontology, WordNet provides a structured lexical-semantic resource that has become fundamental in natural language processing tasks, including word sense disambiguation, semantic similarity measurement, and information retrieval. Together, semantic networks, ontologies, and WordNet illustrate the spectrum of knowledge representation methods, from intuitive graphs, through formal logical models, to richly structured lexical resources used in both research and applied AI.
+
+``` python
+from nltk.corpus import wordnet as wn
+
+# Synsets (synonym sets) for 'dog'
+dog_synsets = wn.synsets("dog")
+print(dog_synsets[0].definition())
+# -> "a member of the genus Canis (probably descended from the common wolf)..."
+
+# Hypernym (more general concept)
+print(dog_synsets[0].hypernyms())
+# -> [Synset('canine.n.02'), Synset('domestic_animal.n.01')]
+
+# Meronym (part-of relation)
+print(dog_synsets[0].part_meronyms())
+# -> [Synset('paw.n.01'), Synset('fang.n.01'), ...]
+```
+
+```         
+a member of the genus Canis (probably descended from the common wolf) that has been domesticated by man since prehistoric times; occurs in many breeds
+[Synset('canine.n.02'), Synset('domestic_animal.n.01')]
+[Synset('flag.n.07')]
+```
+
+WordNet doesn\'t describe *all* world knowledge like an ontology, but it provides **lexical relationships** (synonyms, hypernyms, meronyms) useful in NLP tasks such as semantic similarity, word sense disambiguation, or query expansion.
+
+Current version of WordNet can be found here: <https://wordnet.princeton.edu>
+
+You can use WordNet inside Python (as above) and there are many options available for the user:
+
+``` python
+import nltk
+nltk.download('wordnet')
+from nltk.corpus import wordnet as wn
+
+print(wn.synsets("dog"))
+print(wn.synsets("dog")[0].definition())
+```
+
+```         
+[Synset('dog.n.01'), Synset('frump.n.01'), Synset('dog.n.03'), Synset('cad.n.01'), Synset('frank.n.02'), Synset('pawl.n.01'), Synset('andiron.n.01'), Synset('chase.v.01')]
+a member of the genus Canis (probably descended from the common wolf) that has been domesticated by man since prehistoric times; occurs in many breeds
+```
+
+dog
+
+├── dog.n.01 → "domestic dog"
+
+├── frump.n.01 → "unattractive woman"
+
+├── dog.n.03 → "informal man"
+
+├── cad.n.01 → "reprehensible man"
+
+├── frank.n.02 → "sausage"
+
+├── pawl.n.01 → "ratchet part"
+
+├── andiron.n.01 → "fireplace support"
+
+└── chase.v.01 → "to pursue"
+
+*Dog* has **multiple senses**, and WordNet organizes them as synsets with definitions.
+
+In 2015, I started my career with **"Słowosieć"**, the Polish equivalent of WordNet [(my publication)](https://cejsh.icm.edu.pl/cejsh/element/bwmeta1.element.desklight-67a7dd2f-c9db-4a11-b02c-dc20340a85c8/c/Filipek-4-1-2016.pdf) . At present, it contains **191,000 nouns, verbs, adjectives, and adverbs**, **285,000 senses**, and **over 600,000 relations**. It has already become the **largest wordnet in the world** and continues to expand. What is important to remember is that **many languages have their own WordNet**.
+
+| Feature          | Semantic Networks                   | Ontologies                                          | WordNet                                              |
+|------------------|-------------------------------------|-----------------------------------------------------|------------------------------------------------------|
+| **Formality**    | Informal, intuitive graphs          | Formal, logic-based                                 | Semi-formal, ontology-like                           |
+| **Scope**        | General representation of knowledge | Domain-specific, precise definitions                | Lexical database for English (expanded multilingual) |
+| **Relations**    | Arbitrary (is-a, part-of, causes)   | Strictly defined (subclass, property, domain/range) | Synonymy, hypernymy, meronymy, etc.                  |
+| **Applications** | Early AI, knowledge graphs          | Semantic Web, data integration                      | NLP tasks, word sense disambiguation                 |
+
+### 2.4.3. Distributional Semantics and Embeddings
+
+**Distributional semantics** is a theoretical and computational approach to meaning in natural language, rooted in the idea that *words occurring in similar contexts tend to have similar meanings* (Harris, 1954; Firth, 1957). Instead of defining meaning in terms of abstract logical structures, distributional models rely on statistical analysis of large corpora. They represent words as high-dimensional vectors derived from co-occurrence patterns, allowing semantic similarity to be measured quantitatively. This approach has proven particularly useful for tasks such as synonym detection, word sense disambiguation, and semantic clustering.
+
+**Embeddings** are the modern, computational implementation of distributional semantics. They map linguistic units---typically words, but also subwords, sentences, or even entire documents---into dense, low-dimensional vector spaces. Early models such as *Latent Semantic Analysis* (Deerwester et al., 1990) relied on linear algebra techniques like singular value decomposition, while neural network-based approaches such as *Word2Vec* (Mikolov et al., 2013) and *GloVe*(Pennington et al., 2014) provided more efficient and context-sensitive representations. More recently, contextual embeddings derived from transformer-based models, such as *BERT* (Devlin et al., 2019), have advanced the field further by generating dynamic word representations that adapt to the surrounding sentence context.
+
+Together, distributional semantics and embeddings form the foundation of much of contemporary natural language processing (NLP), enabling systems to approximate human-like semantic reasoning and supporting applications from information retrieval to machine translation and conversational AI.
+
+### 2.4.4. Embeddings in practice
+
+Why we use embeddings?
+
+-   **Semantic similarity & clustering:** group/compare texts without labels.
+
+-   **Semantic search / RAG:** retrieve passages/documents most similar to a query.
+
+-   **Classification features:** plug embeddings into classical ML (SVM/LogReg).
+
+-   **Deduplication / anomaly detection:** near-duplicate or outlier search.
+
+In the Hugging Face **Transformers** library, embeddings are a fundamental component of every model. Raw text cannot be processed directly by a transformer, so each token is first mapped into a dense numerical vector known as a **token embedding**, while additional **positional embeddings** are added to encode word order and, in some models, **segment embeddings** are used to distinguish sentences. These embeddings form the input layer of the network and are refined during training.
+
+Importantly, the library allows direct access to embeddings: one can extract token-level representations, contextual hidden states from intermediate layers, or pooled sentence-level embeddings. For example, with BERT, it is possible to obtain vectors for each token in a sentence or create a single sentence embedding by averaging token representations. Hugging Face also provides a convenient `feature-extraction` pipeline for quick access to embeddings, while the **sentence-transformers** extension builds on this functionality to deliver optimized, ready-to-use sentence embeddings suitable for semantic similarity, clustering, search, and classification tasks. In practice, this means that embeddings in Transformers are not only the model\'s internal building blocks but also a versatile tool for a wide range of downstream NLP applications.
+
+``` python
+from transformers import AutoTokenizer, AutoModel
+import torch
+
+# Load model and tokenizer
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+model = AutoModel.from_pretrained("bert-base-uncased")
+
+# Encode text
+inputs = tokenizer("Transformers provide embeddings.", return_tensors="pt")
+
+# Forward pass (get hidden states)
+with torch.no_grad():
+    outputs = model(**inputs)
+
+last_hidden_state = outputs.last_hidden_state  # shape: [batch, seq_len, hidden_dim]
+sentence_embedding = last_hidden_state.mean(dim=1)  # simple average pooling
+print(sentence_embedding.shape) 
+```
+
+```         
+torch.Size([1, 768])
+```
+
+The notation **`torch.Size([1, 768])`** is PyTorch\'s way of describing the **shape of a tensor**---that is, the dimensions of the numerical array.
+
+-   The **first number (`1`)** is the **batch size**: in our example we passed only **one input sentence** to the model. If you had given 10 sentences at once, the first dimension would be `10`.
+
+-   The **second number (`768`)** is the **embedding dimension**: BERT-base represents each token or sentence as a vector of length 768. Other models may use different sizes (e.g., BERT-large uses 1024, RoBERTa-base also 768, MiniLM 384).
+
+**`torch.Size([1, 768])` means \"one embedding vector of size 768\"**, i.e. a single sentence (or pooled representation) encoded in a 768-dimensional semantic space.

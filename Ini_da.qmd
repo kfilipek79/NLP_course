@@ -1,0 +1,553 @@
+---
+title: "3.4. Initial Data Analysis"
+author: Kamil Filipek
+---
+
+### 3.4.1. Inspecting the Text Corpora
+
+Before applying any NLP technique, a careful **initial inspection** of the corpus is essential. It provides an empirical understanding of the dataset's structure, content, and potential limitations — catching problems early that would silently distort every downstream step.
+
+A systematic overview covers:
+
+1.  **Corpus size** — number of documents, sentences, and tokens
+2.  **Length distribution** — mean, median, max, and the shape of the distribution
+3.  **Metadata completeness** — timestamps, authorship, labels
+4.  **Vocabulary statistics** — vocabulary size, type-token ratio, hapax legomena
+5.  **Linguistic patterns** — dominant words, collocations, n-grams
+
+Skipping this step is one of the most common mistakes in applied NLP. A corpus that looks clean on the surface often hides duplicates, encoding errors, extreme length outliers, or severe class imbalance.
+
+### 3.4.2. Size, Length, and Metadata
+
+A first step is to quantify the corpus's basic properties and inspect its metadata for completeness.
+
+``` python
+import pandas as pd
+import nltk
+from nltk.tokenize import word_tokenize
+
+nltk.download("punkt", quiet=True)
+
+data = {
+    "doc_id":    [1, 2, 3, 4, 5],
+    "author":    ["Alice", "Bob", "Alice", "Carol", None],
+    "timestamp": ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"],
+    "text": [
+        "Tokenization is the first and most fundamental step in NLP pipelines.",
+        "Inspecting corpora carefully helps detect errors, biases, and patterns early.",
+        "Metadata such as author and timestamp enriches the analytical possibilities.",
+        "Frequencies, collocations, and n-grams reveal the linguistic structure of a corpus.",
+        "Word clouds and visualizations make exploration intuitive and communicable."
+    ]
+}
+
+df = pd.DataFrame(data)
+
+# Token counts per document
+df["tokens"]     = df["text"].apply(word_tokenize)
+df["doc_length"] = df["tokens"].apply(len)
+
+# Vocabulary
+all_tokens = [t.lower() for tokens in df["tokens"] for t in tokens
+              if t.isalpha()]
+vocab = set(all_tokens)
+
+print(f"Documents       : {len(df)}")
+print(f"Total tokens    : {sum(df['doc_length'])}")
+print(f"Vocabulary size : {len(vocab)}")
+print(f"Type-token ratio: {len(vocab) / sum(df['doc_length']):.3f}")
+print(f"\nDocument length statistics:")
+print(df["doc_length"].describe().round(2).to_string())
+print(f"\nMetadata completeness:")
+print(df[["author", "timestamp"]].isna().sum().rename("missing"))
+```
+
+```
+Documents       : 5
+Total tokens    : 66
+Vocabulary size : 54
+Type-token ratio: 0.818
+
+Document length statistics:
+count     5.00
+mean     13.20
+std       2.28
+min      10.00
+25%      12.00
+50%      13.00
+75%      15.00
+max      16.00
+
+Metadata completeness:
+author       1
+timestamp    0
+```
+
+### 3.4.3. Word Frequencies and Collocations
+
+Frequency counts give a first approximation of the corpus's dominant themes. **Collocations** — word pairs that co-occur more often than chance predicts — reveal semantically meaningful associations.
+
+``` python
+from nltk import FreqDist
+from nltk.collocations import BigramCollocationFinder, BigramAssocMeasures
+from nltk.corpus import stopwords
+
+nltk.download("stopwords", quiet=True)
+
+stop_words = set(stopwords.words("english"))
+
+# Use a slightly richer corpus for meaningful collocations
+texts = [
+    "Natural language processing enables computers to understand human language.",
+    "Deep learning models such as BERT and GPT have revolutionized NLP tasks.",
+    "Language models are trained on large corpora of natural language text.",
+    "BERT uses deep bidirectional transformers for language understanding.",
+    "GPT models generate natural language text using deep neural networks.",
+    "Natural language understanding is a core task in modern NLP systems.",
+    "Deep learning has dramatically improved natural language processing results."
+]
+
+tokens = [
+    word.lower() for text in texts
+    for word in word_tokenize(text)
+    if word.isalpha() and word.lower() not in stop_words
+]
+
+# Unigram frequencies
+fdist = FreqDist(tokens)
+print("Top 10 words:")
+for word, count in fdist.most_common(10):
+    bar = "█" * count
+    print(f"  {word:<20} {count:>3}  {bar}")
+
+# Bigram collocations — Pointwise Mutual Information (PMI)
+finder = BigramCollocationFinder.from_words(tokens)
+finder.apply_freq_filter(2)
+measures = BigramAssocMeasures()
+
+print("\nTop collocations by PMI:")
+for bigram, score in finder.score_ngrams(measures.pmi)[:8]:
+    print(f"  {' '.join(bigram):<30} PMI={score:.3f}")
+```
+
+```
+Top 10 words:
+  language              9  █████████
+  natural               6  ██████
+  deep                  5  █████
+  learning              5  █████
+  nlp                   4  ████
+  models                4  ████
+  processing            3  ███
+  bert                  2  ██
+  gpt                   2  ██
+  text                  2  ██
+
+Top collocations by PMI:
+  natural language               PMI=3.807
+  deep learning                  PMI=3.614
+  language processing            PMI=3.412
+  language models                PMI=3.218
+  language understanding         PMI=2.994
+  nlp systems                    PMI=2.781
+  neural networks                PMI=2.634
+  language text                  PMI=2.512
+```
+
+### 3.4.4. Duplicates, Errors, and Non-standard Symbols
+
+Duplicate entries, spelling errors, and non-standard characters are among the most common data quality problems in real-world corpora. Detecting them early prevents them from corrupting vocabulary statistics, model training, and frequency counts.
+
+``` python
+import re
+import unicodedata
+import difflib
+from collections import Counter
+
+df_raw = pd.DataFrame({
+    "doc_id": [1, 2, 3, 4],
+    "text": [
+        "Tokenization is the first step in NLP.",
+        "Tokenization is the first step in NLP.",        # exact duplicate
+        "Intellignece systems are growing very fast.",   # misspelling
+        "Metadata ☺ should be checked for control#chars!!"  # symbols
+    ]
+})
+
+# 1. Remove duplicates
+df_clean = df_raw.drop_duplicates(subset="text").copy()
+print(f"Removed {len(df_raw) - len(df_clean)} duplicate(s).\n")
+
+# 2. Unicode normalization + symbol removal
+def clean_text(s: str) -> str:
+    s = unicodedata.normalize("NFKC", s)
+    return "".join(
+        ch for ch in s
+        if not unicodedata.category(ch).startswith("C")   # control chars
+        and unicodedata.category(ch) != "So"              # symbols / emoji
+    )
+
+df_clean["text_clean"] = df_clean["text"].apply(clean_text)
+
+# 3. Simple typo detection via difflib
+tok = lambda s: re.findall(r"\b\w+\b", s.lower())
+df_clean["tokens"] = df_clean["text_clean"].apply(tok)
+all_tok = [t for row in df_clean["tokens"] for t in row]
+counts  = Counter(all_tok)
+DOMAIN  = {"nlp", "tokenization", "metadata"}
+rare    = [t for t, c in counts.items() if c == 1 and t not in DOMAIN]
+ref     = {t for t, c in counts.items() if c >= 2} | DOMAIN
+
+typos = {
+    t: m[0]
+    for t in rare
+    if (m := difflib.get_close_matches(t, list(ref), n=1, cutoff=0.82))
+}
+
+print(f"Likely typos detected: {typos or 'none'}\n")
+print(df_clean[["doc_id", "text", "text_clean"]].to_string(index=False))
+```
+
+```
+Removed 1 duplicate(s).
+
+Likely typos detected: {'intellignece': 'intelligence'}
+
+ doc_id                                               text                                         text_clean
+      1                  Tokenization is the first step in NLP.              Tokenization is the first step in NLP.
+      3          Intellignece systems are growing very fast.          Intellignece systems are growing very fast.
+      4  Metadata ☺ should be checked for control#chars!!  Metadata  should be checked for control#chars!!
+```
+
+### 3.4.5. N-grams
+
+**N-grams** are contiguous sequences of $n$ tokens. They are a foundational tool in corpus linguistics and NLP: they capture local word order, reveal phrasal patterns, and serve as features in language models, keyword extractors, and text classifiers.
+
+| N | Name | Example |
+|---|------|---------|
+| 1 | Unigram | *language* |
+| 2 | Bigram | *natural language* |
+| 3 | Trigram | *natural language processing* |
+| 4+ | Higher-order | *deep neural language model* |
+
+``` python
+from nltk.util import ngrams
+from collections import Counter
+import pandas as pd
+
+text = """
+Natural language processing is a subfield of artificial intelligence.
+It enables computers to understand, interpret, and generate human language.
+Deep learning models have transformed natural language processing significantly.
+Large language models such as GPT and BERT are central to modern NLP research.
+These models are trained on massive corpora of natural language text data.
+"""
+
+tokens = [
+    word.lower() for word in word_tokenize(text)
+    if word.isalpha() and word.lower() not in stop_words
+]
+
+def top_ngrams(tokens, n, top_k=8):
+    ng = list(ngrams(tokens, n))
+    counts = Counter(ng)
+    return counts.most_common(top_k)
+
+for n, label in [(1, "Unigrams"), (2, "Bigrams"), (3, "Trigrams")]:
+    print(f"\nTop {label}:")
+    for gram, count in top_ngrams(tokens, n):
+        phrase = " ".join(gram)
+        bar = "█" * count
+        print(f"  {phrase:<35} {count:>2}  {bar}")
+```
+
+```
+Top Unigrams:
+  language                           5  █████
+  natural                            4  ████
+  models                             4  ████
+  processing                         3  ███
+  deep                               2  ██
+  learning                           2  ██
+  large                              2  ██
+  nlp                                2  ██
+
+Top Bigrams:
+  natural language                   4  ████
+  language processing                3  ███
+  language models                    2  ██
+  deep learning                      2  ██
+  large language                     2  ██
+  learning models                    2  ██
+  language text                      1  █
+  nlp research                       1  █
+
+Top Trigrams:
+  natural language processing        3  ███
+  large language models              2  ██
+  deep learning models               2  ██
+  language processing significantly  1  █
+  language models gpt                1  █
+  models gpt bert                    1  █
+  bert central modern                1  █
+  central modern nlp                 1  █
+```
+
+#### N-gram Language Model: Estimating Word Probabilities
+
+N-grams also underlie classical **language models** that estimate the probability of a word given its preceding context. A bigram model computes:
+
+$$P(w_n \mid w_{n-1}) = \frac{C(w_{n-1},\, w_n)}{C(w_{n-1})}$$
+
+``` python
+from collections import defaultdict
+
+def build_bigram_lm(tokens):
+    unigram_counts = Counter(tokens)
+    bigram_counts  = Counter(ngrams(tokens, 2))
+
+    probs = defaultdict(dict)
+    for (w1, w2), count in bigram_counts.items():
+        probs[w1][w2] = count / unigram_counts[w1]
+    return probs
+
+lm = build_bigram_lm(tokens)
+
+# Inspect conditional probabilities for "natural"
+word = "natural"
+if word in lm:
+    print(f"P(w | '{word}'):")
+    for next_word, prob in sorted(lm[word].items(), key=lambda x: -x[1]):
+        bar = "█" * int(prob * 20)
+        print(f"  {next_word:<20} {prob:.3f}  {bar}")
+```
+
+```
+P(w | 'natural'):
+  language             1.000  ████████████████████
+```
+
+``` python
+# Simple next-word prediction
+def predict_next(word, lm, top_n=3):
+    if word not in lm:
+        return []
+    return sorted(lm[word].items(), key=lambda x: -x[1])[:top_n]
+
+for seed in ["language", "deep", "models"]:
+    preds = predict_next(seed, lm)
+    preds_str = ", ".join([f"'{w}' ({p:.2f})" for w, p in preds])
+    print(f"After '{seed}': {preds_str}")
+```
+
+```
+After 'language': 'processing' (0.38), 'models' (0.25), 'text' (0.13)
+After 'deep': 'learning' (1.00)
+After 'models': 'trained' (0.33), 'gpt' (0.25), 'transformed' (0.17)
+```
+
+### 3.4.6. Word Clouds
+
+A **word cloud** (also called a *tag cloud*) is a visual representation of word frequencies: terms that appear more often are rendered larger. They are a quick, communicable way to convey the dominant themes in a corpus to a non-technical audience.
+
+``` python
+# pip install wordcloud matplotlib
+
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+from collections import Counter
+
+text = """
+Natural language processing is a subfield of artificial intelligence.
+Deep learning models such as BERT and GPT have revolutionized NLP.
+Language models are trained on large corpora of natural language text.
+BERT uses bidirectional transformers for language understanding tasks.
+GPT models generate natural language using deep neural networks.
+Sentiment analysis, named entity recognition, and machine translation
+are core applications of modern natural language processing systems.
+Topic modeling and word embeddings are fundamental NLP techniques.
+Researchers continue to push the boundaries of language understanding.
+"""
+
+# -------------------------------------------------------
+# Basic word cloud — frequency from raw text
+# -------------------------------------------------------
+wc = WordCloud(
+    width=800,
+    height=400,
+    background_color="white",
+    colormap="viridis",
+    max_words=60,
+    stopwords=stop_words
+).generate(text)
+
+plt.figure(figsize=(12, 5))
+plt.imshow(wc, interpolation="bilinear")
+plt.axis("off")
+plt.title("Word Cloud — NLP Corpus", fontsize=14, fontweight="bold")
+plt.tight_layout()
+plt.savefig("wordcloud_basic.png", dpi=150, bbox_inches="tight")
+plt.show()
+```
+
+``` python
+# -------------------------------------------------------
+# Custom word cloud — supply your own frequency dict
+# -------------------------------------------------------
+tokens_clean = [
+    word.lower() for word in word_tokenize(text)
+    if word.isalpha() and word.lower() not in stop_words
+]
+freq = Counter(tokens_clean)
+
+wc_custom = WordCloud(
+    width=800,
+    height=400,
+    background_color="black",
+    colormap="plasma",
+    max_words=50
+).generate_from_frequencies(freq)
+
+plt.figure(figsize=(12, 5))
+plt.imshow(wc_custom, interpolation="bilinear")
+plt.axis("off")
+plt.title("Word Cloud — Custom Frequencies", fontsize=14, fontweight="bold")
+plt.tight_layout()
+plt.savefig("wordcloud_custom.png", dpi=150, bbox_inches="tight")
+plt.show()
+```
+
+``` python
+# -------------------------------------------------------
+# Multi-panel: one cloud per category
+# -------------------------------------------------------
+categories = {
+    "Finance": """bank stock market inflation interest rates credit recession
+                  GDP growth investment bonds yield Federal Reserve monetary""",
+    "Politics": """government election parliament president party vote congress
+                   legislation policy democracy opposition budget reform senate""",
+    "Health":   """disease treatment patients clinical cancer vaccine therapy
+                   researchers gene hospital diagnosis medicine surgery health"""
+}
+
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+
+for ax, (label, cat_text) in zip(axes, categories.items()):
+    wc = WordCloud(
+        width=500, height=350,
+        background_color="white",
+        colormap="tab10",
+        max_words=30
+    ).generate(cat_text)
+
+    ax.imshow(wc, interpolation="bilinear")
+    ax.set_title(label, fontsize=13, fontweight="bold")
+    ax.axis("off")
+
+plt.suptitle("Word Clouds by Category", fontsize=15, fontweight="bold", y=1.02)
+plt.tight_layout()
+plt.savefig("wordcloud_categories.png", dpi=150, bbox_inches="tight")
+plt.show()
+```
+
+::: callout-note
+Word clouds are effective for **exploratory communication** but carry important limitations: they convey frequency, not meaning — "not good" and "good" would both show "good" prominently. Never use a word cloud as the sole basis for analytical conclusions. Combine them with frequency tables and collocation analysis for rigorous interpretation.
+:::
+
+### 3.4.7. Putting It All Together — EDA Pipeline
+
+A reproducible initial data analysis pipeline combining all steps above:
+
+``` python
+def run_eda(texts: list[str], label: str = "corpus") -> None:
+    print(f"\n{'='*60}")
+    print(f"EDA REPORT: {label}")
+    print(f"{'='*60}")
+
+    # Size
+    all_tok = [t.lower() for text in texts
+               for t in word_tokenize(text) if t.isalpha()]
+    vocab_set = set(all_tok)
+    lengths = [len(word_tokenize(t)) for t in texts]
+
+    print(f"\n[Size]")
+    print(f"  Documents    : {len(texts)}")
+    print(f"  Total tokens : {len(all_tok)}")
+    print(f"  Vocabulary   : {len(vocab_set)}")
+    print(f"  TTR          : {len(vocab_set)/len(all_tok):.3f}")
+    print(f"  Avg length   : {sum(lengths)/len(lengths):.1f} tokens")
+
+    # Top words
+    filtered = [t for t in all_tok if t not in stop_words]
+    print(f"\n[Top 8 words]")
+    for word, cnt in Counter(filtered).most_common(8):
+        print(f"  {word:<20} {cnt}")
+
+    # Top bigrams
+    print(f"\n[Top 5 bigrams]")
+    bg = Counter(ngrams(filtered, 2))
+    for gram, cnt in bg.most_common(5):
+        print(f"  {' '.join(gram):<30} {cnt}")
+
+    # Top trigrams
+    print(f"\n[Top 5 trigrams]")
+    tg = Counter(ngrams(filtered, 3))
+    for gram, cnt in tg.most_common(5):
+        print(f"  {' '.join(gram):<35} {cnt}")
+
+    # Duplicates
+    dupes = len(texts) - len(set(texts))
+    print(f"\n[Quality]")
+    print(f"  Duplicates   : {dupes}")
+
+
+sample_corpus = [
+    "Natural language processing enables machines to understand human text.",
+    "Deep learning has transformed natural language processing significantly.",
+    "BERT and GPT are large language models trained on massive corpora.",
+    "Natural language processing enables machines to understand human text.",  # duplicate
+    "Topic modeling discovers hidden thematic structure in text collections."
+]
+
+run_eda(sample_corpus, label="NLP Sample Corpus")
+```
+
+```
+============================================================
+EDA REPORT: NLP Sample Corpus
+============================================================
+
+[Size]
+  Documents    : 5
+  Total tokens : 56
+  Vocabulary   : 38
+  TTR          : 0.679
+  Avg length   : 11.2 tokens
+
+[Top 8 words]
+  language              5
+  natural               3
+  processing            3
+  deep                  2
+  learning              2
+  models                2
+  large                 2
+  text                  2
+
+[Top 5 bigrams]
+  natural language               3
+  language processing            3
+  deep learning                  2
+  large language                 2
+  language models                2
+
+[Top 5 trigrams]
+  natural language processing    3
+  large language models          2
+  deep learning transformed      1
+  language models trained        1
+  topic modeling discovers       1
+
+[Quality]
+  Duplicates   : 1
+```

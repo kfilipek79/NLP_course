@@ -1,0 +1,424 @@
+%% ============================================================
+%%  NLP Course — Complete Bibliography
+%%  Kamil Filipek, UMCS Lublin
+%% ============================================================
+
+%% ── Chapters 1–2: Language, Machines, Theoretical Foundations ──
+
+@book{jurafsky2025,
+  author    = {Jurafsky, Daniel and Martin, James H.},
+  title     = {Speech and Language Processing},
+  edition   = {3rd (draft)},
+  year      = {2025},
+  url       = {https://web.stanford.edu/~jurafsky/slp3/}
+}
+
+@book{russell2010,
+  author    = {Russell, Stuart and Norvig, Peter},
+  title     = {Artificial Intelligence: A Modern Approach},
+  edition   = {3rd},
+  year      = {2010},
+  publisher = {Prentice Hall}
+}
+
+@book{manning1999,
+  author    = {Manning, Christopher D. and Schütze, Hinrich},
+  title     = {Foundations of Statistical Natural Language Processing},
+  year      = {1999},
+  publisher = {MIT Press}
+}
+
+@book{chomsky1957,
+  author    = {Chomsky, Noam},
+  title     = {Syntactic Structures},
+  year      = {1957},
+  publisher = {Mouton}
+}
+
+%% ── Chapter 3: Basic Data Engineering ──
+
+@book{bird2009,
+  author    = {Bird, Steven and Klein, Ewan and Loper, Edward},
+  title     = {Natural Language Processing with Python},
+  year      = {2009},
+  publisher = {O'Reilly Media},
+  url       = {https://www.nltk.org/book/}
+}
+
+@inproceedings{bostrom2020,
+  author    = {Bostrom, Kaj and Durrett, Greg},
+  title     = {Byte Pair Encoding is Suboptimal for Language Model Pretraining},
+  booktitle = {Findings of EMNLP},
+  year      = {2020}
+}
+
+@inproceedings{sennrich2016,
+  author    = {Sennrich, Rico and Haddow, Barry and Birch, Alexandra},
+  title     = {Neural Machine Translation of Rare Words with Subword Units},
+  booktitle = {ACL},
+  year      = {2016}
+}
+
+%% ── Chapter 4: Evolution of Embeddings ──
+
+@inproceedings{mikolov2013word2vec,
+  author    = {Mikolov, Tomáš and Chen, Kai and Corrado, Greg and Dean, Jeffrey},
+  title     = {Efficient Estimation of Word Representations in Vector Space},
+  booktitle = {ICLR},
+  year      = {2013},
+  note      = {arXiv:1301.3781}
+}
+
+@inproceedings{mikolov2013distributed,
+  author    = {Mikolov, Tomáš and Sutskever, Ilya and Chen, Kai and Corrado, Greg and Dean, Jeffrey},
+  title     = {Distributed Representations of Words and Phrases and their Compositionality},
+  booktitle = {NeurIPS},
+  year      = {2013}
+}
+
+@inproceedings{pennington2014,
+  author    = {Pennington, Jeffrey and Socher, Richard and Manning, Christopher D.},
+  title     = {{GloVe}: Global Vectors for Word Representation},
+  booktitle = {EMNLP},
+  year      = {2014}
+}
+
+@article{bojanowski2017,
+  author  = {Bojanowski, Piotr and Grave, Edouard and Joulin, Armand and Mikolov, Tomáš},
+  title   = {Enriching Word Vectors with Subword Information},
+  journal = {Transactions of the ACL},
+  volume  = {5},
+  pages   = {135--146},
+  year    = {2017}
+}
+
+@article{harris1954,
+  author  = {Harris, Zellig S.},
+  title   = {Distributional Structure},
+  journal = {Word},
+  volume  = {10},
+  number  = {2--3},
+  pages   = {146--162},
+  year    = {1954}
+}
+
+%% ── Chapter 5: Contextual Embeddings ──
+
+@inproceedings{peters2018,
+  author    = {Peters, Matthew E. and Neumann, Mark and Iyyer, Mohit and Gardner, Matt and Clark, Christopher and Lee, Kenton and Zettlemoyer, Luke},
+  title     = {Deep Contextualized Word Representations},
+  booktitle = {NAACL},
+  year      = {2018},
+  note      = {arXiv:1802.05365}
+}
+
+@inproceedings{vaswani2017,
+  author    = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, Łukasz and Polosukhin, Illia},
+  title     = {Attention Is All You Need},
+  booktitle = {NeurIPS},
+  year      = {2017}
+}
+
+@inproceedings{devlin2019,
+  author    = {Devlin, Jacob and Chang, Ming-Wei and Lee, Kenton and Toutanova, Kristina},
+  title     = {{BERT}: Pre-training of Deep Bidirectional Transformers for Language Understanding},
+  booktitle = {NAACL},
+  year      = {2019},
+  note      = {arXiv:1810.04805}
+}
+
+@article{radford2018,
+  author  = {Radford, Alec and Narasimhan, Karthik and Salimans, Tim and Sutskever, Ilya},
+  title   = {Improving Language Understanding by Generative Pre-Training},
+  year    = {2018},
+  url     = {https://openai.com/research/language-unsupervised}
+}
+
+@article{radford2019,
+  author  = {Radford, Alec and Wu, Jeffrey and Child, Rewon and Luan, David and Amodei, Dario and Sutskever, Ilya},
+  title   = {Language Models are Unsupervised Multitask Learners},
+  year    = {2019},
+  url     = {https://openai.com/research/better-language-models}
+}
+
+@article{brown2020,
+  author  = {Brown, Tom B. and others},
+  title   = {Language Models are Few-Shot Learners},
+  journal = {NeurIPS},
+  year    = {2020},
+  note    = {arXiv:2005.14165}
+}
+
+@inproceedings{liu2019roberta,
+  author    = {Liu, Yinhan and others},
+  title     = {{RoBERTa}: A Robustly Optimized {BERT} Pretraining Approach},
+  year      = {2019},
+  note      = {arXiv:1907.11692}
+}
+
+@inproceedings{sanh2019distilbert,
+  author    = {Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
+  title     = {{DistilBERT}, a distilled version of {BERT}},
+  booktitle = {NeurIPS EMC2 Workshop},
+  year      = {2019}
+}
+
+%% ── Chapter 6: Elementary Language Analysis ──
+
+@inproceedings{ekman1972,
+  author    = {Ekman, Paul},
+  title     = {Universals and Cultural Differences in Facial Expressions of Emotion},
+  booktitle = {Nebraska Symposium on Motivation},
+  year      = {1972},
+  publisher = {University of Nebraska Press}
+}
+
+@book{ekman2003,
+  author    = {Ekman, Paul},
+  title     = {Emotions Revealed},
+  year      = {2003},
+  publisher = {Times Books}
+}
+
+@article{russell1980,
+  author  = {Russell, James A.},
+  title   = {A Circumplex Model of Affect},
+  journal = {Journal of Personality and Social Psychology},
+  volume  = {39},
+  number  = {6},
+  pages   = {1161--1178},
+  year    = {1980}
+}
+
+@book{plutchik1980,
+  author    = {Plutchik, Robert},
+  title     = {Emotion: A Psychoevolutionary Synthesis},
+  year      = {1980},
+  publisher = {Harper and Row}
+}
+
+@book{barrett2017,
+  author    = {Barrett, Lisa Feldman},
+  title     = {How Emotions Are Made: The Secret Life of the Brain},
+  year      = {2017},
+  publisher = {Houghton Mifflin}
+}
+
+@article{barrett2019,
+  author  = {Barrett, Lisa Feldman and Adolphs, Ralph and Marsella, Stacy and Martinez, Aleix M. and Pollak, Seth D.},
+  title   = {Emotional Expressions Reconsidered: Challenges to Inferring Emotion from Human Facial Movements},
+  journal = {Psychological Science in the Public Interest},
+  volume  = {20},
+  number  = {1},
+  pages   = {1--68},
+  year    = {2019}
+}
+
+@book{crawford2021,
+  author    = {Crawford, Kate},
+  title     = {Atlas of {AI}: Power, Politics, and the Planetary Costs of Artificial Intelligence},
+  year      = {2021},
+  publisher = {Yale University Press}
+}
+
+@inproceedings{hutto2014,
+  author    = {Hutto, Clayton J. and Gilbert, Eric},
+  title     = {{VADER}: A Parsimonious Rule-based Model for Sentiment Analysis of Social Media Text},
+  booktitle = {ICWSM},
+  year      = {2014}
+}
+
+@article{mohammad2013,
+  author  = {Mohammad, Saif M. and Turney, Peter D.},
+  title   = {Crowdsourcing a Word-Emotion Association Lexicon},
+  journal = {Computational Intelligence},
+  volume  = {29},
+  number  = {3},
+  pages   = {436--465},
+  year    = {2013}
+}
+
+@article{campos2020yake,
+  author  = {Campos, Ricardo and Mangaravite, Vítor and Pasquali, Arian and Jorge, Alípio and Nunes, Célia and Jatowt, Adam},
+  title   = {{YAKE}! Keyword Extraction from Single Documents using Multiple Local Features},
+  journal = {Information Sciences},
+  volume  = {509},
+  pages   = {257--289},
+  year    = {2020}
+}
+
+@misc{grootendorst2020keybert,
+  author = {Grootendorst, Maarten},
+  title  = {{KeyBERT}: Minimal keyword extraction with {BERT}},
+  year   = {2020},
+  doi    = {10.5281/zenodo.4461265}
+}
+
+%% ── Chapter 7: Topic Modeling ──
+
+@inproceedings{blei2003,
+  author    = {Blei, David M. and Ng, Andrew Y. and Jordan, Michael I.},
+  title     = {Latent {Dirichlet} Allocation},
+  journal   = {Journal of Machine Learning Research},
+  volume    = {3},
+  pages     = {993--1022},
+  year      = {2003}
+}
+
+@article{lee1999,
+  author  = {Lee, Daniel D. and Seung, H. Sebastian},
+  title   = {Learning the Parts of Objects by Non-Negative Matrix Factorization},
+  journal = {Nature},
+  volume  = {401},
+  pages   = {788--791},
+  year    = {1999}
+}
+
+@article{deerwester1990,
+  author  = {Deerwester, Scott and Dumais, Susan T. and Furnas, George W. and Landauer, Thomas K. and Harshman, Richard},
+  title   = {Indexing by Latent Semantic Analysis},
+  journal = {Journal of the American Society for Information Science},
+  volume  = {41},
+  number  = {6},
+  pages   = {391--407},
+  year    = {1990}
+}
+
+@book{lazarsfeld1968,
+  author    = {Lazarsfeld, Paul F. and Henry, Neil W.},
+  title     = {Latent Structure Analysis},
+  year      = {1968},
+  publisher = {Houghton Mifflin}
+}
+
+@inproceedings{rehurek2010gensim,
+  author    = {Řehůřek, Radim and Sojka, Petr},
+  title     = {Software Framework for Topic Modelling with Large Corpora},
+  booktitle = {LREC Workshop on New Challenges for NLP Frameworks},
+  year      = {2010}
+}
+
+%% ── Chapter 8: Working with LLMs ──
+
+@inproceedings{lewis2020rag,
+  author    = {Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio and Karpukhin, Vladimir and Goyal, Naman and Küttler, Heinrich and Lewis, Mike and Yih, Wen-tau and Rocktäschel, Tim and Riedel, Sebastian and Kiela, Douwe},
+  title     = {Retrieval-Augmented Generation for Knowledge-Intensive {NLP} Tasks},
+  booktitle = {NeurIPS},
+  year      = {2020},
+  note      = {arXiv:2005.11401}
+}
+
+@article{hu2021lora,
+  author  = {Hu, Edward J. and Shen, Yelong and Wallis, Phillip and Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and Wang, Lu and Chen, Weizhu},
+  title   = {{LoRA}: Low-Rank Adaptation of Large Language Models},
+  journal = {ICLR},
+  year    = {2022},
+  note    = {arXiv:2106.09685}
+}
+
+@article{dettmers2023qlora,
+  author  = {Dettmers, Tim and Pagnoni, Artidoro and Holtzman, Ari and Zettlemoyer, Luke},
+  title   = {{QLoRA}: Efficient Finetuning of Quantized {LLMs}},
+  journal = {NeurIPS},
+  year    = {2023},
+  note    = {arXiv:2305.14314}
+}
+
+@inproceedings{papineni2002bleu,
+  author    = {Papineni, Kishore and Roukos, Salim and Ward, Todd and Zhu, Wei-Jing},
+  title     = {{BLEU}: a Method for Automatic Evaluation of Machine Translation},
+  booktitle = {ACL},
+  year      = {2002}
+}
+
+@inproceedings{lin2004rouge,
+  author    = {Lin, Chin-Yew},
+  title     = {{ROUGE}: A Package for Automatic Evaluation of Summaries},
+  booktitle = {ACL Workshop on Text Summarization},
+  year      = {2004}
+}
+
+@article{zhang2020bertscore,
+  author  = {Zhang, Tianyi and Kishore, Varsha and Wu, Felix and Weinberger, Kilian Q. and Artzi, Yoav},
+  title   = {{BERTScore}: Evaluating Text Generation with {BERT}},
+  journal = {ICLR},
+  year    = {2020},
+  note    = {arXiv:1904.09675}
+}
+
+@article{ouyang2022instructgpt,
+  author  = {Ouyang, Long and others},
+  title   = {Training Language Models to Follow Instructions with Human Feedback},
+  journal = {NeurIPS},
+  year    = {2022},
+  note    = {arXiv:2203.02155}
+}
+
+@article{kojima2022cot,
+  author  = {Kojima, Takeshi and Gu, Shixiang Shane and Reid, Machel and Matsuo, Yutaka and Iwasawa, Yusuke},
+  title   = {Large Language Models are Zero-Shot Reasoners},
+  journal = {NeurIPS},
+  year    = {2022},
+  note    = {arXiv:2205.11916}
+}
+
+@article{wei2022cot,
+  author  = {Wei, Jason and Wang, Xuezhi and Schuurmans, Dale and Bosma, Maarten and Chi, Ed and Le, Quoc and Zhou, Denny},
+  title   = {Chain-of-Thought Prompting Elicits Reasoning in Large Language Models},
+  journal = {NeurIPS},
+  year    = {2022},
+  note    = {arXiv:2201.11903}
+}
+
+%% ── Chapter 9: AI Agents ──
+
+@article{yao2022react,
+  author  = {Yao, Shunyu and Zhao, Jeffrey and Yu, Dian and Du, Nan and Shafran, Irina and Narasimhan, Karthik and Cao, Yuan},
+  title   = {{ReAct}: Synergizing Reasoning and Acting in Language Models},
+  journal = {ICLR},
+  year    = {2023},
+  note    = {arXiv:2210.03629}
+}
+
+@inproceedings{park2023generative,
+  author    = {Park, Joon Sung and O'Brien, Joseph C. and Cai, Carrie J. and Morris, Meredith Ringel and Liang, Percy and Bernstein, Michael S.},
+  title     = {Generative Agents: Interactive Simulacra of Human Behavior},
+  booktitle = {UIST},
+  year      = {2023},
+  note      = {arXiv:2304.03442}
+}
+
+@article{wu2023autogen,
+  author  = {Wu, Qingyun and Bansal, Gagan and Zhang, Jieyu and Wu, Yiran and Zhang, Shaokun and Zhu, Erkang and Li, Beibin and Jiang, Li and Zhang, Xiaoyun and Wang, Chi},
+  title   = {{AutoGen}: Enabling Next-Gen {LLM} Applications via Multi-Agent Conversation},
+  year    = {2023},
+  note    = {arXiv:2308.08155}
+}
+
+@article{nakano2021webgpt,
+  author  = {Nakano, Reiichiro and others},
+  title   = {{WebGPT}: Browser-assisted question-answering with human feedback},
+  year    = {2021},
+  note    = {arXiv:2112.09332}
+}
+
+@article{hong2023metagpt,
+  author  = {Hong, Sirui and others},
+  title   = {{MetaGPT}: Meta Programming for a Multi-Agent Collaborative Framework},
+  year    = {2023},
+  note    = {arXiv:2308.00352}
+}
+
+@book{sutton1998,
+  author    = {Sutton, Richard S. and Barto, Andrew G.},
+  title     = {Reinforcement Learning: An Introduction},
+  year      = {1998},
+  publisher = {MIT Press}
+}
+
+@book{bond1988,
+  author    = {Bond, Alan H. and Gasser, Les},
+  title     = {Readings in Distributed Artificial Intelligence},
+  year      = {1988},
+  publisher = {Morgan Kaufmann}
+}

@@ -1,0 +1,6 @@
+---
+title: "5.3. Sentiment Analysis"
+author: "Kamil Filipek"
+format: html
+editor: visual
+---

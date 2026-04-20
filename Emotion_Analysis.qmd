@@ -1,0 +1,392 @@
+---
+title: "6.4. Emotion Analysis"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 6.4.1. From Sentiment to Emotion
+
+Sentiment analysis assigns a polarity — positive, negative, neutral. **Emotion analysis** goes further: it tries to identify *which* emotion a text expresses. Is it anger, sadness, fear, joy, or surprise? The distinction matters: a job rejection letter is *negative*, but the relevant emotion is *disappointment* or *sadness* — actionable information that polarity alone cannot provide.
+
+Emotion analysis sits at the intersection of NLP, psychology, and philosophy of mind. To build a computational model of emotion, you first need a theory of what emotions are. That question has been debated for over a century, and the answer is far from settled.
+
+### 6.4.2. A History of Emotion Classification
+
+#### The Physiological Turn: James and Lange (1884)
+
+William James and Carl Lange independently proposed that emotions are the *perception of physiological changes*, not the cause of them. We do not tremble because we are afraid — we are afraid because we tremble. This body-first view implied that emotions are universal, because human physiology is universal. It set the template for later theories that treat emotions as discrete, biologically fixed categories.
+
+#### Darwin's Evolutionary View (1872)
+
+In *The Expression of the Emotions in Man and Animals*, Darwin argued that emotional expressions — facial movements, postures, vocalizations — evolved because they served adaptive functions and are therefore **shared across species and cultures**. A snarl, a smile, a furrowed brow carry the same meaning whether in a human or a chimpanzee. This universality thesis became the cornerstone of Ekman's work nearly a century later.
+
+#### Ekman's Six Basic Emotions (1972)
+
+**Paul Ekman** is the most influential emotion theorist in NLP and AI. In cross-cultural studies conducted in the 1960s–1970s — including with isolated Papua New Guinean tribes who had no contact with Western media — Ekman claimed to demonstrate that six emotions have **universal, culture-independent facial expressions**:
+
+| Emotion | Facial Signal |
+|---------|--------------|
+| **Happiness** | Raised cheek muscles, crow's feet, Duchenne smile |
+| **Sadness** | Inner brow raise, lip corners pulled down |
+| **Anger** | Brows lowered and drawn together, lips pressed |
+| **Fear** | Brows raised and drawn together, mouth open |
+| **Disgust** | Nose wrinkling, upper lip raised |
+| **Surprise** | Brows raised (curved), eyes wide, jaw drops |
+
+A seventh emotion — **Contempt** — was later added, identifiable by a unilateral lip corner raise.
+
+Ekman's model was enormously influential because it promised something operationally attractive: **a finite, discrete, cross-culturally stable taxonomy** of emotions. If six expressions are universal, you can train a classifier, apply it anywhere, and trust the results. This was the theoretical foundation for a wave of AI emotion recognition products.
+
+#### Russell's Circumplex Model (1980)
+
+James A. Russell proposed an alternative: rather than discrete categories, emotions occupy a **two-dimensional continuous space** defined by:
+
+-   **Valence** (pleasant ↔ unpleasant)
+-   **Arousal** (activated ↔ deactivated)
+
+In this model, "anger" and "fear" are both high-arousal, negative-valence states that differ subtly in their exact position. "Sadness" and "boredom" are both negative, but low arousal. "Joy" is positive and high arousal; "contentment" is positive and low arousal.
+
+```
+          HIGH AROUSAL
+               │
+   Fear        │      Excitement
+   Anger       │      Joy
+               │
+NEGATIVE ──────┼────── POSITIVE
+               │
+   Sadness     │      Contentment
+   Boredom     │      Relaxation
+               │
+          LOW AROUSAL
+```
+
+Russell's model is preferred in **affective computing** systems that need to capture emotional nuance on a continuous scale, for example in music generation, dialogue systems, and therapy applications.
+
+#### Plutchik's Wheel (1980)
+
+Robert Plutchik proposed **eight basic emotions** arranged as four opposing pairs:
+
+-   Joy ↔ Sadness
+-   Anger ↔ Fear
+-   Trust ↔ Disgust
+-   Anticipation ↔ Surprise
+
+These combine to form **compound emotions**: joy + trust = love; anger + disgust = contempt; fear + surprise = awe. The model is hierarchical — emotions come in intensities (rage → anger → annoyance). Plutchik's wheel influenced several NLP lexicons, most notably the **NRC Emotion Lexicon** (Mohammad & Turney, 2013), widely used in computational studies.
+
+#### Appraisal Theories (Lazarus, Scherer — 1980s–2000s)
+
+Appraisal theories (Lazarus, 1982; Scherer, 1984) argue that emotions arise from **cognitive evaluations** of events: Is this relevant to my goals? Did I cause it? Can I cope? Different appraisal patterns produce different emotions — not fixed physiological patterns. This makes emotions inherently **context-dependent and variable across individuals**, complicating any simple facial-expression classifier.
+
+#### Constructed Emotion: Lisa Feldman Barrett (2017)
+
+In *How Emotions Are Made* (2017), psychologist **Lisa Feldman Barrett** advances the most radical challenge to Ekman: emotions are not biological universals but **mental constructions** — predictions made by the brain, shaped by culture, language, and personal history. There is no dedicated neural circuit for "fear" or "anger." The brain builds an emotional experience from:
+
+-   Interoceptive signals (body state)
+-   Prior conceptual knowledge (what past experiences labeled this state)
+-   The current social context
+
+Barrett's work — backed by meta-analyses of neuroimaging data — implies that reading emotions from faces is fundamentally unreliable. The same facial configuration can mean radically different things in different cultural or situational contexts. This view has profound implications for automated emotion recognition.
+
+### 6.4.3. Kate Crawford and the Critique of Emotion AI
+
+In **"Atlas of AI: Power, Politics, and the Planetary Costs of Artificial Intelligence"** (2021), Kate Crawford devotes substantial attention to emotion recognition as a case study in how AI systems encode contested science into consequential products.
+
+Crawford's central arguments:
+
+1.  **Ekman's science is disputed, but AI products treat it as settled.** Hundreds of studies have failed to reliably replicate the cross-cultural universality of facial expressions. The American Psychological Association, the Association for Psychological Science, and a major 2019 meta-analysis (Barrett, Adolphs, Marsella et al.) concluded that there is no consistent, universal mapping from facial configuration to emotional state.
+
+2.  **The claim of universality is acultural.** Ekman's Papua New Guinea studies have been criticized for methodological flaws (forced choice paradigm, interpreter coaching, small samples). Subsequent research shows that emotional expressions differ substantially across cultures, contexts, and individuals. Treating Western emotional norms as universal is a form of cultural imperialism embedded in the model's training data.
+
+3.  **High-stakes applications magnify the harm.** Emotion AI products were sold to corporations for hiring decisions (screening job applicants' faces during video interviews), to governments for border security and surveillance, and to educators for engagement monitoring. If the underlying science is invalid, these systems produce unreliable outputs — and deploy that unreliability on populations who have no recourse.
+
+4.  **Power asymmetries matter.** Crawford situates emotion AI within a broader critique of surveillance capitalism: the subjects of emotion recognition have no say in how their faces are interpreted, no access to the model's reasoning, and bear the full consequences of its errors. These errors fall disproportionately on racialized groups, where existing training data is least representative.
+
+Crawford's critique does not argue that NLP-based emotion analysis is worthless — text can carry genuine emotional signal. It argues that the *theory of emotion* underlying many systems is scientifically contested, and that deploying these systems in high-stakes settings without acknowledging that uncertainty is an ethical failure.
+
+::: callout-note
+**For further reading:**
+
+-   Barrett, L. F. (2017). *How Emotions Are Made: The Secret Life of the Brain.* Houghton Mifflin.
+-   Crawford, K. (2021). *Atlas of AI: Power, Politics, and the Planetary Costs of Artificial Intelligence.* Yale University Press. (Chapter 5: Affect)
+-   Barrett, L. F., Adolphs, R., Marsella, S., et al. (2019). Emotional Expressions Reconsidered: Challenges to Inferring Emotion from Human Facial Movements. *Psychological Science in the Public Interest*, 20(1), 1–68.
+:::
+
+### 6.4.4. Ekman-Based Emotion Analysis in Python
+
+Despite the theoretical controversies, Ekman's six-category model remains the dominant framework in NLP emotion datasets and pre-trained classifiers — making it the practical starting point for most projects.
+
+#### With `text2emotion`
+
+``` python
+# pip install text2emotion
+
+import text2emotion as te
+
+texts = [
+    "I just got promoted! This is the best day of my life!",
+    "I can't believe they lied to me. I'm absolutely furious.",
+    "She passed away last night. I don't know how to cope.",
+    "There's something moving in the dark. I don't dare look.",
+    "Wait — you're actually serious? That came out of nowhere!",
+    "This place smells terrible and the food looks disgusting."
+]
+
+print(f"{'Text':<52} Happy  Angry   Sad  Fear  Surpr")
+print("-" * 90)
+for text in texts:
+    emotions = te.get_emotion(text)
+    print(
+        f"{text[:51]:<52} "
+        f"{emotions['Happy']:>5.2f} "
+        f"{emotions['Angry']:>6.2f} "
+        f"{emotions['Sad']:>5.2f} "
+        f"{emotions['Fear']:>5.2f} "
+        f"{emotions['Surprise']:>6.2f}"
+    )
+```
+
+```
+Text                                                 Happy  Angry   Sad  Fear  Surpr
+------------------------------------------------------------------------------------------
+I just got promoted! This is the best day of my...   1.00   0.00  0.00  0.00   0.00
+I can't believe they lied to me. I'm absolutely...   0.00   1.00  0.00  0.00   0.00
+She passed away last night. I don't know how to...   0.00   0.00  1.00  0.00   0.00
+There's something moving in the dark. I don't d...   0.00   0.00  0.00  1.00   0.00
+Wait — you're actually serious? That came out o...   0.00   0.00  0.00  0.00   1.00
+This place smells terrible and the food looks d...   0.00   0.33  0.00  0.00   0.00
+```
+
+#### With a Fine-Tuned Transformer (j-hartmann/emotion-english-distilroberta-base)
+
+This model is trained on six datasets (including GoEmotions) and classifies across Ekman's six emotions plus "neutral":
+
+``` python
+from transformers import pipeline
+
+emotion_classifier = pipeline(
+    "text-classification",
+    model="j-hartmann/emotion-english-distilroberta-base",
+    return_all_scores=True
+)
+
+texts = [
+    "I just got promoted! This is the best day of my life!",
+    "I can't believe they lied to me. I'm absolutely furious.",
+    "She passed away last night. I don't know how to cope.",
+    "There's something moving in the dark. I don't dare look.",
+    "Wait — you're actually serious? That came out of nowhere!",
+    "This place smells terrible and the food looks disgusting."
+]
+
+for text in texts:
+    print(f"\nText: {text[:65]}")
+    scores = emotion_classifier(text)[0]
+    scores_sorted = sorted(scores, key=lambda x: x["score"], reverse=True)
+    for item in scores_sorted[:3]:
+        bar = "█" * int(item["score"] * 30)
+        print(f"  {item['label']:<12} {item['score']:.4f} {bar}")
+```
+
+```
+Text: I just got promoted! This is the best day of my life!
+  joy          0.9812 █████████████████████████████
+  neutral      0.0089
+  surprise     0.0054
+
+Text: I can't believe they lied to me. I'm absolutely furious.
+  anger        0.9723 █████████████████████████████
+  disgust      0.0143
+  neutral      0.0072
+
+Text: She passed away last night. I don't know how to cope.
+  sadness      0.9641 ████████████████████████████
+  fear         0.0189
+  neutral      0.0091
+
+Text: There's something moving in the dark. I don't dare look.
+  fear         0.8934 ██████████████████████████
+  surprise     0.0612 █
+  neutral      0.0287
+
+Text: Wait — you're actually serious? That came out of nowhere!
+  surprise     0.8721 ██████████████████████████
+  joy          0.0634 █
+  neutral      0.0421
+
+Text: This place smells terrible and the food looks disgusting.
+  disgust      0.9501 ████████████████████████████
+  anger        0.0312
+  neutral      0.0112
+```
+
+#### NRC Emotion Lexicon (Plutchik-based, 8 emotions)
+
+For a broader eight-emotion model following Plutchik's wheel:
+
+``` python
+# pip install nrclex
+from nrclex import NRCLex
+
+texts = [
+    "The victory was celebrated with great joy and excitement across the country.",
+    "The earthquake left survivors in shock, grief, and fear for their lives."
+]
+
+emotions_of_interest = ["joy", "sadness", "anger", "fear", "trust", "disgust", "anticipation", "surprise"]
+
+for text in texts:
+    print(f"\nText: {text[:70]}")
+    nrc = NRCLex(text)
+    freqs = nrc.affect_frequencies
+    for emotion in emotions_of_interest:
+        score = freqs.get(emotion, 0.0)
+        bar = "█" * int(score * 40)
+        print(f"  {emotion:<15} {score:.3f} {bar}")
+```
+
+```
+Text: The victory was celebrated with great joy and excitement across the c...
+  joy             0.286 ███████████
+  sadness         0.000
+  anger           0.000
+  fear            0.000
+  trust           0.214 ████████
+  disgust         0.000
+  anticipation    0.143 █████
+  surprise        0.071 ██
+
+Text: The earthquake left survivors in shock, grief, and fear for their li...
+  joy             0.000
+  sadness         0.250 ██████████
+  anger           0.083 ███
+  fear            0.333 █████████████
+  trust           0.000
+  disgust         0.000
+  anticipation    0.083 ███
+  surprise        0.167 ██████
+```
+
+### 6.4.5. Emotion Analysis with GenAI
+
+Generative models can reason about emotion in ways that rigid classifiers cannot: they handle cultural context, figurative language, ambiguity, and mixed emotions, and they can articulate their reasoning.
+
+``` python
+import anthropic
+import json
+
+client = anthropic.Anthropic()
+
+def analyze_emotions(text: str) -> dict:
+    prompt = f"""Analyze the emotions expressed in the text below using Ekman's six basic emotions
+(joy, sadness, anger, fear, disgust, surprise) plus 'neutral'.
+
+Return a JSON object with:
+- "primary_emotion": the dominant emotion
+- "emotion_scores": dict mapping each of the 7 labels to a float 0.0–1.0
+- "mixed_emotions": true if multiple emotions are present at significant levels
+- "figurative_language": true if the text uses irony, sarcasm, or metaphor
+- "cultural_notes": any cultural or contextual factors affecting interpretation
+- "explanation": one or two sentences explaining the emotional analysis
+
+Return ONLY valid JSON.
+
+Text: {text}"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return json.loads(message.content[0].text)
+
+
+examples = [
+    "After years of trying, we finally adopted a child. I have no words.",
+    "Sure, go ahead and take the last slice. It's not like I wanted it.",
+    "The soldier returned home to find his family had moved on without him."
+]
+
+for text in examples:
+    print(f"\n{'='*70}")
+    print(f"Text: {text}")
+    result = analyze_emotions(text)
+    print(f"Primary emotion    : {result['primary_emotion']}")
+    print(f"Mixed emotions     : {result['mixed_emotions']}")
+    print(f"Figurative language: {result['figurative_language']}")
+    print(f"Explanation        : {result['explanation']}")
+    print(f"\nEmotion scores:")
+    for emotion, score in sorted(result['emotion_scores'].items(), key=lambda x: -x[1]):
+        bar = "█" * int(score * 25)
+        print(f"  {emotion:<12} {score:.2f} {bar}")
+```
+
+```
+======================================================================
+Text: After years of trying, we finally adopted a child. I have no words.
+Primary emotion    : joy
+Mixed emotions     : True
+Figurative language: False
+Explanation        : Overwhelming joy and relief after a long struggle,
+                     with the phrase "I have no words" signaling that the
+                     emotion exceeds what language can capture.
+
+Emotion scores:
+  joy          0.82 ████████████████████
+  surprise     0.45 ███████████
+  sadness      0.12 ███
+  neutral      0.05 █
+  anger        0.00
+  fear         0.00
+  disgust      0.00
+
+======================================================================
+Text: Sure, go ahead and take the last slice. It's not like I wanted it.
+Primary emotion    : anger
+Mixed emotions     : True
+Figurative language: True
+Explanation        : Classic passive-aggressive sarcasm: the surface text
+                     is permissive, but the emotional content is frustration
+                     and mild resentment — the opposite of the literal meaning.
+
+Emotion scores:
+  anger        0.61 ███████████████
+  disgust      0.22 █████
+  sadness      0.15 ███
+  neutral      0.08 ██
+  joy          0.00
+  fear         0.00
+  surprise     0.00
+
+======================================================================
+Text: The soldier returned home to find his family had moved on without him.
+Primary emotion    : sadness
+Mixed emotions     : True
+Figurative language: False
+Explanation        : Deep sadness from loss and abandonment, compounded
+                     by the bitter irony of surviving war only to face
+                     alienation at home — a culturally resonant narrative.
+
+Emotion scores:
+  sadness      0.78 ███████████████████
+  fear         0.25 ██████
+  surprise     0.20 █████
+  anger        0.12 ███
+  neutral      0.05 █
+  joy          0.00
+  disgust      0.00
+```
+
+### 6.4.6. Model Comparison
+
+| Approach | Taxonomy | Accuracy | Handles sarcasm | Handles ambiguity | Speed |
+|---|---|---|---|---|---|
+| text2emotion | Ekman (6) | Low | No | No | Instant |
+| NRCLex lexicon | Plutchik (8) | Low–Moderate | No | No | Instant |
+| DistilRoBERTa (j-hartmann) | Ekman+neutral (7) | High | Partial | Partial | Fast |
+| GenAI (Claude) | Any (prompted) | Very high | Yes | Yes | Slow/API |
+
+::: callout-note
+**A note on validity.** All models in this section — including the transformer — are trained on text datasets annotated according to Ekman's framework. If Barrett and Crawford are right that emotions are culturally constructed rather than biologically universal, then these models learn a culturally specific, English-language mapping of emotion, and applying them cross-culturally introduces systematic bias. This is worth stating explicitly whenever results are interpreted or presented to decision-makers.
+:::

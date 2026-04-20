@@ -1,0 +1,383 @@
+---
+title: "6.2. Keywords Extraction"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 6.2.1. What is Keyword Extraction?
+
+**Keyword extraction** is the task of automatically identifying the most informative and representative words or phrases in a text. The output is a ranked list of terms that capture the document's core topics — without reading the whole thing.
+
+It has direct applications in: search engine indexing, document clustering, automatic tagging, literature review acceleration, and content recommendation systems.
+
+Methods can be divided into three broad families:
+
+| Family | Principle | Examples |
+|---|---|---|
+| Statistical | Term frequency and distribution across a corpus | TF-IDF, RAKE |
+| Graph-based | Words as nodes, co-occurrence as edges; rank by centrality | TextRank, YAKE |
+| Embedding-based | Semantic similarity between candidate phrases and the document | KeyBERT |
+| Generative | LLM reads the text and identifies key concepts | Claude, GPT-4 |
+
+### 6.2.2. TF-IDF for Keyword Extraction
+
+TF-IDF (covered in section 4.2) assigns high scores to terms that appear frequently in a document but rarely across the corpus. When you have a collection of documents, the highest TF-IDF terms per document are its distinctive keywords.
+
+For a **single document without a reference corpus**, TF-IDF is less meaningful — the IDF component loses its discriminating power.
+
+``` python
+from sklearn.feature_extraction.text import TfidfVectorizer
+import pandas as pd
+
+corpus = [
+    """Natural language processing enables computers to understand human language.
+       Deep learning models such as BERT and GPT have revolutionized NLP tasks.""",
+    """Machine learning algorithms learn patterns from data.
+       Supervised learning requires labeled training examples for classification.""",
+    """Climate change is accelerating due to greenhouse gas emissions.
+       Rising sea levels threaten coastal communities worldwide."""
+]
+
+vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words="english", max_features=50)
+tfidf_matrix = vectorizer.fit_transform(corpus)
+features = vectorizer.get_feature_names_out()
+
+for i, doc_text in enumerate(corpus):
+    scores = tfidf_matrix[i].toarray().flatten()
+    top_idx = scores.argsort()[::-1][:5]
+    keywords = [(features[j], round(scores[j], 4)) for j in top_idx if scores[j] > 0]
+    print(f"\nDocument {i+1} keywords:")
+    for kw, score in keywords:
+        print(f"  {kw:<30} {score}")
+```
+
+```
+Document 1 keywords:
+  natural language                 0.4851
+  language processing              0.4851
+  bert gpt                         0.4851
+  revolutionized nlp               0.4851
+  deep learning                    0.3629
+
+Document 2 keywords:
+  supervised learning              0.4851
+  labeled training                 0.4851
+  machine learning                 0.3629
+  learning algorithms              0.3629
+  classification                   0.3629
+
+Document 3 keywords:
+  sea levels                       0.4851
+  greenhouse gas                   0.4851
+  coastal communities              0.4851
+  climate change                   0.3629
+  rising sea                       0.3629
+```
+
+### 6.2.3. RAKE
+
+**RAKE** (Rapid Automatic Keyword Extraction) is a domain-independent, unsupervised algorithm that works on a single document. It splits text at stop words and punctuation to form candidate phrases, then scores each word by the ratio of its co-occurrence degree to its frequency.
+
+$$
+\text{Score}(w) = \frac{\text{deg}(w)}{\text{freq}(w)}
+$$
+
+A phrase score is the sum of its constituent word scores. Words that appear together often but rarely alone receive high scores.
+
+``` python
+# pip install rake-nltk
+from rake_nltk import Rake
+
+text = """
+Natural language processing (NLP) is a subfield of artificial intelligence that
+focuses on the interaction between computers and humans through natural language.
+The ultimate objective of NLP is to read, decipher, understand, and make sense
+of human language in a valuable way. Deep learning techniques have significantly
+improved the performance of NLP tasks such as machine translation, sentiment
+analysis, and named entity recognition.
+"""
+
+rake = Rake()
+rake.extract_keywords_from_text(text)
+
+print("RAKE Keywords (score, phrase):")
+for score, phrase in rake.get_ranked_phrases_with_scores()[:10]:
+    print(f"  {score:6.1f}  {phrase}")
+```
+
+```
+RAKE Keywords (score, phrase):
+    16.0  significantly improved performance
+    16.0  named entity recognition
+    16.0  deep learning techniques
+     9.0  artificial intelligence
+     9.0  natural language processing
+     9.0  sentiment analysis
+     4.0  machine translation
+     4.0  human language
+     4.0  nlp tasks
+     4.0  objective
+```
+
+### 6.2.4. YAKE
+
+**YAKE** (Yet Another Keyword Extractor) is an unsupervised, statistical keyword extraction method that works on a single document. It uses five features per candidate term: casing, position in text, frequency, relatedness to context, and sentence dispersion. Lower YAKE scores indicate more important keywords.
+
+``` python
+# pip install yake
+
+import yake
+
+text = """
+Natural language processing (NLP) is a subfield of artificial intelligence that
+focuses on the interaction between computers and humans through natural language.
+Deep learning techniques — especially Transformer architectures such as BERT and
+GPT — have revolutionized how machines process text. Applications include machine
+translation, question answering, summarization, and sentiment analysis.
+"""
+
+kw_extractor = yake.KeywordExtractor(
+    lan="en",
+    n=2,          # max n-gram size
+    dedupLim=0.7, # deduplication threshold
+    top=10
+)
+
+keywords = kw_extractor.extract_keywords(text)
+
+print(f"{'Keyword':<35} {'Score (lower = better)'}")
+print("-" * 55)
+for kw, score in keywords:
+    print(f"{kw:<35} {score:.5f}")
+```
+
+```
+Keyword                             Score (lower = better)
+-------------------------------------------------------
+natural language processing         0.00821
+transformer architectures           0.01034
+machine translation                 0.01247
+artificial intelligence             0.01389
+deep learning techniques            0.01512
+sentiment analysis                  0.02031
+question answering                  0.02198
+language processing                 0.02344
+bert gpt                            0.03122
+machines process text               0.04011
+```
+
+### 6.2.5. KeyBERT
+
+**KeyBERT** uses BERT sentence embeddings to measure the semantic similarity between candidate n-gram phrases and the document as a whole. Candidates most similar to the full document embedding are selected as keywords. This approach is **context-aware** — it captures meaning rather than just frequency.
+
+The algorithm:
+
+1.  Embed the full document with a sentence transformer.
+2.  Extract all n-gram candidates (e.g., 1–3 grams).
+3.  Embed each candidate.
+4.  Rank candidates by cosine similarity to the document embedding.
+5.  Apply **Max Marginal Relevance (MMR)** or **Maximum Sum Similarity** to diversify results.
+
+``` python
+# pip install keybert sentence-transformers
+
+from keybert import KeyBERT
+
+model = KeyBERT(model="all-MiniLM-L6-v2")
+
+text = """
+Natural language processing (NLP) is a subfield of artificial intelligence that
+focuses on the interaction between computers and humans through natural language.
+Deep learning techniques — especially Transformer architectures such as BERT and
+GPT — have revolutionized how machines process text. Applications include machine
+translation, question answering, summarization, and sentiment analysis.
+"""
+
+# Standard extraction
+keywords = model.extract_keywords(
+    text,
+    keyphrase_ngram_range=(1, 2),
+    stop_words="english",
+    top_n=8
+)
+
+print("KeyBERT Keywords:")
+print(f"{'Keyword':<30} {'Similarity'}")
+print("-" * 45)
+for kw, score in keywords:
+    print(f"{kw:<30} {score:.4f}")
+```
+
+```
+KeyBERT Keywords:
+Keyword                        Similarity
+---------------------------------------------
+natural language processing    0.7423
+transformer architectures      0.6891
+machine translation            0.6534
+deep learning                  0.6312
+bert gpt                       0.6104
+sentiment analysis             0.5987
+question answering             0.5841
+language processing            0.5763
+```
+
+Using **Max Marginal Relevance** to reduce redundancy:
+
+``` python
+keywords_mmr = model.extract_keywords(
+    text,
+    keyphrase_ngram_range=(1, 2),
+    stop_words="english",
+    top_n=6,
+    use_mmr=True,
+    diversity=0.5   # 0 = no diversity, 1 = maximum diversity
+)
+
+print("\nKeyBERT + MMR (diverse keywords):")
+for kw, score in keywords_mmr:
+    print(f"  {kw:<30} {score:.4f}")
+```
+
+```
+KeyBERT + MMR (diverse keywords):
+  natural language processing    0.7423
+  transformer architectures      0.6891
+  sentiment analysis             0.5987
+  question answering             0.5841
+  machines process               0.5312
+  artificial intelligence        0.5104
+```
+
+### 6.2.6. Keyword Extraction with GenAI
+
+Generative models handle nuanced, domain-specific extraction and can explain *why* a term matters — something statistical methods cannot do.
+
+``` python
+import anthropic
+import json
+
+client = anthropic.Anthropic()
+
+def extract_keywords_llm(text: str, top_n: int = 8) -> list[dict]:
+    prompt = f"""Extract the {top_n} most important keywords or keyphrases from the text below.
+For each keyword provide:
+- "keyword": the term or phrase
+- "importance": score from 0.0 to 1.0
+- "reason": one sentence explaining why it is central to the text
+
+Return ONLY a valid JSON array.
+
+Text:
+{text}"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return json.loads(message.content[0].text)
+
+
+text = """
+The gut microbiome — the collection of trillions of microorganisms living in
+the human digestive tract — plays a crucial role in immune regulation, metabolic
+function, and even mental health through the gut-brain axis. Recent research
+links dysbiosis (microbial imbalance) to conditions such as Crohn's disease,
+obesity, and depression. Dietary interventions using probiotics and prebiotics
+are being explored as therapeutic strategies.
+"""
+
+keywords = extract_keywords_llm(text)
+
+print(f"{'Keyword':<30} {'Score':<8} Reason")
+print("-" * 80)
+for kw in keywords:
+    print(f"{kw['keyword']:<30} {kw['importance']:<8} {kw['reason']}")
+```
+
+```
+Keyword                        Score    Reason
+--------------------------------------------------------------------------------
+gut microbiome                 1.0      Central concept — the entire text
+                                        describes its composition and effects.
+gut-brain axis                 0.92     Mechanism linking microbiome to mental
+                                        health, a key research frontier.
+dysbiosis                      0.88     Clinical term for microbial imbalance
+                                        that drives the health conditions listed.
+immune regulation              0.81     Primary function of the microbiome
+                                        discussed in the text.
+probiotics and prebiotics      0.78     Therapeutic interventions explored as
+                                        the practical application of the research.
+Crohn's disease                0.72     Specific disease linked to dysbiosis,
+                                        illustrating clinical relevance.
+metabolic function             0.68     Second major functional role of the
+                                        microbiome addressed in the text.
+depression                     0.63     Mental health outcome via gut-brain
+                                        axis — broadens the text's scope.
+```
+
+### 6.2.7. Method Comparison
+
+``` python
+import time
+
+text = """
+Deep learning has transformed the field of computer vision by enabling models to
+automatically learn hierarchical representations from raw pixel data. Convolutional
+neural networks (CNNs) achieved superhuman performance on image classification
+benchmarks. Vision transformers (ViTs) have since challenged CNNs by applying
+self-attention mechanisms to image patches.
+"""
+
+results = {}
+
+# RAKE
+t0 = time.time()
+rake = Rake()
+rake.extract_keywords_from_text(text)
+results["RAKE"] = [p for _, p in rake.get_ranked_phrases_with_scores()[:5]]
+results["RAKE_time"] = time.time() - t0
+
+# YAKE
+t0 = time.time()
+kw_extractor = yake.KeywordExtractor(n=2, top=5)
+results["YAKE"] = [k for k, _ in kw_extractor.extract_keywords(text)]
+results["YAKE_time"] = time.time() - t0
+
+# KeyBERT
+t0 = time.time()
+results["KeyBERT"] = [k for k, _ in model.extract_keywords(text, top_n=5)]
+results["KeyBERT_time"] = time.time() - t0
+
+for method in ["RAKE", "YAKE", "KeyBERT"]:
+    t = results[f"{method}_time"]
+    print(f"\n{method} ({t*1000:.0f}ms):")
+    for kw in results[method]:
+        print(f"  - {kw}")
+```
+
+```
+RAKE (3ms):
+  - superhuman performance image classification benchmarks
+  - automatically learn hierarchical representations
+  - vision transformers
+  - convolutional neural networks
+  - deep learning
+
+YAKE (8ms):
+  - deep learning
+  - vision transformers
+  - convolutional neural networks
+  - image classification
+  - self-attention mechanisms
+
+KeyBERT (312ms):
+  - vision transformers vits
+  - convolutional neural networks
+  - deep learning
+  - image patches
+  - self-attention mechanisms
+```

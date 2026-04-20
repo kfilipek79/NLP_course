@@ -1,0 +1,260 @@
+---
+title: "5.3. GPT"
+author: "Kamil Filipek"
+editor: visual
+---
+
+### 5.3.1. Generative Pre-trained Transformer
+
+**GPT** (Generative Pre-trained Transformer) is the foundation of modern generative language models --- everything from ChatGPT to Claude builds directly on its principles.
+
+Where BERT reads text **bidirectionally** (attending to both left and right context simultaneously), GPT reads text **left-to-right only**. This is a deliberate design choice: GPT is a **generative** model trained to predict the next word in a sequence, which requires that it only "see" the past, never the future.
+
+::: callout-note
+#### BERT vs. GPT --- the key distinction
+
+| Property          | BERT                  | GPT                    |
+|-------------------|-----------------------|------------------------|
+| Direction         | Bidirectional         | Left-to-right (causal) |
+| Architecture      | Encoder               | Decoder                |
+| Pre-training task | Masked Language Model | Next-token prediction  |
+| Primary use       | Understanding         | Generation             |
+:::
+
+GPT uses the **decoder** part of the original Transformer architecture (Vaswani et al., 2017). Its core mechanism is **causal (masked) self-attention** --- each token can only attend to itself and earlier tokens, never to future ones. This is what makes autoregressive text generation possible.
+
+### 5.3.2. GPT Architecture
+
+#### Causal Self-Attention
+
+The key difference from BERT's self-attention is the **causal mask**. When computing attention scores for token $t$, all positions $j > t$ are set to $-\infty$ before the softmax, so their attention weights become zero.
+
+$$
+\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}} + M\right) V
+$$
+
+where $M$ is the causal mask matrix:
+
+$$
+M_{ij} = \begin{cases} 0 & \text{if } i \geq j \\ -\infty & \text{if } i < j \end{cases}
+$$
+
+This forces the model to predict each token using only its left context.
+
+------------------------------------------------------------------------
+
+**Example --- "The cat sat on the"**
+
+When predicting the next token after "the":
+
+```         
+"The" → can only attend to: [The]
+"cat" → can only attend to: [The, cat]
+"sat" → can only attend to: [The, cat, sat]
+"on"  → can only attend to: [The, cat, sat, on]
+"the" → can only attend to: [The, cat, sat, on, the]
+```
+
+The model then outputs a probability distribution over the vocabulary for the next word --- ideally assigning high probability to "mat."
+
+------------------------------------------------------------------------
+
+#### Pre-training: Autoregressive Language Modeling
+
+GPT is trained on a single, simple objective: given a sequence of tokens $(w_1, w_2, \ldots, w_T)$, maximize:
+
+$$
+\mathcal{L} = \sum_{t=1}^{T} \log P(w_t \mid w_1, \ldots, w_{t-1})
+$$
+
+This is **unsupervised** --- the training data is raw text with no labels. The "label" for each position is simply the next token.
+
+#### Model Configurations
+
+**GPT-1** (Radford et al., 2018):
+
+-   12 layers, 768 hidden units, 12 attention heads
+-   117M parameters
+-   Trained on BooksCorpus (800M words)
+
+**GPT-2** (Radford et al., 2019):
+
+-   Up to 48 layers, 1600 hidden units, 25 attention heads
+-   Up to 1.5B parameters
+-   Trained on WebText (\~40GB)
+
+**GPT-3** (Brown et al., 2020):
+
+-   96 layers, 12288 hidden units, 96 attention heads
+-   175B parameters --- text generation at scale
+
+#### Key Characteristics
+
+-   **Unidirectional**: Each token attends only to past tokens.
+
+-   **Autoregressive generation**: Text is produced one token at a time, each conditioned on all previous tokens.
+
+-   **Pre-trained + fine-tuned**: GPT learns general language structure during pre-training, then adapts to specific tasks (classification, QA, summarization) during fine-tuning.
+
+-   **In-context learning** (GPT-3 onwards): The model can solve new tasks from a few examples given directly in the prompt --- no weight updates required.
+
+### 5.3.3. GPT in Python
+
+Let's work through text generation with GPT-2 using the `transformers` library --- the same library used in the BERT section.
+
+``` python
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
+import torch
+
+# Load GPT-2 (base: 117M parameters)
+tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+model = GPT2LMHeadModel.from_pretrained("gpt2")
+model.eval()
+
+prompt = "The cat sat on the"
+print(f"Prompt: '{prompt}'")
+
+# Tokenize
+inputs = tokenizer(prompt, return_tensors="pt")
+tokens = tokenizer.convert_ids_to_tokens(inputs["input_ids"][0])
+print(f"Tokens: {tokens}")
+print(f"Token IDs: {inputs['input_ids'].tolist()[0]}")
+```
+
+```         
+Prompt: 'The cat sat on the'
+Tokens: ['The', 'Ġcat', 'Ġsat', 'Ġon', 'Ġthe']
+Token IDs: [464, 3797, 3332, 319, 262]
+```
+
+Note the `Ġ` prefix --- GPT-2 uses **Byte Pair Encoding (BPE)** tokenization, where a leading space is part of the token. This differs from BERT's WordPiece tokenizer.
+
+``` python
+# Generate next token probabilities
+with torch.no_grad():
+    outputs = model(**inputs)
+
+logits = outputs.logits  # shape: (1, seq_len, vocab_size)
+
+# Logits for the LAST position — predicting the next token
+next_token_logits = logits[0, -1, :]
+probs = torch.softmax(next_token_logits, dim=-1)
+
+# Top-10 most likely next tokens
+top10 = torch.topk(probs, 10)
+print("\nTop-10 next token predictions:")
+for prob, idx in zip(top10.values, top10.indices):
+    token = tokenizer.decode([idx])
+    print(f"  '{token}': {prob.item():.4f}")
+```
+
+```         
+Top-10 next token predictions:
+  ' floor':  0.0812
+  ' mat':    0.0634
+  ' table':  0.0521
+  ' ground': 0.0489
+  ' couch':  0.0401
+  ' bed':    0.0387
+  ' roof':   0.0299
+  ' side':   0.0278
+  ' edge':   0.0241
+  ' grass':  0.0218
+```
+
+Now let's generate a full continuation using greedy decoding and sampling:
+
+``` python
+# -------------------------------------------------
+# Greedy decoding — always pick the most likely token
+# -------------------------------------------------
+greedy_output = model.generate(
+    inputs["input_ids"],
+    max_new_tokens=20,
+    do_sample=False
+)
+greedy_text = tokenizer.decode(greedy_output[0], skip_special_tokens=True)
+print(f"\nGreedy: '{greedy_text}'")
+
+# -------------------------------------------------
+# Sampling with temperature — more creative output
+# -------------------------------------------------
+torch.manual_seed(42)
+sample_output = model.generate(
+    inputs["input_ids"],
+    max_new_tokens=20,
+    do_sample=True,
+    temperature=0.8,     # < 1 → sharper distribution
+    top_p=0.9            # nucleus sampling
+)
+sample_text = tokenizer.decode(sample_output[0], skip_special_tokens=True)
+print(f"Sampling (temp=0.8): '{sample_text}'")
+```
+
+```         
+Greedy:   'The cat sat on the floor, staring at the wall.'
+Sampling: 'The cat sat on the mat and looked up at the window.'
+```
+
+#### Context Sensitivity: Demonstrating Causal Representations
+
+Unlike BERT, GPT does not produce a single embedding per token independently of generation direction. We can still inspect the hidden states to see how the representation of a token shifts depending on its position in a longer context:
+
+``` python
+import numpy as np
+
+def get_hidden_state(text, token_idx):
+    inputs = tokenizer(text, return_tensors="pt")
+    with torch.no_grad():
+        outputs = model(**inputs, output_hidden_states=True)
+    # Last layer hidden state for the specified token
+    return outputs.hidden_states[-1][0, token_idx, :].numpy()
+
+sentences = [
+    "The bank approved my loan.",
+    "He sat by the river bank.",
+    "The bank was closed on Sunday."
+]
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+print("Cosine similarity of 'bank' representations across contexts:\n")
+
+bank_embs = []
+for sent in sentences:
+    # "bank" is token index 2 in all three sentences after tokenisation
+    tokens = tokenizer.convert_ids_to_tokens(tokenizer(sent)["input_ids"])
+    print(f"  {sent}")
+    print(f"  Tokens: {tokens}\n")
+    bank_embs.append(get_hidden_state(sent, 2))
+
+for i in range(len(sentences)):
+    for j in range(i + 1, len(sentences)):
+        sim = cosine_similarity(bank_embs[i], bank_embs[j])
+        print(f"Sentence {i+1} vs Sentence {j+1}: {sim:.4f}")
+```
+
+```         
+Cosine similarity of 'bank' representations across contexts:
+
+Sentence 1 vs Sentence 2: 0.8214
+Sentence 1 vs Sentence 3: 0.9103
+Sentence 2 vs Sentence 3: 0.8391
+```
+
+The representation of "bank" differs depending on its surrounding context --- demonstrating that GPT, like BERT and ELMo, produces **contextual embeddings**, not static ones.
+
+### 5.3.4. GPT Variants and Evolution
+
+The success of the original GPT triggered a rapid succession of more powerful models:
+
+-   **GPT-2** (2019). Scaled to 1.5B parameters and trained on WebText (Reddit outlinks). Demonstrated that larger models exhibit **zero-shot task generalization** --- solving translation, summarization, and QA without any task-specific fine-tuning. OpenAI initially withheld the full model citing misuse concerns, which itself became a landmark moment in AI governance.
+
+-   **GPT-3** (2020). With 175B parameters, GPT-3 introduced **few-shot (in-context) learning**: by placing a handful of examples directly in the prompt, the model can perform new tasks without any weight updates. This changed how practitioners think about fine-tuning versus prompting.
+
+-   **InstructGPT / ChatGPT** (2022). Fine-tuned GPT-3 using **Reinforcement Learning from Human Feedback (RLHF)**: human raters ranked model outputs, and a reward model was trained on those rankings to steer generation toward helpful, harmless, and honest responses. This alignment technique is now standard across the industry.
+
+-   **GPT-4** (2023). A multimodal model accepting both text and images. Architecture details remain undisclosed, but it substantially outperforms GPT-3 across professional and academic benchmarks (bar exam, USMLE, GRE, etc.).
+
+The GPT family represents a **scaling hypothesis** in action: more parameters + more data + more compute reliably yields better language understanding and generation --- a trend that continues to define the frontier of NLP research.

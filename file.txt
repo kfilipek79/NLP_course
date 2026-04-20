@@ -1,0 +1,4 @@
+I am learning Python
+She is running fast
+They are walking home
+This is just a testing string

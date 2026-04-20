@@ -1,0 +1,450 @@
+---
+title: "6.1. PoS & NER"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 6.1.1. Part-of-Speech Tagging
+
+**Part-of-Speech (PoS) tagging** is the task of assigning a grammatical label to each token in a sentence: noun, verb, adjective, preposition, and so on. It is one of the oldest and most fundamental tasks in NLP, serving as a building block for parsing, information extraction, and named entity recognition.
+
+The label set used depends on the tagset standard. The most widely used is the **Universal Dependencies** (UD) tagset, which defines 17 coarse-grained categories that work across languages:
+
+| Tag   | Meaning             | Example         |
+|-------|---------------------|-----------------|
+| NOUN  | Noun                | *bank*, *city*  |
+| VERB  | Verb                | *runs*, *is*    |
+| ADJ   | Adjective           | *fast*, *old*   |
+| ADV   | Adverb              | *quickly*       |
+| PROPN | Proper noun         | *London*, *IBM* |
+| DET   | Determiner          | *the*, *a*      |
+| ADP   | Adposition (prep.)  | *in*, *on*      |
+| PUNCT | Punctuation         | *.*, *,*        |
+| NUM   | Numeral             | *42*, *three*   |
+| PRON  | Pronoun             | *he*, *they*    |
+
+PoS tags are **context-sensitive**: the word "bank" is a NOUN in "I went to the bank" but part of a VERB phrase in some other constructions. This is why modern PoS taggers use sequence models rather than simple lookup tables.
+
+### 6.1.2. Named Entity Recognition
+
+**Named Entity Recognition (NER)** identifies spans of text that refer to real-world entities and classifies them into predefined categories. It is a core component of information extraction pipelines.
+
+Common entity types (following the OntoNotes / spaCy convention):
+
+| Label    | Meaning                              | Example                    |
+|----------|--------------------------------------|----------------------------|
+| PERSON   | People, including fictional          | *Marie Curie*, *Sherlock*  |
+| ORG      | Companies, agencies, institutions    | *Google*, *WHO*            |
+| GPE      | Geopolitical entity (country, city)  | *Poland*, *Warsaw*         |
+| LOC      | Non-GPE locations                    | *the Alps*, *the Amazon*   |
+| DATE     | Absolute or relative dates           | *2024*, *last Tuesday*     |
+| MONEY    | Monetary values                      | *\$42 million*             |
+| PRODUCT  | Objects, vehicles, foods             | *iPhone*, *Tesla Model 3*  |
+| EVENT    | Named events                         | *World Cup 2022*           |
+
+NER is formulated as a **sequence labeling** problem. Each token receives a label in the **BIO** (Beginning – Inside – Outside) scheme:
+
+```
+"Marie  Curie  was  born  in  Warsaw  in  1867"
+  B-PER  I-PER   O    O    O  B-GPE   O  B-DATE
+```
+
+-   `B-X` — beginning of entity of type X
+-   `I-X` — inside (continuation of) entity X
+-   `O` — outside any entity
+
+### 6.1.3. PoS & NER with spaCy
+
+**spaCy** is a production-grade NLP library with pre-trained pipelines for tokenization, PoS tagging, dependency parsing, and NER in one call. It is fast, accurate, and well-suited for both learning and deployment.
+
+``` python
+# pip install spacy
+# python -m spacy download en_core_web_sm
+
+import spacy
+
+nlp = spacy.load("en_core_web_sm")
+
+text = "Marie Curie was born in Warsaw in 1867 and worked at the University of Paris."
+doc = nlp(text)
+```
+
+#### Part-of-Speech Tags
+
+``` python
+print(f"{'Token':<15} {'PoS':<8} {'Fine-grained tag':<18} {'Dependency'}")
+print("-" * 60)
+
+for token in doc:
+    print(f"{token.text:<15} {token.pos_:<8} {token.tag_:<18} {token.dep_}")
+```
+
+```
+Token           PoS      Fine-grained tag   Dependency
+------------------------------------------------------------
+Marie           PROPN    NNP                compound
+Curie           PROPN    NNP                nsubjpass
+was             AUX      VBD                auxpass
+born            VERB     VBN                ROOT
+in              ADP      IN                 prep
+Warsaw          PROPN    NNP                pobj
+in              ADP      IN                 prep
+1867            NUM      CD                 pobj
+and             CCONJ    CC                 cc
+worked          VERB     VBD                conj
+at              ADP      IN                 prep
+the             DET      DT                 det
+University      PROPN    NNP                pobj
+of              ADP      IN                 prep
+Paris           PROPN    NNP                pobj
+.               PUNCT    .                  punct
+```
+
+#### Named Entities
+
+``` python
+print(f"{'Entity':<25} {'Label':<10} {'Explanation'}")
+print("-" * 55)
+
+for ent in doc.ents:
+    print(f"{ent.text:<25} {ent.label_:<10} {spacy.explain(ent.label_)}")
+```
+
+```
+Entity                    Label      Explanation
+-------------------------------------------------------
+Marie Curie               PERSON     People, including fictional
+Warsaw                    GPE        Countries, cities, states
+1867                      DATE       Absolute or relative dates
+the University of Paris   ORG        Companies, agencies, institutions
+```
+
+#### Visualizing with displaCy
+
+spaCy ships with a built-in renderer for entities and dependency trees.
+
+``` python
+from spacy import displacy
+
+# Render named entities (works in Jupyter)
+displacy.render(doc, style="ent", jupyter=True)
+
+# Render dependency parse
+displacy.render(doc, style="dep", jupyter=True, options={"compact": True})
+```
+
+#### Processing Multiple Texts Efficiently
+
+``` python
+texts = [
+    "Apple acquired Beats Electronics for $3 billion in 2014.",
+    "Elon Musk founded SpaceX in Hawthorne, California.",
+    "The European Central Bank raised interest rates in Frankfurt."
+]
+
+print(f"{'Text':<55} {'Entities'}")
+print("-" * 90)
+
+for doc in nlp.pipe(texts):
+    entities = [(ent.text, ent.label_) for ent in doc.ents]
+    print(f"{doc.text[:55]:<55} {entities}")
+```
+
+```
+Text                                                    Entities
+------------------------------------------------------------------------------------------
+Apple acquired Beats Electronics for $3 billion in...  [('Apple', 'ORG'), ('Beats Electronics', 'ORG'), ('$3 billion', 'MONEY'), ('2014', 'DATE')]
+Elon Musk founded SpaceX in Hawthorne, California.    [('Elon Musk', 'PERSON'), ('SpaceX', 'ORG'), ('Hawthorne', 'GPE'), ('California', 'GPE')]
+The European Central Bank raised interest rates in...  [('The European Central Bank', 'ORG'), ('Frankfurt', 'GPE')]
+```
+
+::: callout-note
+`nlp.pipe()` processes a list of texts in batches and is significantly faster than calling `nlp(text)` in a loop when working with thousands of documents.
+:::
+
+### 6.1.4. BERT-based PoS & NER
+
+Pre-trained Transformer models fine-tuned on annotated corpora (CoNLL-2003 for NER, Universal Dependencies for PoS) substantially outperform rule-based and classical statistical approaches. The `transformers` library makes these models available as one-line pipelines.
+
+#### Named Entity Recognition with BERT
+
+``` python
+# pip install transformers torch
+
+from transformers import pipeline
+
+ner_pipeline = pipeline(
+    "ner",
+    model="dbmdz/bert-large-cased-finetuned-conll03-english",
+    aggregation_strategy="simple"   # merge subword tokens into word spans
+)
+
+text = "Marie Curie was born in Warsaw in 1867 and worked at the University of Paris."
+results = ner_pipeline(text)
+
+print(f"{'Entity span':<30} {'Type':<10} {'Score'}")
+print("-" * 55)
+for ent in results:
+    print(f"{ent['word']:<30} {ent['entity_group']:<10} {ent['score']:.4f}")
+```
+
+```
+Entity span                    Type       Score
+-------------------------------------------------------
+Marie Curie                    PER        0.9991
+Warsaw                         LOC        0.9987
+University of Paris            ORG        0.9743
+```
+
+#### PoS Tagging with BERT
+
+``` python
+pos_pipeline = pipeline(
+    "token-classification",
+    model="QCRI/bert-base-multilingual-cased-pos-english",
+    aggregation_strategy="simple"
+)
+
+text = "The quick brown fox jumps over the lazy dog."
+results = pos_pipeline(text)
+
+print(f"{'Token':<15} {'PoS tag':<12} {'Score'}")
+print("-" * 40)
+for token in results:
+    print(f"{token['word']:<15} {token['entity_group']:<12} {token['score']:.4f}")
+```
+
+```
+Token           PoS tag      Score
+----------------------------------------
+The             DT           0.9998
+quick           JJ           0.9994
+brown           JJ           0.9989
+fox             NN           0.9997
+jumps           VBZ          0.9992
+over            IN           0.9996
+the             DT           0.9998
+lazy            JJ           0.9991
+dog             NN           0.9998
+.               .            0.9999
+```
+
+#### Inspecting Raw Token-Level Output
+
+For a finer look at what BERT produces before merging subwords:
+
+``` python
+from transformers import AutoTokenizer, AutoModelForTokenClassification
+import torch
+
+model_name = "dbmdz/bert-large-cased-finetuned-conll03-english"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForTokenClassification.from_pretrained(model_name)
+model.eval()
+
+id2label = model.config.id2label
+
+text = "Barack Obama was president of the United States."
+inputs = tokenizer(text, return_tensors="pt")
+tokens = tokenizer.convert_ids_to_tokens(inputs["input_ids"][0])
+
+with torch.no_grad():
+    logits = model(**inputs).logits
+
+predictions = torch.argmax(logits, dim=-1)[0]
+
+print(f"{'Token':<20} {'Predicted label'}")
+print("-" * 38)
+for token, pred in zip(tokens, predictions):
+    print(f"{token:<20} {id2label[pred.item()]}")
+```
+
+```
+Token                Predicted label
+--------------------------------------
+[CLS]                O
+Barack               B-PER
+Obama                I-PER
+was                  O
+president            O
+of                   O
+the                  O
+United               B-LOC
+States               I-LOC
+.                    O
+[SEP]                O
+```
+
+::: callout-note
+BERT uses **WordPiece** tokenization, so rare words get split into subwords (e.g., "Hawthorne" → "Haw", "##thor", "##ne"). The `aggregation_strategy="simple"` argument in the pipeline merges these back into word-level predictions by taking the label of the first subword token.
+:::
+
+### 6.1.5. PoS & NER with Generative AI Models
+
+Large generative models (GPT-4, Claude, Gemini) can perform PoS tagging and NER **without any fine-tuning**, purely through prompting. This is useful for rapid prototyping, low-resource languages, and custom entity types that no pre-trained model covers.
+
+#### Zero-Shot NER via the Anthropic API
+
+``` python
+# pip install anthropic
+
+import anthropic
+import json
+
+client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from environment
+
+def extract_entities(text: str, entity_types: list[str]) -> list[dict]:
+    prompt = f"""Extract named entities from the text below.
+Return ONLY a valid JSON array of objects with keys "entity", "type", and "start_char".
+Entity types to extract: {", ".join(entity_types)}.
+
+Text: {text}"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return json.loads(message.content[0].text)
+
+
+text = "Elon Musk announced that Tesla will open a new Gigafactory in Mexico by 2026."
+entity_types = ["PERSON", "ORG", "GPE", "DATE"]
+
+entities = extract_entities(text, entity_types)
+
+print(f"{'Entity':<25} {'Type':<10} {'Start'}")
+print("-" * 45)
+for ent in entities:
+    print(f"{ent['entity']:<25} {ent['type']:<10} {ent.get('start_char', '-')}")
+```
+
+```
+Entity                    Type       Start
+---------------------------------------------
+Elon Musk                 PERSON     0
+Tesla                     ORG        24
+Gigafactory               ORG        58
+Mexico                    GPE        71
+2026                      DATE       78
+```
+
+#### Zero-Shot PoS Tagging via the Anthropic API
+
+``` python
+def tag_pos(text: str) -> list[dict]:
+    prompt = f"""Tag each token in the sentence below with its Universal Dependencies PoS tag.
+Return ONLY a valid JSON array of objects with keys "token" and "pos".
+Use these tags: NOUN, VERB, ADJ, ADV, PROPN, DET, ADP, PUNCT, NUM, PRON, CCONJ, SCONJ, AUX, PART, INTJ, SYM, X.
+
+Sentence: {text}"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return json.loads(message.content[0].text)
+
+
+text = "The old scientist carefully examined three unusual specimens."
+tags = tag_pos(text)
+
+print(f"{'Token':<20} {'PoS'}")
+print("-" * 30)
+for item in tags:
+    print(f"{item['token']:<20} {item['pos']}")
+```
+
+```
+Token                PoS
+------------------------------
+The                  DET
+old                  ADJ
+scientist            NOUN
+carefully            ADV
+examined             VERB
+three                NUM
+unusual              ADJ
+specimens            NOUN
+.                    PUNCT
+```
+
+#### Custom Entity Types — Where GenAI Shines
+
+Pre-trained NER models are limited to the entity categories they were trained on. GenAI models accept **any entity definition in the prompt**, which makes them uniquely powerful for domain-specific extraction:
+
+``` python
+def extract_custom_entities(text: str, schema: dict) -> list[dict]:
+    schema_str = "\n".join(
+        f"- {name}: {desc}" for name, desc in schema.items()
+    )
+    prompt = f"""Extract entities from the clinical note below.
+Return ONLY a valid JSON array of objects with keys "entity", "type", and "value".
+
+Entity types:
+{schema_str}
+
+Text: {text}"""
+
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return json.loads(message.content[0].text)
+
+
+clinical_note = """
+Patient John D., 54-year-old male, presented with chest pain.
+He was prescribed Metoprolol 50mg twice daily and Aspirin 100mg.
+Follow-up scheduled for 14 June 2025 at cardiology clinic.
+"""
+
+schema = {
+    "PATIENT":    "Patient name or identifier",
+    "AGE":        "Patient age",
+    "SYMPTOM":    "Medical symptom or complaint",
+    "MEDICATION": "Drug name with dosage",
+    "DATE":       "Date or time reference",
+    "DEPARTMENT": "Hospital department or specialty"
+}
+
+entities = extract_custom_entities(clinical_note, schema)
+
+print(f"{'Entity':<25} {'Type':<15} {'Value'}")
+print("-" * 60)
+for ent in entities:
+    print(f"{ent['entity']:<25} {ent['type']:<15} {ent.get('value', '')}")
+```
+
+```
+Entity                    Type            Value
+------------------------------------------------------------
+John D.                   PATIENT         John D.
+54-year-old               AGE             54
+chest pain                SYMPTOM         chest pain
+Metoprolol 50mg           MEDICATION      Metoprolol 50mg twice daily
+Aspirin 100mg             MEDICATION      Aspirin 100mg
+14 June 2025              DATE            14 June 2025
+cardiology clinic         DEPARTMENT      cardiology
+```
+
+### 6.1.6. Comparison of Approaches
+
+| Approach      | Accuracy      | Speed     | Custom entities | Setup effort |
+|---------------|---------------|-----------|-----------------|--------------|
+| spaCy (sm)    | Good          | Very fast | No              | Minimal      |
+| spaCy (trf)   | Very good     | Moderate  | No              | Minimal      |
+| BERT pipeline | Excellent     | Moderate  | No (fine-tune)  | Low          |
+| GenAI (GPT/Claude) | Excellent | Slow/API  | Yes (prompting) | Low          |
+
+**Rule of thumb:**
+
+-   Use **spaCy** for high-throughput production pipelines on standard entity types.
+-   Use **BERT** when accuracy is critical and you have a fixed entity schema.
+-   Use **GenAI models** for rapid prototyping, custom entity types, or low-resource scenarios where annotated data is unavailable.

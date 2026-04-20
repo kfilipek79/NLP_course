@@ -1,0 +1,281 @@
+---
+title: "2.1. Levels of Linguistic Analysis"
+author: Kamil Filipek
+---
+
+### 2.1.1. Phonetics and Phonology
+
+Language is a multidimensional phenomenon, and it is not at all obvious what exactly we should analyze within it. It is no coincidence that it attracts the attention of philologists, sociologists (like myself), psychologists, economists, and, more recently, especially data scientists. Phonetics and phonology represent the lowest level of linguistic analysis, focusing on the **sounds and sound systems of human language**. In computational language analysis, this knowledge forms the **foundation of speech recognition and synthesis technologies**. Phonetic models make it possible to transform continuous acoustic signals (raw audio waveforms measured in Hertz, amplitude, frequency) into linguistic symbols, while phonological theory explains the systematic relations between sounds - such as phonemic oppositions, assimilation processes, or stress patterns.
+
+In automatic speech recognition (ASR), phonetic knowledge is essential for segmenting speech into **meaningful units that can be mapped to words and sentences**. Statistical models such as Hidden Markov Models (HMMs), and more recently neural architectures, rely on phonetic features to improve the accuracy of transcriptions. Similarly, in text-to-speech (TTS) systems, phonological rules are necessary to generate natural-sounding speech, handling issues such as prosody, intonation, and rhythm, which cannot be fully captured at the lexical or syntactic level.
+
+| Sequence                                                                 |
+|--------------------------------------------------------------------------|
+| Raw waveform → acoustic features (MFCCs) → HMM states → phonemes → words |
+
+Despite advances in deep learning, phonetics and phonology remain crucial for addressing challenges such as variability in pronunciation, accents, and noise in real-world environments. Phonological constraints help systems generalize across speakers and contexts, while phonetic modeling supports cross-linguistic applications where training data may be scarce. Current research seeks to integrate symbolic phonological knowledge with data-driven methods, aiming for hybrid systems that combine linguistic insight with the flexibility of neural networks.
+
+##### Example
+
+A good way to illustrate the phonetics/phonology--computational link in Python is with a minimal example that extracts phonetic representations of words (using the CMU Pronouncing Dictionary in NLTK) and shows how stress and phoneme patterns can be analyzed. This connects to the text you wrote about phonemic oppositions, stress, and phonological rules.
+
+``` python
+import nltk
+from nltk.corpus import cmudict
+
+# Download CMU Pronouncing Dictionary if not already installed
+nltk.download('cmudict')
+
+# Load dictionary
+cmu_dict = cmudict.dict()
+
+# Function: get phonetic transcription and stress pattern
+def get_pronunciation(word):
+    word = word.lower()
+    if word in cmu_dict:
+        # Take first available pronunciation
+        phonemes = cmu_dict[word][0]
+        # Extract stress information (digits 0,1,2 indicate no/primary/secondary stress)
+        stress_pattern = ''.join([ch for ph in phonemes for ch in ph if ch.isdigit()])
+        return phonemes, stress_pattern
+    else:
+        return None, None
+
+# Example words
+words = ["record", "present", "analysis"]
+
+for w in words:
+    phonemes, stress = get_pronunciation(w)
+    print(f"Word: {w}")
+    print(f"Phonemes: {phonemes}")
+    print(f"Stress pattern: {stress}")
+    print("-" * 40)
+```
+
+Result
+
+```         
+Word: record
+Phonemes: ['R', 'AH0', 'K', 'AO1', 'R', 'D']
+Stress pattern: 01
+----------------------------------------
+Word: present
+Phonemes: ['P', 'R', 'EH1', 'Z', 'AH0', 'N', 'T']
+Stress pattern: 10
+----------------------------------------
+Word: analysis
+Phonemes: ['AH0', 'N', 'AE1', 'L', 'AH0', 'S', 'AH0', 'S']
+Stress pattern: 0100
+----------------------------------------
+```
+
+#### **What does it mean?**
+
+1.  **Word** -- the orthographic form (*record, present, analysis*).
+2.  **Phonemes** -- the phonemic transcription in the ARPAbet system (e.g., `['R', 'AH0', 'K', 'AO1', 'R', 'D']` = /rəˈkɔrd/).
+    -   Vowels with numbers indicate stress:
+        -   `0` = unstressed,
+        -   `1` = primary stress,
+        -   `2` = secondary stress.
+3.  **Stress pattern** -- a simplified scheme of stress across syllables, written as digits (e.g., `01` → two syllables, stress on the second).
+
+#### **What is it for?**
+
+-   **Text-to-Speech (TTS)** -- so that a computer knows how to pronounce words, where to place stress, and how to sound natural.
+-   **Automatic Speech Recognition (ASR)** -- to match phonemes with human speech sounds.
+-   **Linguistic and NLP analysis** -- e.g., studying rhythm in language, modeling syllables, creating language learning tools.
+-   **Disambiguation of meanings** -- for example, in English *record* as a noun (`REcord` -- stress 10) vs. as a verb (`reCORD`-- stress 01).
+
+``` python
+!!! Mac Users.
+Manually download the CMU Pronouncing Dictionary
+If downloading inside Python fails, you can download it manually:
+
+Go to: https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/cmudict.zip
+
+Unzip it.
+Place the folder cmudict inside your NLTK data directory, e.g.:
+  
+/Users/kamilfilipek/nltk_data/corpora/cmudict/
+```
+
+### 2.1.2. Morphology
+
+Morphology is the branch of linguistics concerned with the **internal structure of words and the rules by which they are formed**. It studies the smallest meaning-bearing units of language, known as **morphemes**, and analyzes how these units combine to create complex lexical items. From this perspective, **morphology provides an essential link between phonology, which deals with sound, and syntax, which governs sentence structure**, by showing how abstract forms are realized as actual words in natural languages (Aronoff & Fudeman, 2011).
+
+A central distinction in morphological analysis is that between **inflectional and derivational processes**.
+
+-   **1. [Inflectional morphology]{.underline}** ***involves changes to a word that signal grammatical categories such as tense, number, or case without altering the word's core meaning or lexical category***.
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Example                                                                                                                                                                                                                      |
++==============================================================================================================================================================================================================================+
+| In English the verb walk can take the forms ***walks, walked, and walking***, which respectively mark present tense/third person singular, past tense, and progressive aspect.                                               |
+|                                                                                                                                                                                                                              |
+| Despite these differences, the word remains a verb with the same core lexical meaning "to move by foot." Similarly, the noun book may appear as books in the plural, but the basic concept of "a written work" is unchanged. |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+-   **2. [Derivational morphology]{.underline}**, on the other hand, ***creates new lexical items by adding prefixes, suffixes, or other affixes, often shifting the word into a different grammatical class***.
+
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Example                                                                                                                                                                                                                                                                                       |
++===============================================================================================================================================================================================================================================================================================+
+| The adjective ***happy*** becomes the noun *happiness* through the addition of the **suffix** *-ness*. Similarly, the verb *teach* can produce the noun *teacher* with the **suffix** *-er*.                                                                                                  |
+|                                                                                                                                                                                                                                                                                               |
+| **Prefixes** can also function derivationally: the adjective *possible* becomes *impossible* with the addition of *im-*, changing its meaning without altering its lexical category. In each case, derivation leads to the creation of a new word in the lexicon, distinct from the original. |
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+This distinction underscores the dual function of morphology: maintaining grammatical coherence while enabling lexical expansion.
+
+In computational linguistics and natural language processing (NLP), morphology plays a crucial role in tasks such as **lemmatization, stemming, and part-of-speech tagging**. Proper modeling of morphological patterns is particularly important for morphologically rich languages, such as Polish, Finnish, or Turkish, where a single lemma can generate dozens or even hundreds of distinct forms. **Ignoring morphological structure can lead to sparse data problems and reduced model accuracy**. Therefore, morphological analysis is not only a theoretical concern but also a practical necessity for building robust language technologies (Hajič, 2000; Cotterell et al., 2018).
+
+### 2.1.3. Syntax
+
+Syntax is the branch of linguistics that studies **how words are combined to form larger structures such as phrases, clauses, and sentences**. It provides the rules and constraints that determine the order of elements in a sentence and how they interact to express meaning.
+
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Example                                                                                                                                                                                                                                                                                                                              |
++======================================================================================================================================================================================================================================================================================================================================+
+| English generally follows a **subject--verb--object (SVO) word order**, while languages like Japanese typically use **subject--object--verb (SOV)**. Such structural differences reveal that syntax is not only about word sequence but also about how grammatical relations, agreement, and hierarchy are encoded across languages. |
+|                                                                                                                                                                                                                                                                                                                                      |
+| ***English (SVO)***                                                                                                                                                                                                                                                                                                                  |
+|                                                                                                                                                                                                                                                                                                                                      |
+| -   Subject Verb Object                                                                                                                                                                                                                                                                                                              |
+|                                                                                                                                                                                                                                                                                                                                      |
+| -   John eats apples                                                                                                                                                                                                                                                                                                                 |
+|                                                                                                                                                                                                                                                                                                                                      |
+| ***Japanese (SOV)***                                                                                                                                                                                                                                                                                                                 |
+|                                                                                                                                                                                                                                                                                                                                      |
+| -   Subject Object Verb                                                                                                                                                                                                                                                                                                              |
+|                                                                                                                                                                                                                                                                                                                                      |
+| -   ジョンは りんごを 食べる                                                                                                                                                                                                                                                                                                         |
+|                                                                                                                                                                                                                                                                                                                                      |
+| -   (John apples eats)                                                                                                                                                                                                                                                                                                               |
++--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Beyond word order, **syntax examines phenomena like constituency** (the grouping of words into coherent units), **dependency relations between elements, and transformations that allow sentences to vary in form while retaining core meaning** (e.g., declarative vs. interrogative sentences). Studying syntax is crucial for understanding both natural language use and computational models, since syntactic patterns shape how humans process information and how machines can parse and generate coherent text.
+
+``` python
+import spacy
+from spacy import displacy
+
+nlp = spacy.load("en_core_web_sm")
+doc = nlp("John eats apples")
+
+for token in doc:
+    print(f"{token.text:<10} {token.pos_:<10} {token.dep_:<10} {token.head.text}")
+
+displacy.serve(doc, style="dep")
+```
+
+**Results**
+
+```         
+John       PROPN      nsubj      eats
+eats       VERB       ROOT       eats
+apples     NOUN       dobj       eats
+```
+
+### 2.1.4. Semantics
+
+Semantics is the branch of linguistics concerned with the **study of meaning in language**. While syntax explains how words are structurally combined, **semantics investigates how those combinations convey sense, reference, and truth conditions**. It addresses phenomena such as ***synonymy, antonymy, polysemy, and ambiguity***, and it examines how meaning emerges both from individual lexical items and from their composition within phrases and sentences.
+
+| Example                                                                                                                                                             |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| The words *bank*(financial institution) and *bank* (river edge) share the same form but differ in meaning, demonstrating the importance of semantic disambiguation. |
+
+``` python
+import spacy
+
+# Use large model with vectors
+nlp = spacy.load("en_core_web_md")
+
+# Example words with polysemy
+doc1 = nlp("bank")
+doc2 = nlp("money bank")
+doc3 = nlp("river bank")
+
+print("Similarity between 'bank' and 'money bank':", doc1.similarity(doc2))
+print("Similarity between 'bank' and 'river bank':", doc1.similarity(doc3))
+
+# Example sentences
+sent1 = nlp("John killed the cat.")
+sent2 = nlp("The cat is dead.")
+print("Similarity between sentences:", sent1.similarity(sent2))
+```
+
+**Result**
+
+```         
+Similarity between 'bank' and 'money bank': 0.8682892547468749
+Similarity between 'bank' and 'river bank': 0.844684544956819
+Similarity between sentences: 0.617571367012122
+```
+
+Beyond lexical meaning, semantics explores **how sentences relate to the world, including the roles of quantifiers (*every*, *some*), modality (*might*, *must*), and tense/aspect in shaping interpretation**. It also considers entailment (e.g., *John killed the cat* entails *The cat is dead*), contradiction, and presupposition, providing the foundations for logical reasoning about natural language.
+
+Understanding semantics is essential not only for linguistic theory but also for computational applications such as **information retrieval, question answering, and machine translation**, where accurate meaning representation directly affects performance.
+
+``` pyt
+2.1.5. Pragmatics
+```
+
+Pragmatics is the branch of linguistics that studies **how meaning is shaped by context and use in communication**. While semantics focuses on the conventional meaning of words and sentences, **pragmatics examines how speakers and listeners rely on situational factors, shared knowledge, and intentions to interpret utterances**.
+
+Classic pragmatic phenomena include deixis (*this*, *here*, *now*), implicature (when a speaker implies more than is explicitly said), and speech acts (e.g., promising, requesting, apologizing). For instance, the sentence *Can you open the window?* is semantically a question about ability, but pragmatically it is typically understood as a polite request.
+
+Pragmatics also explores **how meaning shifts depending on social relations, cultural conventions, and discourse structures**. It addresses presuppositions, politeness strategies, conversational maxims (Grice, 1975), and the ways in which language use manages power, cooperation, or conflict in interaction.
+
+From a computational perspective, pragmatics is particularly challenging: **natural language processing systems must infer speaker intention, model discourse coherence, and adapt to real-world contexts in order to generate or interpret human-like communication**. This makes pragmatics crucial not only for linguistic theory but also for the design of dialogue systems, conversational agents, and human--computer interaction.
+
+``` python
+import spacy
+
+nlp = spacy.load("en_core_web_sm")
+
+# Very simple rules for pragmatic intent
+def classify_intent(text):
+    doc = nlp(text)
+
+    if text.endswith("?"):
+        if any(tok.lemma_ in ["can", "could", "would"] for tok in doc):
+            return "Request (polite question form)"
+        return "Question"
+    if any(tok.lemma_ in ["please"] for tok in doc):
+        return "Request (explicit)"
+    if any(tok.lemma_ in ["sorry", "apologize"] for tok in doc):
+        return "Apology"
+    if any(tok.lemma_ in ["promise", "will"] for tok in doc):
+        return "Promise"
+    return "Statement"
+
+# Examples
+examples = [
+    "Can you open the window?",
+    "Please pass the salt.",
+    "I’m sorry for being late.",
+    "I will call you tomorrow.",
+    "Is it raining outside?"
+]
+
+for text in examples:
+    print(f"Utterance: {text}")
+    print(f"Pragmatic classification: {classify_intent(text)}\n")
+```
+
+```         
+Utterance: Can you open the window?
+Pragmatic classification: Request (polite question form)
+
+Utterance: Please pass the salt.
+Pragmatic classification: Request (explicit)
+
+Utterance: I’m sorry for being late.
+Pragmatic classification: Apology
+
+Utterance: I will call you tomorrow.
+Pragmatic classification: Promise
+
+Utterance: Is it raining outside?
+Pragmatic classification: Question
+```

@@ -1,0 +1,96 @@
+project:
+  type: website
+  output-dir: docs
+
+book:
+  title: "Natural Language Processing - Part I"
+  subtitle: "From Idea to Application"
+  author: "Kamil Filipek"
+  favicon: assets/umcs-favicon.ico
+  search: true
+  sidebar:
+    logo: assets/logo-Centrum.png    # <- tutaj podajesz ścieżkę do pliku z logo
+    style: "floating"                # (opcjonalnie: floating/docked)
+  chapters:
+    - index.qmd
+    - part: "**1. Language and Machines**"
+      chapters:
+        - Why_Language.qmd
+        - Natural_Language.qmd
+        - Hierarchy_languages.qmd
+    - part: "**2. Theoretical Foundations**"
+      chapters:
+        - Levels_analysis.qmd
+        - Approaches_language..qmd
+        - Amb_var.qmd
+        - Lang_machine.qmd
+        - Application.qmd
+    - part: "**3. Basic Data Engineering**"
+      chapters:
+        - Preprocessing.qmd
+        - Stem_lem.qmd
+        - Tokenization.qmd
+        - Ini_da.qmd # Distrubutions, frequencies, wordclouds, N-grams,
+    - part: "**4. Evolution of Embeddings**"
+      chapters:
+        - Bag_of_words.qmd          # Simple BoW representation
+        - Tf_idf.qmd                # Weighted representation
+        - Word2Vec.qmd              # Neural embeddings (CBOW, Skip-Gram)
+        - GloVe.qmd                 # Global vectors
+        - FastText.qmd              # Subword-based embeddings
+    - part: "**5. Contextual_embeddings**"
+      chapters:
+        - ELMo.qmd
+        - BERT.qmd
+        - GPT.qmd
+    - part: "**6. Elementary Language Analaysis**"
+      chapters:
+        - PoS_and_NER.qmd
+        - Keywords_extraction.qmd
+        - Sentiment.qmd
+        - Emotion_Analysis.qmd
+    - part: "**7. Topic Modeling**"
+      chapters:
+        - LDA.qmd
+        - LCA.qmd
+        - NMF.qmd
+        - LSA.qmd
+    - part: "**8. Working with LLMs**"
+      chapters:
+        - Prompt_engineering.qmd
+        - LLM_API.qmd
+        - Fine_tuning.qmd
+        - RAG.qmd
+        - LLM_evaluation.qmd
+    - part: "**9. AI Agents**"
+      chapters:
+        - Agents.qmd
+        - Agents_Python.qmd
+        - n8n.qmd
+        - MultiAgent.qmd
+    - part: "References"
+      chapters:
+        - ref.qmd
+
+bibliography: references.bib
+csl: https://www.zotero.org/styles/apa
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    toc-location: right
+    toc-title: "MORE DETAILS"
+    number-sections: false
+    code-line-numbers: true
+    anchor-sections: true
+    smooth-scroll: true
+    grid:
+      body-width: 920px
+      sidebar-width: 300px
+      margin-width: 320px
+      gutter-width: 1.2rem
+  revealjs:
+    theme: simple
+    logo: assets/logo-Centrum.png

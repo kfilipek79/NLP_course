@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kamil Filipek">
+
+<title>Natural Language Processing - Part I - 4.1. Bag of Words</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./Tf_idf.html" rel="next">
+<link href="./Ini_da.html" rel="prev">
+<link href="./assets/umcs-favicon.ico" rel="icon">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Bag_of_words.html"><strong>4. Evolution of Embeddings</strong></a></li><li class="breadcrumb-item"><a href="./Bag_of_words.html"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">4.1. Bag of Words</span></a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./assets/logo-Centrum.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      </a>
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Natural Language Processing - Part I</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text"><strong>1. Language and Machines</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Why_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.1. Why to Analyze Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Natural_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.2. What is the Natural Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Hierarchy_languages.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.3. Hierarchy of Languages</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text"><strong>2. Theoretical Foundations</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Levels_analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.1. Levels of Linguistic Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Approaches_language..html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Lang_machine.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.4. Representing Language for Machines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Application.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.5. From Theory to Application</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text"><strong>3. Basic Data Engineering</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Preprocessing.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.1. Data Preprocessing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Stem_lem.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Stemming and Lemmatization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tokenization.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Tokenization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Ini_da.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.4. Initial Data Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
+ <span class="menu-text"><strong>4. Evolution of Embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Bag_of_words.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">4.1. Bag of Words</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tf_idf.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.2. TF-IDF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Word2Vec.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.3. Word2Vec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GloVe.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.4. GloVe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./FastText.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.5. FastText</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true">
+ <span class="menu-text"><strong>5. Contextual_embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ELMo.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. ELMo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./BERT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.2. BERT</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GPT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. GPT</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true">
+ <span class="menu-text"><strong>6. Elementary Language Analaysis</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./PoS_and_NER.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. PoS &amp; NER</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Keywords_extraction.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.2. Keywords Extraction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Semntiment.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. Sentiment Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Emotion_Analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.4. Emotion Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <span class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">**6. Advanced Language Analysis**</span></span>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text">Bibliography</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ref.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">References</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">MORE DETAILS</h2>
+   
+  <ul>
+  <li><a href="#history-of-bow" id="toc-history-of-bow" class="nav-link active" data-scroll-target="#history-of-bow">4.1.1. History of BoW</a></li>
+  <li><a href="#sparse-vs.-dense-vectors" id="toc-sparse-vs.-dense-vectors" class="nav-link" data-scroll-target="#sparse-vs.-dense-vectors">4.1.2. Sparse vs.&nbsp;Dense Vectors</a></li>
+  <li><a href="#python-implementation" id="toc-python-implementation" class="nav-link" data-scroll-target="#python-implementation">4.1.3. Python Implementation</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-title">4.1. Bag of Words</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kamil Filipek </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="history-of-bow" class="level3">
+<h3 class="anchored" data-anchor-id="history-of-bow">4.1.1. History of BoW</h3>
+<p>The&nbsp;<strong>bag-of-words (BoW)</strong>&nbsp;representation arose from early information-retrieval practice and quantitative linguistics: regularities like&nbsp;<strong>Zipf’s law</strong>&nbsp;implied that simple term counts carry systematic signal, while&nbsp;<strong>Luhn</strong>&nbsp;showed that term frequency can drive automatic indexing and abstracting. These ideas crystallized in IR through the&nbsp;<strong>vector space model</strong> with&nbsp;<strong>term weighting</strong>&nbsp;and&nbsp;<strong>inverse document frequency</strong>—downweighting ubiquitous terms and yielding the classic&nbsp;<strong>tf–idf</strong>scheme. Standard preprocessing (stop-word removal, stemming/lemmatization, n-grams) made BoW a durable workhorse for text categorization and ranking, and despite the rise of neural embeddings it remains a transparent, competitive baseline and a key ingredient in modern sparse/ hybrid retrieval. (Zipf, 1949; Luhn, 1957).</p>
+</section>
+<section id="sparse-vs.-dense-vectors" class="level3">
+<h3 class="anchored" data-anchor-id="sparse-vs.-dense-vectors">4.1.2. Sparse vs.&nbsp;Dense Vectors</h3>
+<p>However, to understand BoW it is necessary to introduce the issue of so-called&nbsp;<strong>sparse vs.&nbsp;dense vectors</strong>. These are concepts that recur in NLP across many contexts, so we will spend a moment on them now.</p>
+<p>The concept of the two families of vectors is succinctly explained here (<a href="https://medium.com/@imeshadilshani212/words-as-vectors-sparse-vectors-vs-dense-vectors?utm_source=chatgpt.com">https://medium.com/@imeshadilshani212/words-as-vectors-sparse-vectors-vs-dense-vectors</a>), so what I present below is a synthesis of knowledge drawn from multiple sources.</p>
+<p>Briefly,&nbsp;<strong>dense vectors</strong>&nbsp;are low- to medium-dimensional continuous representations (typically 128–1024 dimensions) in which most components are non-zero and are&nbsp;<strong>learned</strong>&nbsp;from data (e.g., word/sentence/document embeddings). They encode semantic similarity geometrically—nearby vectors tend to have related meanings—so cosine similarity or dot products approximate semantic relatedness. Dense vectors support&nbsp;<strong>neural retrieval</strong>&nbsp;(k-NN over embeddings), clustering, and downstream models that benefit from graded similarity and generalization. Their main drawbacks are&nbsp;<strong>lower interpretability</strong>, the need for training/inference infrastructure, and possible loss of fine-grained lexical distinctions.</p>
+<p>By contrast,&nbsp;<strong>sparse vectors</strong>&nbsp;are very high-dimensional representations with&nbsp;<strong>mostly zero entries</strong>—canonical examples are&nbsp;<strong>bag-of-words</strong>&nbsp;or&nbsp;<strong>tf-idf</strong>&nbsp;over a vocabulary&nbsp;VV&nbsp;(one dimension per term). They are&nbsp;<strong>transparent</strong>&nbsp;(each coordinate corresponds to a token), easy to store/compute with compressed sparse formats, and pair naturally with linear models and lexical retrieval (e.g., BM25). Their limitations are the lack of word order and limited semantic sharing (synonyms are orthogonal unless engineered). In practice, modern IR/NLP systems often use&nbsp;<strong>hybrid retrieval</strong>, fusing sparse (lexical precision) and dense (semantic recall) signals.</p>
+<p><strong>Suggested sources:</strong>&nbsp;Manning, Raghavan &amp; Schütze (2008); Jurafsky &amp; Martin (3rd ed.&nbsp;draft); Salton &amp; Buckley (1988, tf–idf); Mikolov et al.&nbsp;(2013, word2vec); Pennington et al.&nbsp;(2014, GloVe).</p>
+</section>
+<section id="python-implementation" class="level3">
+<h3 class="anchored" data-anchor-id="python-implementation">4.1.3. Python Implementation</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">import</span> re</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-4"><a href="#cb1-4"></a></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="im">from</span> sklearn.feature_extraction.text <span class="im">import</span> CountVectorizer, TfidfVectorizer</span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> TruncatedSVD</span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> normalize</span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="im">from</span> sklearn.metrics.pairwise <span class="im">import</span> cosine_similarity</span>
+<span id="cb1-9"><a href="#cb1-9"></a></span>
+<span id="cb1-10"><a href="#cb1-10"></a>docs <span class="op">=</span> [</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    <span class="st">"The bag-of-words model uses simple term counts for indexing and retrieval."</span>,</span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="st">"TF-IDF downweights ubiquitous terms and boosts informative ones."</span>,</span>
+<span id="cb1-13"><a href="#cb1-13"></a>    <span class="st">"Sparse vectors are high-dimensional with many zeros; TF-IDF is a classic example."</span>,</span>
+<span id="cb1-14"><a href="#cb1-14"></a>    <span class="st">"Dense vectors are low-dimensional continuous representations that encode similarity."</span>,</span>
+<span id="cb1-15"><a href="#cb1-15"></a>    <span class="st">"Hybrid retrieval fuses sparse lexical precision with dense semantic recall."</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a>]</span>
+<span id="cb1-17"><a href="#cb1-17"></a></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="kw">def</span> simple_preprocess(text: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb1-19"><a href="#cb1-19"></a>    text <span class="op">=</span> text.lower()</span>
+<span id="cb1-20"><a href="#cb1-20"></a>    text <span class="op">=</span> re.sub(<span class="vs">r"[^a-z0-9\s\-]"</span>, <span class="st">" "</span>, text)</span>
+<span id="cb1-21"><a href="#cb1-21"></a>    text <span class="op">=</span> re.sub(<span class="vs">r"\s+"</span>, <span class="st">" "</span>, text).strip()</span>
+<span id="cb1-22"><a href="#cb1-22"></a>    <span class="cf">return</span> text</span>
+<span id="cb1-23"><a href="#cb1-23"></a></span>
+<span id="cb1-24"><a href="#cb1-24"></a>docs_pp <span class="op">=</span> [simple_preprocess(d) <span class="cf">for</span> d <span class="kw">in</span> docs]</span>
+<span id="cb1-25"><a href="#cb1-25"></a></span>
+<span id="cb1-26"><a href="#cb1-26"></a>bow <span class="op">=</span> CountVectorizer(</span>
+<span id="cb1-27"><a href="#cb1-27"></a>    stop_words<span class="op">=</span><span class="st">"english"</span>,</span>
+<span id="cb1-28"><a href="#cb1-28"></a>    ngram_range<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb1-29"><a href="#cb1-29"></a>    min_df<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb1-30"><a href="#cb1-30"></a>)</span>
+<span id="cb1-31"><a href="#cb1-31"></a>X_bow <span class="op">=</span> bow.fit_transform(docs_pp)</span>
+<span id="cb1-32"><a href="#cb1-32"></a>vocab_bow <span class="op">=</span> bow.get_feature_names_out()</span>
+<span id="cb1-33"><a href="#cb1-33"></a></span>
+<span id="cb1-34"><a href="#cb1-34"></a>tfidf <span class="op">=</span> TfidfVectorizer(</span>
+<span id="cb1-35"><a href="#cb1-35"></a>    stop_words<span class="op">=</span><span class="st">"english"</span>,</span>
+<span id="cb1-36"><a href="#cb1-36"></a>    ngram_range<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb1-37"><a href="#cb1-37"></a>    norm<span class="op">=</span><span class="st">"l2"</span>,</span>
+<span id="cb1-38"><a href="#cb1-38"></a>    use_idf<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-39"><a href="#cb1-39"></a>    smooth_idf<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-40"><a href="#cb1-40"></a>    sublinear_tf<span class="op">=</span><span class="va">True</span></span>
+<span id="cb1-41"><a href="#cb1-41"></a>)</span>
+<span id="cb1-42"><a href="#cb1-42"></a>X_tfidf <span class="op">=</span> tfidf.fit_transform(docs_pp)</span>
+<span id="cb1-43"><a href="#cb1-43"></a>vocab_tfidf <span class="op">=</span> tfidf.get_feature_names_out()</span>
+<span id="cb1-44"><a href="#cb1-44"></a></span>
+<span id="cb1-45"><a href="#cb1-45"></a>k <span class="op">=</span> <span class="dv">4</span></span>
+<span id="cb1-46"><a href="#cb1-46"></a>svd <span class="op">=</span> TruncatedSVD(n_components<span class="op">=</span>k, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb1-47"><a href="#cb1-47"></a>X_dense <span class="op">=</span> svd.fit_transform(X_tfidf)</span>
+<span id="cb1-48"><a href="#cb1-48"></a>X_dense <span class="op">=</span> normalize(X_dense)</span>
+<span id="cb1-49"><a href="#cb1-49"></a></span>
+<span id="cb1-50"><a href="#cb1-50"></a>S_sparse <span class="op">=</span> cosine_similarity(X_tfidf)</span>
+<span id="cb1-51"><a href="#cb1-51"></a>S_dense <span class="op">=</span> cosine_similarity(X_dense)</span>
+<span id="cb1-52"><a href="#cb1-52"></a></span>
+<span id="cb1-53"><a href="#cb1-53"></a>alpha <span class="op">=</span> <span class="fl">0.6</span></span>
+<span id="cb1-54"><a href="#cb1-54"></a>S_hybrid <span class="op">=</span> alpha <span class="op">*</span> S_sparse <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> alpha) <span class="op">*</span> S_dense</span>
+<span id="cb1-55"><a href="#cb1-55"></a></span>
+<span id="cb1-56"><a href="#cb1-56"></a><span class="kw">def</span> top_k_similar(sim_matrix, query_doc_idx: <span class="bu">int</span>, k: <span class="bu">int</span> <span class="op">=</span> <span class="dv">3</span>):</span>
+<span id="cb1-57"><a href="#cb1-57"></a>    sims <span class="op">=</span> sim_matrix[query_doc_idx].copy()</span>
+<span id="cb1-58"><a href="#cb1-58"></a>    sims[query_doc_idx] <span class="op">=</span> <span class="op">-</span><span class="dv">1</span></span>
+<span id="cb1-59"><a href="#cb1-59"></a>    order <span class="op">=</span> np.argsort(sims)[::<span class="op">-</span><span class="dv">1</span>][:k]</span>
+<span id="cb1-60"><a href="#cb1-60"></a>    <span class="cf">return</span> <span class="bu">list</span>(<span class="bu">zip</span>(order, sims[order]))</span>
+<span id="cb1-61"><a href="#cb1-61"></a></span>
+<span id="cb1-62"><a href="#cb1-62"></a>q <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb1-63"><a href="#cb1-63"></a><span class="bu">print</span>(<span class="st">"BoW shape:"</span>, X_bow.shape, <span class="st">"nnz:"</span>, X_bow.nnz)</span>
+<span id="cb1-64"><a href="#cb1-64"></a><span class="bu">print</span>(<span class="st">"TF-IDF shape:"</span>, X_tfidf.shape, <span class="st">"nnz:"</span>, X_tfidf.nnz)</span>
+<span id="cb1-65"><a href="#cb1-65"></a><span class="bu">print</span>(<span class="st">"Dense shape:"</span>, X_dense.shape, <span class="st">"explained_var_sum:"</span>, svd.explained_variance_ratio_.<span class="bu">sum</span>())</span>
+<span id="cb1-66"><a href="#cb1-66"></a></span>
+<span id="cb1-67"><a href="#cb1-67"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Top similar to D1 (sparse TF-IDF):"</span>, top_k_similar(S_sparse, q))</span>
+<span id="cb1-68"><a href="#cb1-68"></a><span class="bu">print</span>(<span class="st">"Top similar to D1 (dense LSA):"</span>, top_k_similar(S_dense, q))</span>
+<span id="cb1-69"><a href="#cb1-69"></a><span class="bu">print</span>(<span class="st">"Top similar to D1 (hybrid):"</span>, top_k_similar(S_hybrid, q))</span>
+<span id="cb1-70"><a href="#cb1-70"></a></span>
+<span id="cb1-71"><a href="#cb1-71"></a>df_tfidf <span class="op">=</span> pd.DataFrame(</span>
+<span id="cb1-72"><a href="#cb1-72"></a>    X_tfidf.toarray(),</span>
+<span id="cb1-73"><a href="#cb1-73"></a>    columns<span class="op">=</span>vocab_tfidf,</span>
+<span id="cb1-74"><a href="#cb1-74"></a>    index<span class="op">=</span>[<span class="ss">f"D</span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">"</span> <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(docs))]</span>
+<span id="cb1-75"><a href="#cb1-75"></a>)</span>
+<span id="cb1-76"><a href="#cb1-76"></a>compact <span class="op">=</span> []</span>
+<span id="cb1-77"><a href="#cb1-77"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(docs)):</span>
+<span id="cb1-78"><a href="#cb1-78"></a>    r <span class="op">=</span> df_tfidf.iloc[i]</span>
+<span id="cb1-79"><a href="#cb1-79"></a>    compact.append(r[r <span class="op">&gt;</span> <span class="dv">0</span>].sort_values(ascending<span class="op">=</span><span class="va">False</span>).head(<span class="dv">6</span>))</span>
+<span id="cb1-80"><a href="#cb1-80"></a>compact_df <span class="op">=</span> pd.DataFrame(compact).fillna(<span class="dv">0</span>)</span>
+<span id="cb1-81"><a href="#cb1-81"></a>compact_df.index <span class="op">=</span> [<span class="ss">f"D</span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">"</span> <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(docs))]</span>
+<span id="cb1-82"><a href="#cb1-82"></a></span>
+<span id="cb1-83"><a href="#cb1-83"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Compact TF-IDF view (top weights per doc):"</span>)</span>
+<span id="cb1-84"><a href="#cb1-84"></a><span class="bu">print</span>(compact_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./Ini_da.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">3.4. Initial Data Analysis</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./Tf_idf.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-title">4.2. TF-IDF</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

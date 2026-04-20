@@ -1,0 +1,11 @@
+title: "Natural Language Processing"
+subtitle: "From Idea to Application"
+author: "Kamil Filipek"
+
+logo: logo-Centrum.png     # <- Twoje logo
+logo-alt: "UMCS AI Center" # <- tekst alternatywny
+favicon: assets/umcs-favicon.ico
+
+# (opcjonalnie) kolory i typografia
+theme:
+  light: cosmo

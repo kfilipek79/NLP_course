@@ -1,0 +1,108 @@
+---
+title: "4.4. GloVe"
+author: "Kamil Filipek"
+format: html
+editor: visual
+---
+
+### 4.4.1 Short Introduction to GloVe
+
+**GloVe** (short for *Global Vectors*) is a framework for learning distributed representations of words. It operates as an unsupervised algorithm that generates vector embeddings by projecting words into a continuous semantic space, where geometric proximity reflects semantic relatedness. In this space, words with similar meanings tend to occupy nearby positions.
+
+**GloVe**, by contrast to Word2Vec, is a *count-based* model. It constructs a global word--word co-occurrence matrix from the entire corpus and then factorizes it using a weighted log-bilinear regression objective. Instead of predicting words directly, GloVe aims to model ratios of co-occurrence probabilities. **Thus, while W2V relies primarily on local context prediction, GloVe explicitly incorporates global statistical information from the corpus.**
+
+### 4.4.2 The Essence of GloVe
+
+Details of the GloVe model can be found in the paper *GloVe: Global Vectors for Word Representation* by Jeffrey Pennington, Richard Socher, and Christopher D. Manning (2014); at this stage, however, let us focus on what distinguishes it.
+
+::: callout-note
+#### Structural Objective
+
+$$
+\text{maximize } P(\text{context} \mid \text{word})
+$$
+
+Word2Vec learns through a **predictive task**.\
+For a given center (target) word, the model attempts to maximize the probability of observing the correct context words within a fixed window.
+
+Formally, the parameters are optimized so that:
+
+$$
+P(w_c \mid w_t)
+$$
+
+is as large as possible for true (target, context) pairs.
+
+**Example**
+
+-   Target word: *cat*
+-   Context word: *milk*
+-   The model increases the probability assigned to this pair.
+
+This approach is therefore both:
+
+-   **probabilistic** --- it models conditional probability distributions,
+-   **predictive** --- embeddings emerge as a by-product of solving a prediction task.
+:::
+
+### 4.4.3 Python Implementation
+
+``` python
+## pip install glove-python-binary nltk # if needed
+
+import nltk
+from nltk.tokenize import sent_tokenize
+from glove import Corpus, Glove
+
+# Download tokenizer (first time only)
+nltk.download("punkt")
+
+# -------------------------------------------------
+# 1. Prepare corpus
+# -------------------------------------------------
+text = """
+GloVe is a model for distributed word representation.
+It uses global word co-occurrence statistics.
+Semantic similarity is captured through vector space structure.
+"""
+
+sentences = [sentence.lower().split() for sentence in sent_tokenize(text)]
+
+print("Tokenized corpus:")
+print(sentences)
+
+# -------------------------------------------------
+# 2. Build co-occurrence matrix
+# -------------------------------------------------
+corpus = Corpus()
+corpus.fit(sentences, window=5)
+
+print("\nVocabulary size:", len(corpus.dictionary))
+print("Co-occurrence matrix shape:", corpus.matrix.shape)
+
+# -------------------------------------------------
+# 3. Train GloVe model
+# -------------------------------------------------
+glove = Glove(
+    no_components=100,   # embedding dimension
+    learning_rate=0.05
+)
+
+glove.fit(
+    corpus.matrix,
+    epochs=100,
+    no_threads=4,
+    verbose=True
+)
+
+glove.add_dictionary(corpus.dictionary)
+
+# -------------------------------------------------
+# 4. Inspect embeddings
+# -------------------------------------------------
+print("\nVector for 'glove':")
+print(glove.word_vectors[glove.dictionary['glove']][:10])
+
+print("\nMost similar to 'statistics':")
+print(glove.most_similar("statistics", number=5))
+```

@@ -1,0 +1,4 @@
+---
+title: "Exploratory Data Analysis in NLP"
+author: Kamil Filipek
+---

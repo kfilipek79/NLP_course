@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kamil Filipek">
+
+<title>Natural Language Processing - Part I - 5.2. BERT</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./GPT.html" rel="next">
+<link href="./ELMo.html" rel="prev">
+<link href="./assets/umcs-favicon.ico" rel="icon">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ELMo.html"><strong>5. Contextual_embeddings</strong></a></li><li class="breadcrumb-item"><a href="./BERT.html"><span class="chapter-number">20</span>&nbsp; <span class="chapter-title">5.2. BERT</span></a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./assets/logo-Centrum.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      </a>
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Natural Language Processing - Part I</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text"><strong>1. Language and Machines</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Why_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.1. Why to Analyze Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Natural_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.2. What is the Natural Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Hierarchy_languages.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.3. Hierarchy of Languages</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text"><strong>2. Theoretical Foundations</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Levels_analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.1. Levels of Linguistic Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Approaches_language..html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Lang_machine.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.4. Representing Language for Machines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Application.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.5. From Theory to Application</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text"><strong>3. Basic Data Engineering</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Preprocessing.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.1. Data Preprocessing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Stem_lem.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Stemming and Lemmatization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tokenization.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Tokenization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Ini_da.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.4. Initial Data Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
+ <span class="menu-text"><strong>4. Evolution of Embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Bag_of_words.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.1. Bag of Words</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tf_idf.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.2. TF-IDF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Word2Vec.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.3. Word2Vec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GloVe.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.4. GloVe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./FastText.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.5. FastText</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true">
+ <span class="menu-text"><strong>5. Contextual_embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ELMo.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. ELMo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./BERT.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">5.2. BERT</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GPT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. GPT</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true">
+ <span class="menu-text"><strong>6. Elementary Language Analaysis</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./PoS_and_NER.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. PoS &amp; NER</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Keywords_extraction.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.2. Keywords Extraction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Semntiment.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. Sentiment Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Emotion_Analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.4. Emotion Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <span class="sidebar-item-text sidebar-link text-start">
+ <span class="menu-text">**6. Advanced Language Analysis**</span></span>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true">
+ <span class="menu-text">Bibliography</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ref.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">References</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">MORE DETAILS</h2>
+   
+  <ul>
+  <li><a href="#bidirectional-encoder-representations-from-transformers" id="toc-bidirectional-encoder-representations-from-transformers" class="nav-link active" data-scroll-target="#bidirectional-encoder-representations-from-transformers">5.2.1. Bidirectional Encoder Representations from Transformers</a></li>
+  <li><a href="#how-bert-works" id="toc-how-bert-works" class="nav-link" data-scroll-target="#how-bert-works">5.2.2. How BERT works?</a></li>
+  <li><a href="#bert-in-python" id="toc-bert-in-python" class="nav-link" data-scroll-target="#bert-in-python">5.2.3. BERT in Python</a></li>
+  <li><a href="#berts-variants-and-adaptations" id="toc-berts-variants-and-adaptations" class="nav-link" data-scroll-target="#berts-variants-and-adaptations">5.2.4 BERT’s variants and adaptations</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-title">5.2. BERT</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kamil Filipek </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="bidirectional-encoder-representations-from-transformers" class="level3">
+<h3 class="anchored" data-anchor-id="bidirectional-encoder-representations-from-transformers">5.2.1. Bidirectional Encoder Representations from Transformers</h3>
+<p><strong>BERT is the foundation of modern NLP.</strong> Everything since 2018 (including GPT models, Claude, ChatGPT) builds on the Transformer architecture and self-attention mechanism that BERT popularized.</p>
+<p><img src="graphics/BERT.png" class="img-fluid"></p>
+<p>https://arxiv.org/pdf/1810.04805</p>
+<p>Graphical representation of the BERT.</p>
+<p><img src="graphics/BERT_graph.png" class="img-fluid"></p>
+<p><strong>Model configurations:</strong></p>
+<ul>
+<li><p><strong>BERT-BASE</strong>: 12 layers (L), 768 hidden units (H), 12 attention heads (A) = 110M parameters</p></li>
+<li><p><strong>BERT-LARGE</strong>: 24 layers, 1024 hidden units, 16 attention heads = 340M parameters</p></li>
+</ul>
+<section id="input-representation" class="level4">
+<h4 class="anchored" data-anchor-id="input-representation">Input representation:</h4>
+<p>Each token’s input embedding is the <strong>sum of three embeddings</strong>:</p>
+<ol type="1">
+<li><p><strong>Token Embedding</strong>: WordPiece tokenization (30,000 vocabulary)</p></li>
+<li><p><strong>Position Embedding</strong>: Learned positional encodings (0 to 511)</p></li>
+<li><p><strong>Segment Embedding</strong>: Distinguishes Sentence A vs.&nbsp;Sentence B</p></li>
+</ol>
+<p><strong>Special Tokens:</strong></p>
+<ul>
+<li><p><code>[CLS]</code> - Placed at the beginning; its final hidden state aggregates sequence-level representation</p></li>
+<li><p><code>[SEP]</code> - Separates sentence pairs</p></li>
+<li><p><code>[MASK]</code> - Used during pre-training to mask tokens</p></li>
+</ul>
+</section>
+<section id="self-attention-mechanism" class="level4">
+<h4 class="anchored" data-anchor-id="self-attention-mechanism">Self-Attention Mechanism:</h4>
+<p>The critical innovation enabling bidirectionality:</p>
+<p><strong>For each token, compute:</strong></p>
+<blockquote class="blockquote">
+<p>Q = X · W_Q (Query: what am I looking for?)</p>
+<p>K = X · W_K (Key: what do I have?)</p>
+<p>V = X · W_V (Value: what do I provide?)</p>
+<p>Attention(Q,K,V) = softmax(Q·K^T / √d_k) · V</p>
+</blockquote>
+</section>
+</section>
+<section id="how-bert-works" class="level3">
+<h3 class="anchored" data-anchor-id="how-bert-works">5.2.2. How BERT works?</h3>
+<p><strong>BERT is a neural network that reads text bidirectionally to understand context.</strong>&nbsp;Unlike previous models that read left-to-right or right-to-left separately, BERT uses the Transformer architecture with self-attention mechanisms to let <strong>every word “look at” every other word simultaneously</strong>.</p>
+<p>It’s pre-trained on massive amounts of text using two tasks: (i) predicting randomly masked words (like a fill-in-the-blank exercise) and (ii) determining if two sentences follow each other logically. Each word gets converted into a 768-dimensional vector (embedding) that captures its meaning based on the surrounding context—so “bank” near “river” gets a different embedding than “bank” near “money.”</p>
+<p>After pre-training, BERT can be fine-tuned on specific tasks like question answering, sentiment analysis, or text classification with minimal additional data.</p>
+<hr>
+<p><strong>SELF-ATTENTION</strong> is a mechanism that lets each word in a sentence figure out which other words are most relevant to understanding it. Think of it like reading a sentence where every word simultaneously asks “which other words should I pay attention to?” and then updates its meaning based on those relationships.</p>
+<hr>
+<table class="table">
+<colgroup>
+<col style="width: 91%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p><sup>Sentence:&nbsp;“The&nbsp;bank&nbsp;by&nbsp;the&nbsp;river&nbsp;was&nbsp;flooded”</sup></p>
+<p><sup>When&nbsp;processing&nbsp;“bank”:</sup></p>
+<p><sup>-&nbsp;Looks&nbsp;at&nbsp;“The”&nbsp;→&nbsp;low&nbsp;attention&nbsp;(0.1)</sup></p>
+<p><sup>-&nbsp;Looks&nbsp;at&nbsp;“by”&nbsp;→&nbsp;low&nbsp;attention&nbsp;(0.1)</sup></p>
+<p><sup>-&nbsp;Looks&nbsp;at&nbsp;“the”&nbsp;→&nbsp;low&nbsp;attention&nbsp;(0.1)</sup></p>
+<p><sup>-&nbsp;Looks&nbsp;at&nbsp;“river”&nbsp;→&nbsp;HIGH&nbsp;attention&nbsp;(0.6)&nbsp;←&nbsp;relevant&nbsp;context!</sup></p>
+<p><sup>-&nbsp;Looks&nbsp;at&nbsp;“was”&nbsp;→&nbsp;low&nbsp;attention&nbsp;(0.05)</sup></p>
+<p><sup>-&nbsp;Looks&nbsp;at&nbsp;“flooded”&nbsp;→&nbsp;medium&nbsp;attention&nbsp;(0.05)</sup></p>
+<p><sup>Result:&nbsp;“bank”&nbsp;embedding&nbsp;is&nbsp;heavily&nbsp;influenced&nbsp;by&nbsp;“river”</sup></p>
+<p><sup>→&nbsp;BERT&nbsp;understands&nbsp;it’s&nbsp;a&nbsp;river&nbsp;bank,&nbsp;not&nbsp;a&nbsp;financial&nbsp;bank</sup></p></td>
+</tr>
+</tbody>
+</table>
+<p>Comparison with ELMo.</p>
+<hr>
+<p>Sentence: “The bank by the river”</p>
+<p>ELMo: [left→] “The” “bank” “by” + [←right] “river” “the” “by”</p>
+<p>BERT: “The” ←→ “bank” ←→ “by” ←→ “the” ←→ “river”</p>
+<p>(all words attend to all other words at once)</p>
+<hr>
+<p><strong>Pre-training: Two Unsupervised Tasks</strong></p>
+<p>Task 1: Masked Language Model (MLM)</p>
+<ul>
+<li><p>Randomly mask 15% of input tokens</p></li>
+<li><p><strong>Masking strategy:</strong></p>
+<ul>
+<li><p>80% → Replace with <code>[MASK]</code></p></li>
+<li><p>10% → Replace with random token</p></li>
+<li><p>10% → Keep unchanged</p></li>
+</ul></li>
+</ul>
+<p><strong>Objective:</strong> Predict original token using bidirectional context</p>
+<p><strong>Critical insight:</strong> Unlike left-to-right language modeling, MLM forces the model to fuse left AND right context, enabling <strong>deep bidirectionality</strong>. Standard LM can’t do this because bidirectional conditioning would allow tokens to “see themselves.”</p>
+<p>Task 2: Next Sentence Prediction (NSP)</p>
+<ul>
+<li><p>Given sentence pairs (A, B):</p>
+<ul>
+<li><p>50% of time: B follows A (IsNext)</p></li>
+<li><p>50% of time: B is random (NotNext)</p></li>
+</ul></li>
+</ul>
+<p><strong>Objective:</strong> Predict whether B actually follows A</p>
+<p><strong>Purpose:</strong> Learn sentence-pair relationships critical for QA and NLI tasks. The <code>[CLS]</code> token’s representation is used for this binary classification.</p>
+<p><strong>Training Corpus:</strong></p>
+<ul>
+<li><p>BooksCorpus (800M words) + English Wikipedia (2,500M words)</p></li>
+<li><p>1M training steps, batch size 256 sequences (128K tokens/batch)</p></li>
+<li><p>4 days on 4 Cloud TPUs (BERT-BASE) or 16 Cloud TPUs (BERT-LARGE)</p></li>
+</ul>
+<section id="example" class="level4">
+<h4 class="anchored" data-anchor-id="example">EXAMPLE</h4>
+<p>The sentence <strong>“Cat is bad”</strong></p>
+<p>After tokenization with special tokens:</p>
+<blockquote class="blockquote">
+<p>[CLS] Cat is bad [SEP]</p>
+</blockquote>
+</section>
+<section id="step-1-create-input-embeddings" class="level4">
+<h4 class="anchored" data-anchor-id="step-1-create-input-embeddings"><strong>Step 1: Create Input Embeddings</strong></h4>
+<p>Each token gets three 768-dimensional vectors (BERT-BASE) that are&nbsp;<strong>summed</strong>:</p>
+<pre><code>Token 0: [CLS]
+  Token_Emb_0     = [0.23, -0.45, 0.12, ..., 0.67]  (768 dims)
+  Position_Emb_0  = [0.11, 0.08, -0.33, ..., 0.22]  (position 0)
+  Segment_Emb_0   = [0.05, 0.02, 0.19, ..., -0.14]  (sentence A)
+  ────────────────────────────────────────────────
+  X_0 = sum       = [0.39, -0.35, -0.02, ..., 0.75]
+
+Token 1: "Cat"
+  Token_Emb_1     = [0.67, 0.23, -0.89, ..., 0.34]
+  Position_Emb_1  = [0.14, 0.11, -0.28, ..., 0.19]  (position 1)
+  Segment_Emb_1   = [0.05, 0.02, 0.19, ..., -0.14]
+  ────────────────────────────────────────────────
+  X_1 = sum       = [0.86, 0.36, -0.98, ..., 0.39]
+
+Token 2: "is"
+  Token_Emb_2     = [-0.12, 0.56, 0.78, ..., -0.23]
+  Position_Emb_2  = [0.17, 0.14, -0.23, ..., 0.16]  (position 2)
+  Segment_Emb_2   = [0.05, 0.02, 0.19, ..., -0.14]
+  ────────────────────────────────────────────────
+  X_2 = sum       = [0.10, 0.72, 0.74, ..., -0.21]
+
+Token 3: "bad"
+  Token_Emb_3     = [-0.45, -0.67, 0.23, ..., 0.89]
+  Position_Emb_3  = [0.20, 0.17, -0.18, ..., 0.13]  (position 3)
+  Segment_Emb_3   = [0.05, 0.02, 0.19, ..., -0.14]
+  ────────────────────────────────────────────────
+  X_3 = sum       = [-0.20, -0.48, 0.24, ..., 0.88]
+
+Token 4: [SEP]
+  (similar process...)
+  X_4 = sum       = [0.15, 0.33, -0.45, ..., 0.56]</code></pre>
+<p><strong>Result: Input matrix X</strong>&nbsp;(5 tokens × 768 dimensions)</p>
+<pre><code>X = [X_0]   [[0.39, -0.35, -0.02, ..., 0.75]
+    [X_1] =  [0.86,  0.36, -0.98, ..., 0.39]
+    [X_2]    [0.10,  0.72,  0.74, ..., -0.21]
+    [X_3]    [-0.20, -0.48,  0.24, ..., 0.88]
+    [X_4]]   [0.15,  0.33, -0.45, ..., 0.56]]</code></pre>
+<hr>
+</section>
+<section id="step-2-layer-1---multi-head-self-attention" class="level4">
+<h4 class="anchored" data-anchor-id="step-2-layer-1---multi-head-self-attention"><strong>Step 2: Layer 1 - Multi-Head Self-Attention</strong></h4>
+<section id="a.-compute-q-k-v-matrices" class="level5">
+<h5 class="anchored" data-anchor-id="a.-compute-q-k-v-matrices"><strong>2a. Compute Q, K, V matrices</strong></h5>
+<p>Each token’s embedding is multiplied by learned weight matrices:</p>
+<pre><code>Q = X · W_Q    (5 × 768) · (768 × 768) = (5 × 768)
+K = X · W_K    (5 × 768) · (768 × 768) = (5 × 768)
+V = X · W_V    (5 × 768) · (768 × 768) = (5 × 768)</code></pre>
+<p><strong>Example for token “Cat” (position 1):</strong></p>
+<pre><code>Q_1 = X_1 · W_Q = [0.86, 0.36, -0.98, ...] · W_Q 
+                = [0.54, -0.23, 0.67, ..., 0.12]  (768 dims)
+
+K_1 = X_1 · W_K = [0.86, 0.36, -0.98, ...] · W_K
+                = [0.31, 0.88, -0.45, ..., 0.76]  (768 dims)
+
+V_1 = X_1 · W_V = [0.86, 0.36, -0.98, ...] · W_V
+                = [0.72, 0.19, 0.33, ..., -0.54]  (768 dims)</code></pre>
+</section>
+<section id="b.-calculate-attention-scores" class="level5">
+<h5 class="anchored" data-anchor-id="b.-calculate-attention-scores"><strong>2b. Calculate attention scores</strong></h5>
+<p>For “Cat” to attend to all tokens:</p>
+<pre><code>Score = Q_Cat · K^T / √64   (√d_k where d_k = 64 per attention head)
+
+Attention scores for "Cat":
+  Q_Cat · K_[CLS] / 8 = 0.54·0.22 + (-0.23)·0.67 + ... = 2.3
+  Q_Cat · K_Cat / 8   = 0.54·0.31 + (-0.23)·0.88 + ... = 5.8  ← high!
+  Q_Cat · K_is / 8    = 0.54·0.19 + (-0.23)·0.45 + ... = 1.7
+  Q_Cat · K_bad / 8   = 0.54·(-0.67) + (-0.23)·0.23 + ... = 4.2  ← relevant!
+  Q_Cat · K_[SEP] / 8 = 0.54·0.11 + (-0.23)·0.56 + ... = 1.1</code></pre>
+</section>
+<section id="c.-apply-softmax-to-get-attention-weights" class="level5">
+<h5 class="anchored" data-anchor-id="c.-apply-softmax-to-get-attention-weights"><strong>2c. Apply softmax to get attention weights</strong></h5>
+<pre><code>Scores = [2.3, 5.8, 1.7, 4.2, 1.1]
+
+Softmax:
+  exp(2.3) = 9.97
+  exp(5.8) = 330.3   ← largest
+  exp(1.7) = 5.47
+  exp(4.2) = 66.69
+  exp(1.1) = 3.00
+  Sum = 415.43
+
+Attention weights = [9.97/415.43, 330.3/415.43, 5.47/415.43, 66.69/415.43, 3.00/415.43]
+                  = [0.024, 0.795, 0.013, 0.161, 0.007]
+                      ↑      ↑              ↑
+                   [CLS]   "Cat"          "bad"</code></pre>
+<p><strong>Interpretation:</strong>&nbsp;“Cat” pays most attention to itself (79.5%) and significant attention to “bad” (16.1%)</p>
+</section>
+<section id="d.-weighted-sum-of-values" class="level5">
+<h5 class="anchored" data-anchor-id="d.-weighted-sum-of-values"><strong>2d. Weighted sum of values</strong></h5>
+<pre><code>Output_Cat = 0.024·V_[CLS] + 0.795·V_Cat + 0.013·V_is 
+           + 0.161·V_bad + 0.007·V_[SEP]
+
+         = 0.024·[0.23, 0.11, ...] + 0.795·[0.72, 0.19, ...] 
+           + 0.013·[0.15, 0.67, ...] + 0.161·[-0.34, -0.89, ...] 
+           + 0.007·[0.09, 0.44, ...]
+
+         = [0.52, -0.09, 0.33, ..., 0.18]  (768 dims)</code></pre>
+<p><strong>This new representation of “Cat” now contains information from “bad”!</strong></p>
+<hr>
+</section>
+<section id="e.-multi-head-repeat-12-times" class="level5">
+<h5 class="anchored" data-anchor-id="e.-multi-head-repeat-12-times"><strong>2e. Multi-head (repeat 12 times)</strong></h5>
+<p>BERT-BASE has&nbsp;<strong>12 attention heads</strong>. Each head learns different relationships:</p>
+<pre><code>Head 1: "Cat" → focuses on syntactic role (subject)
+Head 2: "Cat" → focuses on semantic connection with "bad"
+Head 3: "Cat" → focuses on position in sentence
+...
+Head 12: "Cat" → focuses on relationship with [CLS] token
+
+Concatenate all 12 heads:
+MultiHead_Cat = [Head1_Cat; Head2_Cat; ...; Head12_Cat]
+              = [768-dimensional vector]</code></pre>
+</section>
+<section id="f.-residual-connection-layer-norm" class="level5">
+<h5 class="anchored" data-anchor-id="f.-residual-connection-layer-norm"><strong>2f. Residual connection + Layer Norm</strong></h5>
+<pre><code># Add original input (residual connection)
+X_1_after_attn = X_1 + MultiHead_Cat
+               = [0.86, 0.36, -0.98, ...] + [0.52, -0.09, 0.33, ...]
+               = [1.38, 0.27, -0.65, ...]
+
+# Layer Normalization (normalize across 768 dimensions)
+mean = (1.38 + 0.27 + ... + val_768) / 768 = 0.15
+variance = ...
+
+X_1_normalized = (X_1_after_attn - mean) / √(variance + ε)
+               = [1.42, 0.14, -0.91, ..., 0.33]  (normalized)</code></pre>
+<hr>
+</section>
+</section>
+<section id="step-3-feed-forward-network" class="level4">
+<h4 class="anchored" data-anchor-id="step-3-feed-forward-network"><strong>Step 3: Feed-Forward Network</strong></h4>
+<p>Each token independently goes through 2-layer FFN:</p>
+<pre><code>For "Cat" token:
+
+# First layer: 768 → 3072 dimensions (expansion)
+Hidden = GELU(X_1_normalized · W1 + b1)
+
+X_1_normalized · W1 = [1.42, 0.14, -0.91, ...] · [768×3072 matrix]
+                    = [0.67, -0.23, 0.89, ..., 0.45]  (3072 dims)
+
+GELU activation (smooth version of ReLU):
+  GELU(x) = x · Φ(x)  where Φ is cumulative normal distribution
+  
+Hidden = [0.55, -0.08, 0.82, ..., 0.39]  (3072 dims)
+
+# Second layer: 3072 → 768 dimensions (projection back)
+FFN_Cat = Hidden · W2 + b2
+        = [0.55, -0.08, ...] · [3072×768 matrix]
+        = [0.34, -0.56, 0.78, ..., 0.22]  (768 dims)</code></pre>
+</section>
+<section id="residual-layernorm-again" class="level4">
+<h4 class="anchored" data-anchor-id="residual-layernorm-again"><strong>Residual + LayerNorm again</strong></h4>
+<pre><code>X_1_layer1_output = LayerNorm(X_1_normalized + FFN_Cat)
+                  = LayerNorm([1.42, 0.14, ...] + [0.34, -0.56, ...])
+                  = [1.23, -0.31, 0.67, ..., 0.44]</code></pre>
+<hr>
+</section>
+<section id="step-4-repeat-for-layers-2-12" class="level4">
+<h4 class="anchored" data-anchor-id="step-4-repeat-for-layers-2-12"><strong>Step 4: Repeat for Layers 2-12</strong></h4>
+<p>The output from Layer 1 becomes input to Layer 2, and so on:</p>
+<pre><code>Layer 1 output → Layer 2 input → Layer 2 output → ... → Layer 12 output</code></pre>
+<p><strong>After 12 layers, each token has been refined 12 times:</strong></p>
+<pre><code>Final representation of "Cat" after 12 layers:
+  Initial X_1:  [0.86, 0.36, -0.98, ..., 0.39]
+  After Layer 12: [0.45, -0.78, 0.23, ..., 0.91]
+  
+  ↑ This vector now encodes:
+    - "Cat" is the subject
+    - "Cat" is associated with negative sentiment ("bad")
+    - "Cat" appears early in the sentence
+    - Full bidirectional context from the entire sentence</code></pre>
+<hr>
+</section>
+<section id="complete-forward-pass-summary" class="level4">
+<h4 class="anchored" data-anchor-id="complete-forward-pass-summary"><strong>Complete Forward Pass Summary</strong></h4>
+<pre><code>Input: "[CLS] Cat is bad [SEP]"
+
+┌─────────────────────────────────────────┐
+│ Token + Position + Segment Embeddings   │
+│ X = (5 tokens × 768 dims)               │
+└─────────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────────┐
+│ Layer 1:                                │
+│  • Multi-Head Attention (12 heads)     │
+│    - Each token attends to all others   │
+│    - "Cat" learns it's related to "bad" │
+│  • Feed-Forward Network                 │
+│  • Residual + LayerNorm (×2)            │
+└─────────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────────┐
+│ Layer 2:                                │
+│  • Refines representations further      │
+│  • Captures deeper relationships        │
+└─────────────────────────────────────────┘
+              ↓
+           ... (Layers 3-11)
+              ↓
+┌─────────────────────────────────────────┐
+│ Layer 12:                               │
+│  • Final contextualized embeddings      │
+└─────────────────────────────────────────┘
+              ↓
+Output: Contextualized embeddings (5 × 768)
+  [CLS]: [0.23, -0.67, 0.89, ..., 0.34]  ← sentence representation
+  Cat:   [0.45, -0.78, 0.23, ..., 0.91]  ← "cat" with negative context
+  is:    [0.12, 0.34, -0.56, ..., 0.67]  ← linking verb
+  bad:   [-0.89, -0.54, 0.12, ..., 0.78] ← negative sentiment
+  [SEP]: [0.33, 0.45, -0.23, ..., 0.56]  ← separator</code></pre>
+</section>
+</section>
+<section id="bert-in-python" class="level3">
+<h3 class="anchored" data-anchor-id="bert-in-python">5.2.3. BERT in Python</h3>
+<p>Let’s play with the “Cat is bad” sentence.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1"></a><span class="im">import</span> warnings</span>
+<span id="cb15-2"><a href="#cb15-2"></a>warnings.filterwarnings(<span class="st">'ignore'</span>)</span>
+<span id="cb15-3"><a href="#cb15-3"></a></span>
+<span id="cb15-4"><a href="#cb15-4"></a><span class="im">import</span> os</span>
+<span id="cb15-5"><a href="#cb15-5"></a>os.environ[<span class="st">'TF_CPP_MIN_LOG_LEVEL'</span>] <span class="op">=</span> <span class="st">'3'</span>  <span class="co"># Suppress TensorFlow warnings</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a></span>
+<span id="cb15-7"><a href="#cb15-7"></a><span class="im">from</span> transformers <span class="im">import</span> BertTokenizer, BertModel</span>
+<span id="cb15-8"><a href="#cb15-8"></a><span class="im">import</span> torch</span>
+<span id="cb15-9"><a href="#cb15-9"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb15-10"><a href="#cb15-10"></a></span>
+<span id="cb15-11"><a href="#cb15-11"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-12"><a href="#cb15-12"></a><span class="bu">print</span>(<span class="st">"BERT: 'Cat is bad' - DETAILED ANALYSIS"</span>)</span>
+<span id="cb15-13"><a href="#cb15-13"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-14"><a href="#cb15-14"></a></span>
+<span id="cb15-15"><a href="#cb15-15"></a><span class="co"># Load model</span></span>
+<span id="cb15-16"><a href="#cb15-16"></a>tokenizer <span class="op">=</span> BertTokenizer.from_pretrained(<span class="st">'bert-base-uncased'</span>)</span>
+<span id="cb15-17"><a href="#cb15-17"></a>model <span class="op">=</span> BertModel.from_pretrained(<span class="st">'bert-base-uncased'</span>)</span>
+<span id="cb15-18"><a href="#cb15-18"></a>model.<span class="bu">eval</span>()</span>
+<span id="cb15-19"><a href="#cb15-19"></a></span>
+<span id="cb15-20"><a href="#cb15-20"></a>sentence <span class="op">=</span> <span class="st">"Cat is bad"</span></span>
+<span id="cb15-21"><a href="#cb15-21"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Input: '</span><span class="sc">{</span>sentence<span class="sc">}</span><span class="ss">'"</span>)</span>
+<span id="cb15-22"><a href="#cb15-22"></a></span>
+<span id="cb15-23"><a href="#cb15-23"></a><span class="co"># Tokenize</span></span>
+<span id="cb15-24"><a href="#cb15-24"></a>inputs <span class="op">=</span> tokenizer(sentence, return_tensors<span class="op">=</span><span class="st">"pt"</span>)</span>
+<span id="cb15-25"><a href="#cb15-25"></a>tokens <span class="op">=</span> tokenizer.convert_ids_to_tokens(inputs[<span class="st">'input_ids'</span>][<span class="dv">0</span>])</span>
+<span id="cb15-26"><a href="#cb15-26"></a></span>
+<span id="cb15-27"><a href="#cb15-27"></a><span class="bu">print</span>(<span class="ss">f"Tokens: </span><span class="sc">{</span>tokens<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-28"><a href="#cb15-28"></a><span class="bu">print</span>(<span class="ss">f"Token IDs: </span><span class="sc">{</span>inputs[<span class="st">'input_ids'</span>]<span class="sc">.</span>tolist()[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-29"><a href="#cb15-29"></a></span>
+<span id="cb15-30"><a href="#cb15-30"></a><span class="co"># Generate embeddings</span></span>
+<span id="cb15-31"><a href="#cb15-31"></a><span class="cf">with</span> torch.no_grad():</span>
+<span id="cb15-32"><a href="#cb15-32"></a>    outputs <span class="op">=</span> model(<span class="op">**</span>inputs)</span>
+<span id="cb15-33"><a href="#cb15-33"></a></span>
+<span id="cb15-34"><a href="#cb15-34"></a>embeddings <span class="op">=</span> outputs.last_hidden_state</span>
+<span id="cb15-35"><a href="#cb15-35"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Output shape: </span><span class="sc">{</span>embeddings<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-36"><a href="#cb15-36"></a><span class="bu">print</span>(<span class="ss">f"  → 1 sentence, </span><span class="sc">{</span>embeddings<span class="sc">.</span>shape[<span class="dv">1</span>]<span class="sc">}</span><span class="ss"> tokens, 768 dimensions"</span>)</span>
+<span id="cb15-37"><a href="#cb15-37"></a></span>
+<span id="cb15-38"><a href="#cb15-38"></a><span class="co"># Extract each token's embedding</span></span>
+<span id="cb15-39"><a href="#cb15-39"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span> <span class="op">+</span> <span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-40"><a href="#cb15-40"></a><span class="bu">print</span>(<span class="st">"TOKEN EMBEDDINGS"</span>)</span>
+<span id="cb15-41"><a href="#cb15-41"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-42"><a href="#cb15-42"></a></span>
+<span id="cb15-43"><a href="#cb15-43"></a><span class="cf">for</span> i, token <span class="kw">in</span> <span class="bu">enumerate</span>(tokens):</span>
+<span id="cb15-44"><a href="#cb15-44"></a>    emb <span class="op">=</span> embeddings[<span class="dv">0</span>, i, :]  <span class="co"># [batch=0, position=i, all_dimensions]</span></span>
+<span id="cb15-45"><a href="#cb15-45"></a>    </span>
+<span id="cb15-46"><a href="#cb15-46"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">. Token: '</span><span class="sc">{</span>token<span class="sc">}</span><span class="ss">'"</span>)</span>
+<span id="cb15-47"><a href="#cb15-47"></a>    <span class="bu">print</span>(<span class="ss">f"   Shape: </span><span class="sc">{</span>emb<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-48"><a href="#cb15-48"></a>    <span class="bu">print</span>(<span class="ss">f"   First 10 values: </span><span class="sc">{</span>emb[:<span class="dv">10</span>]<span class="sc">.</span>numpy()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-49"><a href="#cb15-49"></a>    <span class="bu">print</span>(<span class="ss">f"   L2 norm: </span><span class="sc">{</span>torch<span class="sc">.</span>norm(emb)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb15-50"><a href="#cb15-50"></a>    <span class="bu">print</span>(<span class="ss">f"   Mean: </span><span class="sc">{</span>torch<span class="sc">.</span>mean(emb)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb15-51"><a href="#cb15-51"></a>    <span class="bu">print</span>(<span class="ss">f"   Std: </span><span class="sc">{</span>torch<span class="sc">.</span>std(emb)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb15-52"><a href="#cb15-52"></a></span>
+<span id="cb15-53"><a href="#cb15-53"></a><span class="co"># Compare "Cat" with "bad"</span></span>
+<span id="cb15-54"><a href="#cb15-54"></a>cat_emb <span class="op">=</span> embeddings[<span class="dv">0</span>, <span class="dv">1</span>, :].numpy()  <span class="co"># Position 1</span></span>
+<span id="cb15-55"><a href="#cb15-55"></a>bad_emb <span class="op">=</span> embeddings[<span class="dv">0</span>, <span class="dv">3</span>, :].numpy()  <span class="co"># Position 3</span></span>
+<span id="cb15-56"><a href="#cb15-56"></a></span>
+<span id="cb15-57"><a href="#cb15-57"></a><span class="co"># Cosine similarity</span></span>
+<span id="cb15-58"><a href="#cb15-58"></a><span class="kw">def</span> cosine_similarity(a, b):</span>
+<span id="cb15-59"><a href="#cb15-59"></a>    <span class="cf">return</span> np.dot(a, b) <span class="op">/</span> (np.linalg.norm(a) <span class="op">*</span> np.linalg.norm(b))</span>
+<span id="cb15-60"><a href="#cb15-60"></a></span>
+<span id="cb15-61"><a href="#cb15-61"></a>similarity <span class="op">=</span> cosine_similarity(cat_emb, bad_emb)</span>
+<span id="cb15-62"><a href="#cb15-62"></a></span>
+<span id="cb15-63"><a href="#cb15-63"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span> <span class="op">+</span> <span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-64"><a href="#cb15-64"></a><span class="bu">print</span>(<span class="st">"SIMILARITY ANALYSIS"</span>)</span>
+<span id="cb15-65"><a href="#cb15-65"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-66"><a href="#cb15-66"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Cosine similarity between 'Cat' and 'bad': </span><span class="sc">{</span>similarity<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb15-67"><a href="#cb15-67"></a><span class="bu">print</span>(<span class="st">"(Higher = more similar, range: -1 to 1)"</span>)</span>
+<span id="cb15-68"><a href="#cb15-68"></a></span>
+<span id="cb15-69"><a href="#cb15-69"></a><span class="co"># Compare with different context</span></span>
+<span id="cb15-70"><a href="#cb15-70"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span> <span class="op">+</span> <span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-71"><a href="#cb15-71"></a><span class="bu">print</span>(<span class="st">"CONTEXT SENSITIVITY TEST"</span>)</span>
+<span id="cb15-72"><a href="#cb15-72"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-73"><a href="#cb15-73"></a></span>
+<span id="cb15-74"><a href="#cb15-74"></a>sentences <span class="op">=</span> [</span>
+<span id="cb15-75"><a href="#cb15-75"></a>    <span class="st">"Cat is bad"</span>,</span>
+<span id="cb15-76"><a href="#cb15-76"></a>    <span class="st">"Cat is good"</span>,</span>
+<span id="cb15-77"><a href="#cb15-77"></a>    <span class="st">"Cat is sleeping"</span></span>
+<span id="cb15-78"><a href="#cb15-78"></a>]</span>
+<span id="cb15-79"><a href="#cb15-79"></a></span>
+<span id="cb15-80"><a href="#cb15-80"></a>cat_embeddings <span class="op">=</span> []</span>
+<span id="cb15-81"><a href="#cb15-81"></a></span>
+<span id="cb15-82"><a href="#cb15-82"></a><span class="cf">for</span> sent <span class="kw">in</span> sentences:</span>
+<span id="cb15-83"><a href="#cb15-83"></a>    inputs <span class="op">=</span> tokenizer(sent, return_tensors<span class="op">=</span><span class="st">"pt"</span>)</span>
+<span id="cb15-84"><a href="#cb15-84"></a>    </span>
+<span id="cb15-85"><a href="#cb15-85"></a>    <span class="cf">with</span> torch.no_grad():</span>
+<span id="cb15-86"><a href="#cb15-86"></a>        outputs <span class="op">=</span> model(<span class="op">**</span>inputs)</span>
+<span id="cb15-87"><a href="#cb15-87"></a>    </span>
+<span id="cb15-88"><a href="#cb15-88"></a>    <span class="co"># Get "Cat" embedding (position 1)</span></span>
+<span id="cb15-89"><a href="#cb15-89"></a>    cat_emb <span class="op">=</span> outputs.last_hidden_state[<span class="dv">0</span>, <span class="dv">1</span>, :].numpy()</span>
+<span id="cb15-90"><a href="#cb15-90"></a>    cat_embeddings.append(cat_emb)</span>
+<span id="cb15-91"><a href="#cb15-91"></a>    </span>
+<span id="cb15-92"><a href="#cb15-92"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">'</span><span class="sc">{</span>sent<span class="sc">}</span><span class="ss">'"</span>)</span>
+<span id="cb15-93"><a href="#cb15-93"></a>    <span class="bu">print</span>(<span class="ss">f"  'Cat' embedding norm: </span><span class="sc">{</span>np<span class="sc">.</span>linalg<span class="sc">.</span>norm(cat_emb)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb15-94"><a href="#cb15-94"></a>    <span class="bu">print</span>(<span class="ss">f"  'Cat' embedding mean: </span><span class="sc">{</span>np<span class="sc">.</span>mean(cat_emb)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb15-95"><a href="#cb15-95"></a></span>
+<span id="cb15-96"><a href="#cb15-96"></a><span class="co"># Compare "Cat" across different contexts</span></span>
+<span id="cb15-97"><a href="#cb15-97"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span> <span class="op">+</span> <span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-98"><a href="#cb15-98"></a><span class="bu">print</span>(<span class="st">"'Cat' EMBEDDING COMPARISON ACROSS CONTEXTS"</span>)</span>
+<span id="cb15-99"><a href="#cb15-99"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-100"><a href="#cb15-100"></a></span>
+<span id="cb15-101"><a href="#cb15-101"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(sentences)):</span>
+<span id="cb15-102"><a href="#cb15-102"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(i<span class="op">+</span><span class="dv">1</span>, <span class="bu">len</span>(sentences)):</span>
+<span id="cb15-103"><a href="#cb15-103"></a>        sim <span class="op">=</span> cosine_similarity(cat_embeddings[i], cat_embeddings[j])</span>
+<span id="cb15-104"><a href="#cb15-104"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">'</span><span class="sc">{</span>sentences[i]<span class="sc">}</span><span class="ss">' vs '</span><span class="sc">{</span>sentences[j]<span class="sc">}</span><span class="ss">'"</span>)</span>
+<span id="cb15-105"><a href="#cb15-105"></a>        <span class="bu">print</span>(<span class="ss">f"  'Cat' similarity: </span><span class="sc">{</span>sim<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb15-106"><a href="#cb15-106"></a></span>
+<span id="cb15-107"><a href="#cb15-107"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span> <span class="op">+</span> <span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-108"><a href="#cb15-108"></a><span class="bu">print</span>(<span class="st">"KEY INSIGHT:"</span>)</span>
+<span id="cb15-109"><a href="#cb15-109"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">60</span>)</span>
+<span id="cb15-110"><a href="#cb15-110"></a><span class="bu">print</span>(<span class="st">"The same word 'Cat' gets DIFFERENT embeddings based on context!"</span>)</span>
+<span id="cb15-111"><a href="#cb15-111"></a><span class="bu">print</span>(<span class="st">"This is the power of BERT's contextualized representations."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre><code>============================================================
+BERT: 'Cat is bad' - DETAILED ANALYSIS
+============================================================
+
+Input: 'Cat is bad'
+Tokens: ['[CLS]', 'cat', 'is', 'bad', '[SEP]']
+Token IDs: [101, 4937, 2003, 2919, 102]
+
+Output shape: torch.Size([1, 5, 768])
+  → 1 sentence, 5 tokens, 768 dimensions
+
+============================================================
+TOKEN EMBEDDINGS
+============================================================
+
+0. Token: '[CLS]'
+   Shape: torch.Size([768])
+   First 10 values: [-0.07808859  0.23633376  0.00748989 -0.19930461 -0.21934718 -0.21074782
+  0.22678672  0.32977104 -0.0873947  -0.02356342]
+   L2 norm: 14.2931
+   Mean: -0.0099
+   Std: 0.5160
+
+1. Token: 'cat'
+   Shape: torch.Size([768])
+   First 10 values: [-0.24112292 -0.3909084   0.49417976 -0.5961284   0.42886347 -0.17034085
+  0.8402244   0.5922511   0.2468363  -0.08944406]
+   L2 norm: 12.5046
+   Mean: -0.0083
+   Std: 0.4514
+
+2. Token: 'is'
+   Shape: torch.Size([768])
+   First 10 values: [-0.4049647  -0.19689023 -0.04476955 -0.4561386   0.5344377   0.01362636
+ -0.2565227   0.91136676 -0.29432696 -0.3559795 ]
+   L2 norm: 13.3442
+   Mean: -0.0105
+   Std: 0.4817
+
+3. Token: 'bad'
+   Shape: torch.Size([768])
+   First 10 values: [ 0.11469449  0.22295797 -0.37003624 -0.29357094 -0.36409536  0.02500957
+  0.5872498   0.6286149  -0.7757226  -0.09452349]
+   L2 norm: 13.1246
+   Mean: -0.0094
+   Std: 0.4738
+
+4. Token: '[SEP]'
+   Shape: torch.Size([768])
+   First 10 values: [ 0.6679046   0.0461308  -0.23258942  0.41409358 -0.35163918 -0.7270919
+  0.57082033 -0.45416155  0.34605163  0.4111727 ]
+   L2 norm: 15.1586
+   Mean: -0.0162
+   Std: 0.5471
+
+============================================================
+SIMILARITY ANALYSIS
+============================================================
+
+Cosine similarity between 'Cat' and 'bad': 0.4708
+(Higher = more similar, range: -1 to 1)
+
+============================================================
+CONTEXT SENSITIVITY TEST
+============================================================
+
+'Cat is bad'
+  'Cat' embedding norm: 12.5046
+  'Cat' embedding mean: -0.0083
+
+'Cat is good'
+  'Cat' embedding norm: 12.5920
+  'Cat' embedding mean: -0.0089
+
+'Cat is sleeping'
+  'Cat' embedding norm: 13.9256
+  'Cat' embedding mean: -0.0107
+
+============================================================
+'Cat' EMBEDDING COMPARISON ACROSS CONTEXTS
+============================================================
+
+'Cat is bad' vs 'Cat is good'
+  'Cat' similarity: 0.9641
+
+'Cat is bad' vs 'Cat is sleeping'
+  'Cat' similarity: 0.8413
+
+'Cat is good' vs 'Cat is sleeping'
+  'Cat' similarity: 0.8301
+
+============================================================
+KEY INSIGHT:
+============================================================
+The same word 'Cat' gets DIFFERENT embeddings based on context!
+This is the power of BERT's contextualized representations.</code></pre>
+</section>
+<section id="berts-variants-and-adaptations" class="level3">
+<h3 class="anchored" data-anchor-id="berts-variants-and-adaptations">5.2.4 BERT’s variants and adaptations</h3>
+<p>But this is only a part of the story. The success of BERT is greatly due to its open-source nature, which has allowed developers to access the source code of the original BERT and create new features and improvements.</p>
+<p>This has resulted in a good number of BERT’s variants. Below, you can find some of the most well-known variants:</p>
+<ul>
+<li><p><strong>RoBERTa.</strong> Short for “Robustly Optimized BERT Approach’’, RoBERTa is a BERT variant created by Meta in collaboration with Washington University. Considered a more powerful version than the original BERT, RoBERTa was trained with a dataset 10 times bigger than the one used to train BERT. As for its architecture, the most significant difference is the use of dynamic masking learning instead of static masking learning. This technique, which involved duplicating training data and masking it 10 times, each time with a different mask strategy, allowed RoBERTa to learn more robust and generalizable representations of words.</p></li>
+<li><p><strong>DistilBERT.</strong>&nbsp;Since the launch of the first LLMs in the late 2010s, there has been a consolidated trend of building bigger and heavier LLMs. This makes sense, as there seems to be a direct relationship between model size and model accuracy. Yet, it’s also true that the bigger the model, the more resources it requires to run, and hence, fewer people can afford to use it. DistilBERT aims at making BERT more accessible by offering a smaller, faster, cheaper, and lighter variant. Based on the architecture of the original BERT, DistilBERT uses knowledge distillation techniques during pre-training to reduce the size by 40% while retaining 97% of its language understanding capabilities and being 60% faster.</p></li>
+<li><p><strong>ALBERT.</strong>&nbsp;Stands for A Lite BERT, ALBERT was specifically designed to increase the efficiency of BERTlarge during pre-training. As training bigger models often results in memory limitations, longer training times, and unexpected model degradation, ALBERT creators developed two parameter-reduction techniques to reduce memory consulting and increase speed during training.</p></li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./ELMo.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">5.1. ELMo</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./GPT.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-title">5.3. GPT</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
