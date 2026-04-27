@@ -8,7 +8,7 @@
 
 <meta name="author" content="Kamil Filipek">
 
-<title>9.4. Multi-Agent Systems – Natural Language Processing - Part I</title>
+<title>10.4. Multi-Agent Systems – Natural Language Processing - Part I</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -124,7 +124,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Agents.html"><strong>9. AI Agents</strong></a></li><li class="breadcrumb-item"><a href="./MultiAgent.html"><span class="chapter-title">9.4. Multi-Agent Systems</span></a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Agents.html"><strong>10. AI Agents</strong></a></li><li class="breadcrumb-item"><a href="./MultiAgent.html"><span class="chapter-title">10.4. Multi-Agent Systems</span></a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -285,6 +285,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <a href="./FastText.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.5. FastText</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Similarity_measures.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.6. Similarity Measures in NLP</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -378,7 +383,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
- <span class="menu-text"><strong>8. Working with LLMs</strong></span></a>
+ <span class="menu-text"><strong>8. Training Neural Networks</strong></span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -386,27 +391,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./Prompt_engineering.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.1. Prompt Engineering</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./LLM_API.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.2. Working with LLM APIs</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./Fine_tuning.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.3. Fine-Tuning LLMs</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./RAG.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.4. Retrieval-Augmented Generation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./LLM_evaluation.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.5. Evaluating LLM Outputs</span></a>
+  <a href="./Training_LSTM.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8. Training Your Own Neural Network</span></a>
   </div>
 </li>
       </ul>
@@ -414,7 +399,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
- <span class="menu-text"><strong>9. AI Agents</strong></span></a>
+ <span class="menu-text"><strong>9. Working with LLMs</strong></span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -422,22 +407,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./Agents.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.1. AI Agents — Concepts and Architectures</span></a>
+  <a href="./Prompt_engineering.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.1. Prompt Engineering</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./Agents_Python.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.2. Building Agents in Python</span></a>
+  <a href="./LLM_API.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.2. Working with LLM APIs</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./n8n.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.3. Visual Agent Workflows with n8n</span></a>
+  <a href="./Fine_tuning.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.3. Fine-Tuning LLMs</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./MultiAgent.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">9.4. Multi-Agent Systems</span></a>
+  <a href="./RAG.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.4. Retrieval-Augmented Generation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LLM_evaluation.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.5. Evaluating LLM Outputs</span></a>
   </div>
 </li>
       </ul>
@@ -445,12 +435,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
- <span class="menu-text">References</span></a>
+ <span class="menu-text"><strong>10. AI Agents</strong></span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
       <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.1. AI Agents — Concepts and Architectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents_Python.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.2. Building Agents in Python</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./n8n.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.3. Visual Agent Workflows with n8n</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./MultiAgent.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">10.4. Multi-Agent Systems</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true">
+ <span class="menu-text">References</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./ref.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Sources</span></a>
@@ -479,9 +500,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Agents.html"><strong>9. AI Agents</strong></a></li><li class="breadcrumb-item"><a href="./MultiAgent.html"><span class="chapter-title">9.4. Multi-Agent Systems</span></a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Agents.html"><strong>10. AI Agents</strong></a></li><li class="breadcrumb-item"><a href="./MultiAgent.html"><span class="chapter-title">10.4. Multi-Agent Systems</span></a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title"><span class="chapter-title">9.4. Multi-Agent Systems</span></h1>
+<h1 class="title"><span class="chapter-title">10.4. Multi-Agent Systems</span></h1>
 </div>
 
 
@@ -1326,8 +1347,8 @@ Note
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./n8n.html" class="pagination-link" aria-label="9.3. Visual Agent Workflows with n8n">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">9.3. Visual Agent Workflows with n8n</span></span>
+      <a href="./n8n.html" class="pagination-link" aria-label="10.3. Visual Agent Workflows with n8n">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">10.3. Visual Agent Workflows with n8n</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
