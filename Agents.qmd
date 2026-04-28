@@ -1,11 +1,11 @@
 ---
-title: "9.1. AI Agents — Concepts and Architectures"
+title: "11.1. AI Agents — Concepts and Architectures"
 author: Kamil Filipek
 format: html
 editor: visual
 ---
 
-### 9.1.1. What is an AI Agent?
+### 11.1.1. What is an AI Agent?
 
 An **AI agent** is a system that perceives its environment, reasons about it, and takes actions to achieve a goal — going beyond a single prompt–response cycle. Where a standard LLM answers a question and stops, an agent can **plan**, **use tools**, **observe results**, and **iterate** until the task is complete.
 
@@ -20,7 +20,7 @@ A language-based agent typically has four components:
 | **Tools** | External capabilities the agent can invoke | Search, calculator, database, API |
 | **Action loop** | Repeats observe → reason → act until done | ReAct loop |
 
-### 9.1.2. A Brief History
+### 11.1.2. A Brief History
 
 -   **1950s–80s** — Classical AI agents: rule-based expert systems, symbolic planners (STRIPS, SHAKEY robot). Brittle, domain-specific, require handcrafted knowledge.
 
@@ -34,7 +34,7 @@ A language-based agent typically has four components:
 
 -   **2024–present** — **Agentic frameworks** (LangChain, LlamaIndex, AutoGen, CrewAI) make agent construction accessible; commercial products embed agents in every knowledge-work context.
 
-### 9.1.3. The ReAct Framework
+### 11.1.3. The ReAct Framework
 
 **ReAct** (Reason + Act, Yao et al. 2022) is the dominant prompting strategy for language agents. It structures the agent's output as alternating **Thought** and **Action** steps:
 
@@ -53,7 +53,7 @@ Action: finish("Warsaw's population density is approximately 3,596 people per km
 
 The key insight: forcing the model to write its reasoning *before* the action dramatically reduces errors compared to acting immediately. The observation from each action is fed back into the context, enabling multi-step planning grounded in real results.
 
-### 9.1.4. Agent Memory
+### 11.1.4. Agent Memory
 
 Agents need different types of memory to function effectively over long tasks:
 
@@ -66,7 +66,7 @@ Agents need different types of memory to function effectively over long tasks:
 
 For most practical agents, in-context memory (the conversation history) plus a RAG-based semantic store is sufficient. Episodic memory becomes important for long-running agents that need to learn from past failures.
 
-### 9.1.5. Agent Taxonomies
+### 11.1.5. Agent Taxonomies
 
 **By autonomy level:**
 

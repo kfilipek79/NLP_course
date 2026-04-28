@@ -1,11 +1,11 @@
 ---
-title: "9.3. Visual Agent Workflows with n8n"
+title: "10.3. Visual Agent Workflows with n8n"
 author: Kamil Filipek
 format: html
 editor: visual
 ---
 
-### 9.3.1. What is n8n?
+### 11.3.1. What is n8n?
 
 **n8n** (pronounced "nodemation") is an open-source, self-hostable workflow automation platform that lets you build complex, multi-step processes through a **visual node-based interface** — without writing a full application. Think of it as a programmable canvas where each node is an action (call an API, transform data, send an email, query a database) and edges between nodes represent the data flow.
 
@@ -24,7 +24,7 @@ For NLP and AI workflows, n8n is particularly powerful because it:
   Form          Custom         Calculator   Google Sheets
 ```
 
-### 9.3.2. Installing n8n
+### 11.3.2. Installing n8n
 
 ``` bash
 # Option 1: npx (no install needed, requires Node.js 18+)
@@ -46,7 +46,7 @@ docker run -it --rm \
 
 After starting, open `http://localhost:5678` in your browser to access the visual workflow editor.
 
-### 9.3.3. Core Concepts
+### 11.3.3. Core Concepts
 
 **Nodes** are the building blocks of every workflow. n8n provides 400+ built-in integrations:
 
@@ -66,7 +66,7 @@ After starting, open `http://localhost:5678` in your browser to access the visua
 -   Supports memory (window buffer, vector store)
 -   Handles the ReAct loop automatically
 
-### 9.3.4. Building a Sentiment Analysis Workflow
+### 11.3.4. Building a Sentiment Analysis Workflow
 
 **Workflow:** User submits text via a form → Claude analyzes sentiment → result saved to Google Sheets → user receives email.
 
@@ -147,7 +147,7 @@ This is the JSON export of the n8n workflow (importable via *Import from JSON* i
 }
 ```
 
-### 9.3.5. Building an NLP AI Agent in n8n
+### 11.3.5. Building an NLP AI Agent in n8n
 
 The **AI Agent node** handles the full ReAct loop automatically. You define the agent's tools by connecting other nodes, and n8n manages the reasoning–action–observation cycle.
 
@@ -220,7 +220,7 @@ In the visual editor, the AI Agent node shows its connected sub-nodes:
   └── 💾 Memory:  [Window Buffer (10 turns)]
 ```
 
-### 9.3.6. Scheduled NLP Monitoring Workflow
+### 11.3.6. Scheduled NLP Monitoring Workflow
 
 **Use case:** Every morning, fetch new papers from arXiv on NLP topics, summarize them with Claude, and send a digest email.
 
@@ -274,7 +274,7 @@ In the visual editor, the AI Agent node shows its connected sub-nodes:
 }
 ```
 
-### 9.3.7. Calling n8n Workflows via API
+### 11.3.7. Calling n8n Workflows via API
 
 n8n workflows can be triggered programmatically from Python — useful for integrating n8n into larger data pipelines:
 
@@ -317,7 +317,7 @@ Text     : The experiment produced mixed results across datasets.
 Sentiment: mixed (0.02)
 ```
 
-### 9.3.8. n8n vs. Python Agents — When to Use Which
+### 11.3.8. n8n vs. Python Agents — When to Use Which
 
 | Criterion | n8n | Python (custom) |
 |---|---|---|

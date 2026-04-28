@@ -1,11 +1,11 @@
 ---
-title: "9.4. Multi-Agent Systems"
+title: "10.4. Multi-Agent Systems"
 author: Kamil Filipek
 format: html
 editor: visual
 ---
 
-### 9.4.1. Why Multiple Agents?
+### 11.4.1. Why Multiple Agents?
 
 A single agent with many tools works well for moderate tasks. But complex, multi-faceted problems benefit from **specialization and parallelism** — the same reasons human organizations divide work among specialists rather than relying on one generalist.
 
@@ -18,7 +18,7 @@ Multi-agent systems (MAS) distribute a task across several agents, each optimize
 
 The theoretical foundations come from distributed AI research (Bond & Gasser, 1988) and multi-agent reinforcement learning (Busoniu et al., 2008), but modern LLM-based MAS are primarily orchestrated through prompting and tool use rather than learned policies.
 
-### 9.4.2. Orchestrator–Worker Pattern
+### 11.4.2. Orchestrator–Worker Pattern
 
 The most common MAS architecture: an **orchestrator** agent decomposes the task and delegates to **worker** agents, then synthesizes their outputs.
 
@@ -144,7 +144,7 @@ AI research (0.81), benchmark validity (0.72).
 the summary agent correctly captured the tension between promise and skepticism.
 ```
 
-### 9.4.3. Critic–Author Pattern
+### 11.4.3. Critic–Author Pattern
 
 A powerful quality-control pattern: one agent writes, another critiques, the first revises. This self-improvement loop often produces higher-quality outputs than a single pass.
 
@@ -230,7 +230,7 @@ in text. LDA is a probabilistic model that produces soft topic mixtures...
 ✓ Approved after 2 round(s).
 ```
 
-### 9.4.4. Multi-Agent NLP Pipeline
+### 11.4.4. Multi-Agent NLP Pipeline
 
 A production-style pipeline for processing a batch of documents through specialized agents:
 
@@ -308,7 +308,7 @@ d3    N/A          N/A        True
 d4    POLITICS     neutral    False    Parliament (ORG)
 ```
 
-### 9.4.5. Frameworks for Multi-Agent Systems
+### 11.4.5. Frameworks for Multi-Agent Systems
 
 Building MAS from scratch is educational but time-consuming. Several frameworks provide higher-level abstractions:
 

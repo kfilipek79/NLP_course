@@ -1,11 +1,11 @@
 ---
-title: "8.4. Retrieval-Augmented Generation"
+title: "9.3. Retrieval-Augmented Generation"
 author: Kamil Filipek
 format: html
 editor: visual
 ---
 
-### 8.4.1. The Problem RAG Solves
+### 9.3.1. The Problem RAG Solves
 
 LLMs have two fundamental limitations for knowledge-intensive tasks:
 
@@ -24,7 +24,7 @@ User query
 
 RAG is the dominant architecture for enterprise NLP applications: document Q&A, internal knowledge bases, customer support bots, and legal or medical assistants.
 
-### 8.4.2. RAG Pipeline Components
+### 9.3.2. RAG Pipeline Components
 
 A standard RAG pipeline has four stages:
 
@@ -33,7 +33,7 @@ A standard RAG pipeline has four stages:
 **3. Indexing** --- store vectors in a vector database for fast similarity search\
 **4. Retrieval + Generation** --- at query time, retrieve relevant chunks and pass them to the LLM
 
-### 8.4.3. Chunking Strategies
+### 9.3.3. Chunking Strategies
 
 Chunking decisions directly affect retrieval quality. Too large → chunks contain irrelevant content. Too small → chunks lose context.
 
@@ -99,7 +99,7 @@ Character chunking → 4 chunks
   NLP by replacing recurrent networks...
 ```
 
-### 8.4.4. Embedding and Indexing
+### 9.3.4. Embedding and Indexing
 
 Each chunk is encoded as a dense vector. Similar chunks end up geometrically close in the embedding space --- enabling fast nearest-neighbor retrieval.
 
@@ -170,7 +170,7 @@ Query: 'What are word embeddings?'
          Models such as Word2Vec, GloVe, and FastText...
 ```
 
-### 8.4.5. Generation with Retrieved Context
+### 9.3.5. Generation with Retrieved Context
 
 The final step: pass the retrieved chunks to the LLM as context, along with the user's question.
 
@@ -230,7 +230,7 @@ A: I don't have enough information to answer this. The provided context covers N
 
 The last answer correctly refuses to hallucinate --- a key benefit of grounded RAG over pure LLM generation.
 
-### 8.4.6. Full RAG Pipeline with LangChain
+### 9.3.6. Full RAG Pipeline with LangChain
 
 LangChain provides a higher-level abstraction that wires chunking, embedding, vector store, and generation into a single chain:
 
@@ -283,7 +283,7 @@ Source chunks used:
   - Natural language processing (NLP) is a subfield of artificial intelligence...
 ```
 
-### 8.4.7. RAG Design Decisions
+### 9.3.7. RAG Design Decisions
 
 | Decision        | Options                           | Guidance                                              |
 |-----------------|-----------------------------------|-------------------------------------------------------|

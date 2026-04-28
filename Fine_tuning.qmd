@@ -1,55 +1,55 @@
 ---
-title: "8.3. Fine-Tuning LLMs"
+title: "9.2. Fine-Tuning LLMs"
 author: Kamil Filipek
 format: html
 editor: visual
 ---
 
-### 8.3.1. When to Fine-Tune?
+### 9.2.1. When to Fine-Tune?
 
-**Fine-tuning** adapts a pre-trained model to a specific task or domain by continuing training on a curated dataset. It updates the model's weights — unlike prompting, which only guides the model at inference time.
+**Fine-tuning** adapts a pre-trained model to a specific task or domain by continuing training on a curated dataset. It updates the model's weights --- unlike prompting, which only guides the model at inference time.
 
 Before fine-tuning, always ask: *can a well-crafted prompt solve this?* Fine-tuning is expensive (compute, data collection, evaluation) and should be reserved for cases where prompting genuinely falls short.
 
-| Situation | Recommendation |
-|---|---|
-| Task is well-covered by the base model | Prompt engineering first |
-| Need a specific output format consistently | Structured output prompting |
-| Domain vocabulary the model doesn't know | Fine-tune |
-| Need extreme consistency across thousands of calls | Fine-tune |
-| Latency/cost requires a smaller model | Fine-tune a small model |
-| Data is confidential and cannot go to an API | Fine-tune locally |
+| Situation                                          | Recommendation              |
+|----------------------------------------------------|-----------------------------|
+| Task is well-covered by the base model             | Prompt engineering first    |
+| Need a specific output format consistently         | Structured output prompting |
+| Domain vocabulary the model doesn't know           | Fine-tune                   |
+| Need extreme consistency across thousands of calls | Fine-tune                   |
+| Latency/cost requires a smaller model              | Fine-tune a small model     |
+| Data is confidential and cannot go to an API       | Fine-tune locally           |
 
-### 8.3.2. Types of Fine-Tuning
+### 9.2.2. Types of Fine-Tuning
 
 #### Full Fine-Tuning
 
-All model parameters are updated. Maximally expressive but requires substantial GPU memory (70B model → ~140GB in fp16) and produces a separate full model copy per task.
+All model parameters are updated. Maximally expressive but requires substantial GPU memory (70B model → \~140GB in fp16) and produces a separate full model copy per task.
 
 #### Parameter-Efficient Fine-Tuning (PEFT)
 
-Only a small subset of parameters — or newly added ones — are updated. The base model weights are frozen.
+Only a small subset of parameters --- or newly added ones --- are updated. The base model weights are frozen.
 
 **LoRA (Low-Rank Adaptation)** is the dominant PEFT method. It inserts small trainable matrices $A$ and $B$ into each attention layer:
 
 $$W' = W + \Delta W = W + BA$$
 
-where $B \in \mathbb{R}^{d \times r}$, $A \in \mathbb{R}^{r \times k}$, and rank $r \ll \min(d,k)$. Only $A$ and $B$ are trained — typically 0.1–1% of the original parameters.
+where $B \in \mathbb{R}^{d \times r}$, $A \in \mathbb{R}^{r \times k}$, and rank $r \ll \min(d,k)$. Only $A$ and $B$ are trained --- typically 0.1--1% of the original parameters.
 
 **QLoRA** extends LoRA by quantizing the frozen base model to 4-bit precision, enabling fine-tuning of 70B models on a single consumer GPU.
 
-| Method | Trainable params | GPU memory | Quality |
-|---|---|---|---|
-| Full fine-tuning | 100% | Very high | Best |
-| LoRA | ~0.1–1% | Moderate | Near-full |
-| QLoRA | ~0.1–1% | Low | Slightly below LoRA |
-| Prompt tuning | <0.01% | Minimal | Task-dependent |
+| Method           | Trainable params | GPU memory | Quality             |
+|------------------|------------------|------------|---------------------|
+| Full fine-tuning | 100%             | Very high  | Best                |
+| LoRA             | \~0.1--1%        | Moderate   | Near-full           |
+| QLoRA            | \~0.1--1%        | Low        | Slightly below LoRA |
+| Prompt tuning    | \<0.01%          | Minimal    | Task-dependent      |
 
-### 8.3.3. Dataset Preparation
+### 9.2.3. Dataset Preparation
 
 Fine-tuning quality depends more on **data quality** than data quantity. A dataset of 500 carefully curated examples often outperforms 10,000 noisy ones.
 
-The standard format for instruction fine-tuning is the **prompt–completion pair**:
+The standard format for instruction fine-tuning is the **prompt--completion pair**:
 
 ``` python
 import json
@@ -87,7 +87,7 @@ for ex in examples:
     print("\n" + "─"*60 + "\n")
 ```
 
-```
+```         
 ### Instruction:
 Classify the sentiment of the following review.
 
@@ -120,14 +120,14 @@ dataset = dataset.train_test_split(test_size=0.1, seed=42)
 print(dataset)
 ```
 
-```
+```         
 DatasetDict({
     train: Dataset({features: ['text'], num_rows: 2}),
     test:  Dataset({features: ['text'], num_rows: 1})
 })
 ```
 
-### 8.3.4. Fine-Tuning with LoRA and the Hugging Face Ecosystem
+### 9.2.4. Fine-Tuning with LoRA and the Hugging Face Ecosystem
 
 ``` python
 # pip install transformers peft accelerate bitsandbytes datasets trl
@@ -178,7 +178,7 @@ model = get_peft_model(model, lora_config)
 model.print_trainable_parameters()
 ```
 
-```
+```         
 trainable params: 2,097,152 || all params: 2,781,573,120 || trainable%: 0.0754
 ```
 
@@ -215,14 +215,14 @@ trainer.save_model("./nlp-lora-finetuned")
 print("Training complete — model saved.")
 ```
 
-```
+```         
 {'loss': 2.3421, 'learning_rate': 0.0002, 'epoch': 1.0}
 {'loss': 1.8934, 'learning_rate': 0.0001, 'epoch': 2.0}
 {'loss': 1.5127, 'learning_rate': 0.0000, 'epoch': 3.0}
 Training complete — model saved.
 ```
 
-### 8.3.5. Inference with a Fine-Tuned Model
+### 9.2.5. Inference with a Fine-Tuned Model
 
 ``` python
 from peft import PeftModel
@@ -260,16 +260,16 @@ The product arrived damaged and customer service was unhelpful.
 print(generate(prompt))
 ```
 
-```
+```         
 NEGATIVE — strongly negative sentiment toward both product quality and customer service.
 ```
 
-### 8.3.6. When Fine-Tuning Fails
+### 9.2.6. When Fine-Tuning Fails
 
 Fine-tuning is not a silver bullet. Common failure modes:
 
--   **Catastrophic forgetting** — the model loses general capabilities while learning the task. Mitigate with a low learning rate, few epochs, and LoRA instead of full fine-tuning.
--   **Overfitting** — the model memorizes training examples and fails to generalize. Mitigate with more diverse data, dropout, and early stopping.
--   **Data leakage** — if test examples appear in training data, evaluation is invalid.
--   **Format hallucination** — the model learns the task but ignores the output format. Fix by making format examples more consistent in the training data.
--   **Insufficient data** — fewer than ~100 examples rarely produces meaningful improvement. Aim for 500–2,000 high-quality examples for most tasks.
+-   **Catastrophic forgetting** --- the model loses general capabilities while learning the task. Mitigate with a low learning rate, few epochs, and LoRA instead of full fine-tuning.
+-   **Overfitting** --- the model memorizes training examples and fails to generalize. Mitigate with more diverse data, dropout, and early stopping.
+-   **Data leakage** --- if test examples appear in training data, evaluation is invalid.
+-   **Format hallucination** --- the model learns the task but ignores the output format. Fix by making format examples more consistent in the training data.
+-   **Insufficient data** --- fewer than \~100 examples rarely produces meaningful improvement. Aim for 500--2,000 high-quality examples for most tasks.

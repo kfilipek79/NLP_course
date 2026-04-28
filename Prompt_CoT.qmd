@@ -1,0 +1,285 @@
+---
+title: "10.2. Chain-of-Thought & Reasoning Prompts"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 10.2.1. Why Reasoning Matters in Prompts
+
+Standard prompts ask the model to jump straight from input to answer. For tasks that require multi-step logic — mathematics, causal reasoning, multi-hop question answering — this direct approach frequently fails. **Chain-of-Thought (CoT)** prompting addresses this by eliciting an explicit reasoning trace before the final answer.
+
+The core insight (Wei et al., 2022): if you give a large-enough model room to "think aloud", its accuracy on hard reasoning tasks improves dramatically. The reasoning steps serve as scratchpad space and also let you verify the model's logic.
+
+---
+
+### 10.2.2. Zero-Shot Chain-of-Thought
+
+The simplest activation: append **"Let's think step by step."** to any question. No examples needed.
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+def prompt(system: str, user: str, max_tokens: int = 600) -> str:
+    msg = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=max_tokens,
+        system=system,
+        messages=[{"role": "user", "content": user}]
+    )
+    return msg.content[0].text
+
+
+question = """A store sells apples at 3 for €2.
+Maria buys 15 apples and pays with a €20 note.
+How much change does she receive?"""
+
+# Direct answer
+direct = prompt("Answer concisely.", question)
+print(f"Direct: {direct}")
+
+# Zero-Shot CoT
+cot = prompt(
+    "Answer the question. Let's think step by step.",
+    question
+)
+print(f"\nZero-Shot CoT:\n{cot}")
+```
+
+```
+Direct: €10
+
+Zero-Shot CoT:
+Step 1: Find the price per apple.
+        3 apples = €2 → 1 apple = €2/3
+
+Step 2: Cost of 15 apples.
+        15 × (€2/3) = €30/3 = €10
+
+Step 3: Change from €20.
+        €20 − €10 = €10
+
+Answer: Maria receives €10 change.
+```
+
+::: callout-note
+Zero-Shot CoT works because large models already know how to reason — the trigger phrase simply shifts them from "answer immediately" mode to "explain your reasoning" mode.
+:::
+
+---
+
+### 10.2.3. Few-Shot Chain-of-Thought
+
+Provide worked examples that include **both** the reasoning trace and the final answer. The model learns the expected reasoning pattern from the demonstrations.
+
+```python
+FEW_SHOT_COT = """Solve each problem by thinking step by step, then state the answer.
+
+Problem: A cyclist travels 60 km in 2 hours, then rests for 30 minutes,
+         then travels 40 km in 1 hour. What is the average speed for the
+         entire journey (excluding rest time)?
+Reasoning:
+  Total distance = 60 + 40 = 100 km
+  Total moving time = 2 h + 1 h = 3 h
+  Average speed = 100 / 3 ≈ 33.3 km/h
+Answer: ≈ 33.3 km/h
+
+Problem: A tank is 3/4 full. After adding 120 litres it is 9/10 full.
+         What is the tank's total capacity?
+Reasoning:
+  The 120 litres represent 9/10 − 3/4 = 18/20 − 15/20 = 3/20 of the tank.
+  Total capacity = 120 / (3/20) = 120 × 20/3 = 800 litres.
+Answer: 800 litres
+
+Problem: {problem}
+Reasoning:"""
+
+problem = """A train and a car start from the same city at 08:00.
+The train travels at 160 km/h; the car at 100 km/h.
+How far apart are they at 10:30?"""
+
+response = prompt(
+    "You are a precise mathematics tutor.",
+    FEW_SHOT_COT.format(problem=problem)
+)
+print(response)
+```
+
+```
+  Travel time = 08:00 to 10:30 = 2.5 hours
+  Train distance = 160 × 2.5 = 400 km
+  Car distance  = 100 × 2.5 = 250 km
+  Distance apart = 400 − 250 = 150 km
+Answer: 150 km apart
+```
+
+---
+
+### 10.2.4. Step-Back Prompting
+
+**Step-back prompting** (Zheng et al., 2023) asks the model to first retrieve the underlying *principle* or *concept* before solving the specific problem. This prevents the model from jumping to an answer without activating the relevant knowledge.
+
+Pattern: **"What general principle applies here? → Apply that principle → Answer."**
+
+```python
+STEP_BACK_TEMPLATE = """Before answering the specific question, step back and identify
+the underlying concept or principle. Then apply it to answer.
+
+Question: {question}
+
+Step 1 — What general concept or principle is relevant here?
+Step 2 — Apply that principle to this specific case.
+Step 3 — State the final answer clearly."""
+
+questions = [
+    "Why does mixing red and blue light give magenta, but mixing red and blue paint gives purple?",
+    "A Python list and a Python tuple look similar — when should I prefer a tuple?"
+]
+
+for q in questions:
+    print(f"Q: {q}\n")
+    print(prompt("You are a clear and precise explainer.", STEP_BACK_TEMPLATE.format(question=q)))
+    print("\n" + "─"*70 + "\n")
+```
+
+```
+Q: Why does mixing red and blue light give magenta, but mixing red and blue paint give purple?
+
+Step 1 — Relevant concept: additive vs subtractive colour mixing.
+  Light uses additive mixing (RGB): combining red + blue adds wavelengths → magenta.
+  Paint uses subtractive mixing (CMY): each pigment absorbs certain wavelengths;
+  red paint absorbs cyan, blue paint absorbs yellow → together they absorb most
+  wavelengths except a narrow band near purple/violet.
+
+Step 2 — Application: the physical medium determines how colours combine.
+
+Step 3 — Red + blue light → magenta; red + blue pigment → purple/violet.
+```
+
+---
+
+### 10.2.5. Self-Ask Prompting
+
+**Self-Ask** (Press et al., 2022) trains the model to decompose a complex question into simpler sub-questions, answer each one, then synthesise the final answer. Particularly effective for multi-hop factual queries.
+
+```python
+SELF_ASK_TEMPLATE = """Answer the question by first asking and answering relevant
+sub-questions, then giving the final answer.
+
+Format:
+  Follow-up question: ...
+  Intermediate answer: ...
+  (repeat as needed)
+  Final answer: ...
+
+Question: {question}"""
+
+question = "Was the president of France when the Eiffel Tower was built also the president when the first Tour de France took place?"
+
+print(prompt(
+    "You are a precise research assistant.",
+    SELF_ASK_TEMPLATE.format(question=question)
+))
+```
+
+```
+Follow-up question: When was the Eiffel Tower built?
+Intermediate answer: The Eiffel Tower was constructed between 1887 and 1889,
+  completing in March 1889.
+
+Follow-up question: Who was the president of France in 1889?
+Intermediate answer: Sadi Carnot was President of France in 1889.
+
+Follow-up question: When was the first Tour de France?
+Intermediate answer: The first Tour de France took place in July 1903.
+
+Follow-up question: Who was the president of France in 1903?
+Intermediate answer: Émile Loubet was President of France in 1903.
+
+Final answer: No. Sadi Carnot was president during the Eiffel Tower's construction
+(1889), but he was assassinated in 1894. Émile Loubet was president during the
+first Tour de France (1903).
+```
+
+---
+
+### 10.2.6. Contrastive Chain-of-Thought
+
+**Contrastive CoT** provides both a correct and an incorrect reasoning trace in the few-shot examples — labelled explicitly. The model learns to distinguish good from poor reasoning, improving the quality of its own traces.
+
+```python
+CONTRASTIVE_COT = """I will show you correct and incorrect reasoning, then ask you to solve a new problem correctly.
+
+INCORRECT EXAMPLE:
+Problem: If 5 workers build a wall in 10 days, how long for 2 workers?
+Reasoning: Fewer workers → take less time. 5−2=3 fewer workers → 10−3=7 days.
+Answer: 7 days ← WRONG (this reasoning is incorrect)
+
+CORRECT EXAMPLE:
+Problem: If 5 workers build a wall in 10 days, how long for 2 workers?
+Reasoning: Total work = 5 workers × 10 days = 50 worker-days.
+           With 2 workers: 50 worker-days ÷ 2 workers = 25 days.
+Answer: 25 days ← CORRECT
+
+Now solve this problem using correct reasoning:
+Problem: {problem}"""
+
+problem = "A pump fills a tank in 6 hours. A second pump fills it in 4 hours. How long do they take together?"
+
+print(prompt("You are a precise maths tutor.", CONTRASTIVE_COT.format(problem=problem)))
+```
+
+```
+Reasoning:
+  Rate of pump 1 = 1/6 tank per hour
+  Rate of pump 2 = 1/4 tank per hour
+  Combined rate  = 1/6 + 1/4 = 2/12 + 3/12 = 5/12 tank per hour
+  Time together  = 1 ÷ (5/12) = 12/5 = 2.4 hours = 2 hours 24 minutes
+Answer: 2 hours and 24 minutes ← CORRECT
+```
+
+---
+
+### 10.2.7. Tabular Chain-of-Thought
+
+**Tabular CoT** (Ye & Durrett, 2023) structures reasoning as a markdown table, enforcing clear intermediate steps and reducing errors in multi-step computations. Especially effective for problems involving multiple entities or comparisons.
+
+```python
+TABULAR_COT_SYSTEM = """Solve problems by constructing a step-by-step reasoning table.
+Format each step as | Step | Operation | Value |
+End with a clear Final Answer line."""
+
+problem = """Three freelancers bid for a project:
+Alice: €80/hour, estimates 40 hours
+Bob:   €65/hour, estimates 55 hours
+Carol: €90/hour, estimates 32 hours
+Who offers the lowest total cost?"""
+
+print(prompt(TABULAR_COT_SYSTEM, problem))
+```
+
+```
+| Step | Operation               | Value            |
+|------|-------------------------|------------------|
+| 1    | Alice total cost        | €80 × 40 = €3200 |
+| 2    | Bob total cost          | €65 × 55 = €3575 |
+| 3    | Carol total cost        | €90 × 32 = €2880 |
+| 4    | Minimum cost            | €2880 (Carol)    |
+
+Final Answer: Carol offers the lowest total cost at €2880.
+```
+
+---
+
+### 10.2.8. When to Use Each Technique
+
+| Technique | Best for | Key trigger |
+|---|---|---|
+| **Zero-Shot CoT** | Any reasoning task, quick wins | "Let's think step by step" |
+| **Few-Shot CoT** | Consistent output format needed | 2–4 worked examples with traces |
+| **Step-Back** | Factual / conceptual questions | "What principle applies?" |
+| **Self-Ask** | Multi-hop factual queries | "Follow-up question: ..." |
+| **Contrastive CoT** | Improving reasoning quality | Show wrong + right traces |
+| **Tabular CoT** | Numerical / comparative problems | Markdown table format |

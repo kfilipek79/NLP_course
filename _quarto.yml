@@ -38,6 +38,7 @@ book:
         - Word2Vec.qmd              # Neural embeddings (CBOW, Skip-Gram)
         - GloVe.qmd                 # Global vectors
         - FastText.qmd              # Subword-based embeddings
+        - Similarity_measures.qmd   # Cosine, Jaccard, edit-distance, fuzzy, BM25
     - part: "**5. Contextual_embeddings**"
       chapters:
         - ELMo.qmd
@@ -55,14 +56,23 @@ book:
         - LCA.qmd
         - NMF.qmd
         - LSA.qmd
-    - part: "**8. Working with LLMs**"
+    - part: "**8. Training Neural Networks**"
       chapters:
-        - Prompt_engineering.qmd
+        - NN_Fundamentals.qmd
+        - Training_LSTM.qmd
+        - Training_Best_Practices.qmd
+    - part: "**9. Working with LLMs**"
+      chapters:
         - LLM_API.qmd
         - Fine_tuning.qmd
         - RAG.qmd
         - LLM_evaluation.qmd
-    - part: "**9. AI Agents**"
+    - part: "**10. Prompt Engineering**"
+      chapters:
+        - Prompt_engineering.qmd
+        - Prompt_CoT.qmd
+        - Prompt_advanced.qmd
+    - part: "**11. AI Agents**"
       chapters:
         - Agents.qmd
         - Agents_Python.qmd

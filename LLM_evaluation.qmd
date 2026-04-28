@@ -1,11 +1,11 @@
 ---
-title: "8.5. Evaluating LLM Outputs"
+title: "9.4. Evaluating LLM Outputs"
 author: Kamil Filipek
 format: html
 editor: visual
 ---
 
-### 8.5.1. Why Evaluation is Hard
+### 9.4.1. Why Evaluation is Hard
 
 Evaluating LLM outputs is fundamentally more difficult than evaluating classical NLP models. A sentiment classifier has a correct label — the model is right or wrong. An LLM answering a question can be correct in ten different ways, and wrong in subtle ways that look correct.
 
@@ -19,7 +19,7 @@ Evaluation methods fall into three families:
 
 In practice, robust evaluation uses all three in combination.
 
-### 8.5.2. BLEU Score
+### 9.4.2. BLEU Score
 
 **BLEU** (Bilingual Evaluation Understudy, Papineni et al. 2002) was designed for machine translation. It measures the overlap of n-grams between the model output (hypothesis) and one or more reference translations.
 
@@ -72,7 +72,7 @@ BERT is a bidirectional transformer model pre-trai...  BERT uses a transformer a
 BLEU penalizes "A fast brown fox leaps over the sleepy dog" compared to the reference — even though it is a perfectly valid paraphrase. This is BLEU's fundamental limitation for open-ended generation tasks.
 :::
 
-### 8.5.3. ROUGE Score
+### 9.4.3. ROUGE Score
 
 **ROUGE** (Recall-Oriented Understudy for Gisting Evaluation, Lin 2004) was designed for summarization evaluation. Unlike BLEU (which measures precision), ROUGE emphasizes **recall** — how much of the reference is covered by the hypothesis.
 
@@ -116,7 +116,7 @@ Interest rates were raised by the Federal Reserve.                 0.500  0.250 
 The economy is doing well and growth is strong.                    0.118  0.000  0.118
 ```
 
-### 8.5.4. BERTScore
+### 9.4.4. BERTScore
 
 **BERTScore** (Zhang et al. 2020) replaces exact n-gram matching with **semantic similarity** using contextual BERT embeddings. Each token in the hypothesis is matched to the most similar token in the reference using cosine similarity.
 
@@ -156,7 +156,7 @@ BERT uses a transformer and is trained on text data.       0.9156    0.9089 0.91
 
 BERTScore correctly assigns high scores to valid paraphrases that BLEU would penalize.
 
-### 8.5.5. LLM-as-Judge
+### 9.4.5. LLM-as-Judge
 
 The most powerful scalable evaluation method: use a strong LLM (Claude, GPT-4) to evaluate the outputs of another model. This captures dimensions that no metric can measure automatically: factual accuracy, reasoning quality, helpfulness, and tone.
 
@@ -234,7 +234,7 @@ Q: What is tokenization in NLP?
   Feedback         : Complete, accurate, and clearly explained with appropriate context.
 ```
 
-### 8.5.6. Evaluating a Full RAG Pipeline
+### 9.4.6. Evaluating a Full RAG Pipeline
 
 For RAG systems, evaluation covers three components independently:
 
@@ -287,7 +287,7 @@ for k, v in result.items():
   issues                    []
 ```
 
-### 8.5.7. Choosing the Right Metric
+### 9.4.7. Choosing the Right Metric
 
 | Task | Recommended metrics |
 |---|---|

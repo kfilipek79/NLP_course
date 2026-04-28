@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kamil Filipek">
+
+<title>6.3. Sentiment Analysis – Natural Language Processing - Part I</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./Emotion_Analysis.html" rel="next">
+<link href="./Keywords_extraction.html" rel="prev">
+<link href="./assets/umcs-favicon.ico" rel="icon">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3ab6da5411f65e348dffac8b2649764d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./PoS_and_NER.html"><strong>6. Elementary Language Analaysis</strong></a></li><li class="breadcrumb-item"><a href="./Sentiment.html"><span class="chapter-title">6.3. Sentiment Analysis</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./assets/logo-Centrum.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="./assets/logo-Centrum.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Natural Language Processing - Part I</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>1. Language and Machines</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Why_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.1. Why to Analyze Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Natural_Language.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.2. What is the Natural Language?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Hierarchy_languages.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">1.3. Hierarchy of Languages</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>2. Theoretical Foundations</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Levels_analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.1. Levels of Linguistic Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Approaches_language..html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Lang_machine.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.4. Representing Language for Machines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Application.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.5. From Theory to Application</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>3. Basic Data Engineering</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Preprocessing.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.1. Data Preprocessing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Stem_lem.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Stemming and Lemmatization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tokenization.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.2. Tokenization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Ini_da.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">3.4. Initial Data Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>4. Evolution of Embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Bag_of_words.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.1. Bag of Words</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Tf_idf.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.2. TF-IDF</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Word2Vec.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.3. Word2Vec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GloVe.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.4. GloVe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./FastText.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.5. FastText</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Similarity_measures.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">4.6. Similarity Measures in NLP</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>5. Contextual_embeddings</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ELMo.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.1. ELMo</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./BERT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.2. BERT</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./GPT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">5.3. GPT</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>6. Elementary Language Analaysis</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./PoS_and_NER.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.1. PoS &amp; NER</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Keywords_extraction.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.2. Keywords Extraction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Sentiment.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">6.3. Sentiment Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Emotion_Analysis.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">6.4. Emotion Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>7. Topic Modeling</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LDA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.1. Latent Dirichlet Allocation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LCA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.2. Latent Class Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./NMF.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.3. Non-negative Matrix Factorization</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LSA.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">7.4. Latent Semantic Analysis</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>8. Training Neural Networks</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./NN_Fundamentals.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.1. Neural Network Fundamentals &amp; Hyperparameters</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Training_LSTM.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.2. LSTM Architecture &amp; PyTorch Training Loop</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Training_Best_Practices.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.3. Diagnostics, Regularisation &amp; Pre-trained Embeddings</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>9. Working with LLMs</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-9" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-9" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LLM_API.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.1. Working with LLM APIs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Fine_tuning.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.2. Fine-Tuning LLMs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./RAG.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.3. Retrieval-Augmented Generation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./LLM_evaluation.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">9.4. Evaluating LLM Outputs</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>10. Prompt Engineering</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-10" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-10" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Prompt_engineering.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.1. Prompt Engineering Basics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Prompt_CoT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.2. Chain-of-Thought &amp; Reasoning Prompts</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Prompt_advanced.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.3. Advanced Prompting Techniques</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true">
+ <span class="menu-text"><strong>11. AI Agents</strong></span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-11" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-11" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">11.1. AI Agents — Concepts and Architectures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Agents_Python.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.2. Building Agents in Python</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./n8n.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.3. Visual Agent Workflows with n8n</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./MultiAgent.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.4. Multi-Agent Systems</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true">
+ <span class="menu-text">References</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-12" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-12" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ref.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">Sources</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">MORE DETAILS</h2>
+   
+  <ul>
+  <li><a href="#what-is-sentiment-analysis" id="toc-what-is-sentiment-analysis" class="nav-link active" data-scroll-target="#what-is-sentiment-analysis">6.3.1. What is Sentiment Analysis?</a></li>
+  <li><a href="#rule-based-approaches" id="toc-rule-based-approaches" class="nav-link" data-scroll-target="#rule-based-approaches">6.3.2. Rule-Based Approaches</a></li>
+  <li><a href="#machine-learning-approach" id="toc-machine-learning-approach" class="nav-link" data-scroll-target="#machine-learning-approach">6.3.3. Machine Learning Approach</a></li>
+  <li><a href="#bert-based-sentiment-analysis" id="toc-bert-based-sentiment-analysis" class="nav-link" data-scroll-target="#bert-based-sentiment-analysis">6.3.4. BERT-Based Sentiment Analysis</a></li>
+  <li><a href="#aspect-based-sentiment-analysis-absa" id="toc-aspect-based-sentiment-analysis-absa" class="nav-link" data-scroll-target="#aspect-based-sentiment-analysis-absa">6.3.5. Aspect-Based Sentiment Analysis (ABSA)</a></li>
+  <li><a href="#sentiment-analysis-with-genai" id="toc-sentiment-analysis-with-genai" class="nav-link" data-scroll-target="#sentiment-analysis-with-genai">6.3.6. Sentiment Analysis with GenAI</a></li>
+  <li><a href="#approach-comparison" id="toc-approach-comparison" class="nav-link" data-scroll-target="#approach-comparison">6.3.7. Approach Comparison</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./PoS_and_NER.html"><strong>6. Elementary Language Analaysis</strong></a></li><li class="breadcrumb-item"><a href="./Sentiment.html"><span class="chapter-title">6.3. Sentiment Analysis</span></a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-title">6.3. Sentiment Analysis</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kamil Filipek </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="what-is-sentiment-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-sentiment-analysis">6.3.1. What is Sentiment Analysis?</h3>
+<p><strong>Sentiment analysis</strong> (also called <em>opinion mining</em>) is the task of automatically detecting the <strong>emotional polarity</strong> of a piece of text — most commonly classified as <em>positive</em>, <em>negative</em>, or <em>neutral</em>. It is one of the most commercially applied NLP tasks, powering product review monitoring, social media brand tracking, financial signal extraction, and customer support triage.</p>
+<p>Beyond simple three-class polarity, modern sentiment analysis includes:</p>
+<ul>
+<li><strong>Fine-grained polarity</strong>: very positive / positive / neutral / negative / very negative</li>
+<li><strong>Aspect-based sentiment</strong> (ABSA): “<em>The battery life is great, but the camera is disappointing</em>” — different sentiments for different aspects</li>
+<li><strong>Subjectivity detection</strong>: distinguishing factual statements from opinion</li>
+<li><strong>Comparative sentiment</strong>: “<em>Product A is better than Product B</em>”</li>
+</ul>
+</section>
+<section id="rule-based-approaches" class="level3">
+<h3 class="anchored" data-anchor-id="rule-based-approaches">6.3.2. Rule-Based Approaches</h3>
+<p>Rule-based systems rely on curated <strong>sentiment lexicons</strong> — dictionaries that assign polarity scores to individual words. They are fast, transparent, and require no training data.</p>
+<section id="vader" class="level4">
+<h4 class="anchored" data-anchor-id="vader">VADER</h4>
+<p><strong>VADER</strong> (Valence Aware Dictionary and sEntiment Reasoner) was designed specifically for <strong>social media text</strong>. It handles punctuation (!!!), capitalization (GREAT), emojis, and common internet slang. It produces four scores: positive, negative, neutral proportions, and a compound score in [−1, 1].</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># pip install vaderSentiment</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="im">from</span> vaderSentiment.vaderSentiment <span class="im">import</span> SentimentIntensityAnalyzer</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a>analyzer <span class="op">=</span> SentimentIntensityAnalyzer()</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a>texts <span class="op">=</span> [</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    <span class="st">"This product is absolutely AMAZING!!!"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="st">"Worst purchase I've ever made. Complete waste of money."</span>,</span>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="st">"The package arrived on time."</span>,</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="st">"Not bad, but could be better 🤔"</span>,</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    <span class="st">"I can't say this is a bad product... NOT."</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>]</span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Text'</span><span class="sc">:&lt;50}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Compound'</span><span class="sc">:&gt;9}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Label'</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">70</span>)</span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="cf">for</span> text <span class="kw">in</span> texts:</span>
+<span id="cb1-17"><a href="#cb1-17"></a>    scores <span class="op">=</span> analyzer.polarity_scores(text)</span>
+<span id="cb1-18"><a href="#cb1-18"></a>    compound <span class="op">=</span> scores[<span class="st">"compound"</span>]</span>
+<span id="cb1-19"><a href="#cb1-19"></a>    label <span class="op">=</span> <span class="st">"POSITIVE"</span> <span class="cf">if</span> compound <span class="op">&gt;=</span> <span class="fl">0.05</span> <span class="cf">else</span> <span class="st">"NEGATIVE"</span> <span class="cf">if</span> compound <span class="op">&lt;=</span> <span class="op">-</span><span class="fl">0.05</span> <span class="cf">else</span> <span class="st">"NEUTRAL"</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>text[:<span class="dv">49</span>]<span class="sc">:&lt;50}</span><span class="ss"> </span><span class="sc">{</span>compound<span class="sc">:&gt;9.4f}</span><span class="ss"> </span><span class="sc">{</span>label<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Text                                               Compound Label
+----------------------------------------------------------------------
+This product is absolutely AMAZING!!!               0.7003 POSITIVE
+Worst purchase I've ever made. Complete waste o...  -0.7506 NEGATIVE
+The package arrived on time.                         0.0000 NEUTRAL
+Not bad, but could be better 🤔                     0.1027 POSITIVE
+I can't say this is a bad product... NOT.           -0.5423 NEGATIVE</code></pre>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>VADER correctly captures the negation in the last sentence (“can’t say… bad… NOT”) and recognizes all-caps emphasis (“AMAZING”) — things simple bag-of-words models miss.</p>
+</div>
+</div>
+</section>
+<section id="textblob" class="level4">
+<h4 class="anchored" data-anchor-id="textblob">TextBlob</h4>
+<p><strong>TextBlob</strong> provides a simpler interface built on Pattern’s lexicon. It returns <code>polarity</code> ∈ [−1, 1] and <code>subjectivity</code> ∈ [0, 1].</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># pip install textblob</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="im">from</span> textblob <span class="im">import</span> TextBlob</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a>texts <span class="op">=</span> [</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    <span class="st">"The camera quality is stunning and battery life is excellent."</span>,</span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="st">"Customer service was unhelpful and rude."</span>,</span>
+<span id="cb3-7"><a href="#cb3-7"></a>    <span class="st">"The event starts at 9am on Monday."</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>]</span>
+<span id="cb3-9"><a href="#cb3-9"></a></span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Text'</span><span class="sc">:&lt;55}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Polarity'</span><span class="sc">:&gt;9}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Subjectivity'</span><span class="sc">:&gt;13}</span><span class="ss">"</span>)</span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">80</span>)</span>
+<span id="cb3-12"><a href="#cb3-12"></a><span class="cf">for</span> text <span class="kw">in</span> texts:</span>
+<span id="cb3-13"><a href="#cb3-13"></a>    blob <span class="op">=</span> TextBlob(text)</span>
+<span id="cb3-14"><a href="#cb3-14"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>text[:<span class="dv">54</span>]<span class="sc">:&lt;55}</span><span class="ss"> </span><span class="sc">{</span>blob<span class="sc">.</span>sentiment<span class="sc">.</span>polarity<span class="sc">:&gt;9.4f}</span><span class="ss"> </span><span class="sc">{</span>blob<span class="sc">.</span>sentiment<span class="sc">.</span>subjectivity<span class="sc">:&gt;13.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Text                                                    Polarity  Subjectivity
+--------------------------------------------------------------------------------
+The camera quality is stunning and battery life is...     0.6750        0.7750
+Customer service was unhelpful and rude.                 -0.5500        0.6000
+The event starts at 9am on Monday.                        0.0000        0.0000</code></pre>
+</section>
+</section>
+<section id="machine-learning-approach" class="level3">
+<h3 class="anchored" data-anchor-id="machine-learning-approach">6.3.3. Machine Learning Approach</h3>
+<p>Classical ML treats sentiment as a <strong>text classification</strong> problem. TF-IDF vectors feed a logistic regression (or SVM, Naive Bayes) trained on labeled examples.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="im">from</span> sklearn.feature_extraction.text <span class="im">import</span> TfidfVectorizer</span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> classification_report</span>
+<span id="cb5-6"><a href="#cb5-6"></a></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="co"># Minimal labeled dataset (in practice: thousands of examples)</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a>texts <span class="op">=</span> [</span>
+<span id="cb5-9"><a href="#cb5-9"></a>    <span class="st">"I love this product, it's fantastic!"</span>,</span>
+<span id="cb5-10"><a href="#cb5-10"></a>    <span class="st">"Absolutely terrible, never buying again."</span>,</span>
+<span id="cb5-11"><a href="#cb5-11"></a>    <span class="st">"Works as expected, nothing special."</span>,</span>
+<span id="cb5-12"><a href="#cb5-12"></a>    <span class="st">"Best purchase I've made this year."</span>,</span>
+<span id="cb5-13"><a href="#cb5-13"></a>    <span class="st">"Broken on arrival. Complete disappointment."</span>,</span>
+<span id="cb5-14"><a href="#cb5-14"></a>    <span class="st">"Average quality, does the job."</span>,</span>
+<span id="cb5-15"><a href="#cb5-15"></a>    <span class="st">"Outstanding performance and great value!"</span>,</span>
+<span id="cb5-16"><a href="#cb5-16"></a>    <span class="st">"Very poor build quality and bad support."</span>,</span>
+<span id="cb5-17"><a href="#cb5-17"></a>    <span class="st">"Decent product for the price."</span>,</span>
+<span id="cb5-18"><a href="#cb5-18"></a>    <span class="st">"Exceeded all my expectations, highly recommend!"</span></span>
+<span id="cb5-19"><a href="#cb5-19"></a>]</span>
+<span id="cb5-20"><a href="#cb5-20"></a>labels <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">1</span>]  <span class="co"># 0=neg, 1=pos, 2=neutral</span></span>
+<span id="cb5-21"><a href="#cb5-21"></a></span>
+<span id="cb5-22"><a href="#cb5-22"></a>X_train, X_test, y_train, y_test <span class="op">=</span> train_test_split(</span>
+<span id="cb5-23"><a href="#cb5-23"></a>    texts, labels, test_size<span class="op">=</span><span class="fl">0.3</span>, random_state<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb5-24"><a href="#cb5-24"></a>)</span>
+<span id="cb5-25"><a href="#cb5-25"></a></span>
+<span id="cb5-26"><a href="#cb5-26"></a>pipeline <span class="op">=</span> Pipeline([</span>
+<span id="cb5-27"><a href="#cb5-27"></a>    (<span class="st">"tfidf"</span>, TfidfVectorizer(ngram_range<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">2</span>))),</span>
+<span id="cb5-28"><a href="#cb5-28"></a>    (<span class="st">"clf"</span>,   LogisticRegression(max_iter<span class="op">=</span><span class="dv">1000</span>))</span>
+<span id="cb5-29"><a href="#cb5-29"></a>])</span>
+<span id="cb5-30"><a href="#cb5-30"></a></span>
+<span id="cb5-31"><a href="#cb5-31"></a>pipeline.fit(X_train, y_train)</span>
+<span id="cb5-32"><a href="#cb5-32"></a>y_pred <span class="op">=</span> pipeline.predict(X_test)</span>
+<span id="cb5-33"><a href="#cb5-33"></a></span>
+<span id="cb5-34"><a href="#cb5-34"></a><span class="bu">print</span>(classification_report(y_test, y_pred, target_names<span class="op">=</span>[<span class="st">"negative"</span>, <span class="st">"positive"</span>, <span class="st">"neutral"</span>]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="bert-based-sentiment-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="bert-based-sentiment-analysis">6.3.4. BERT-Based Sentiment Analysis</h3>
+<p>Fine-tuned Transformer models achieve state-of-the-art accuracy on standard sentiment benchmarks. The <code>transformers</code> pipeline makes this a single-line operation.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a><span class="im">from</span> transformers <span class="im">import</span> pipeline</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="co"># Fine-tuned on SST-2 (Stanford Sentiment Treebank)</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>sentiment <span class="op">=</span> pipeline(</span>
+<span id="cb6-5"><a href="#cb6-5"></a>    <span class="st">"sentiment-analysis"</span>,</span>
+<span id="cb6-6"><a href="#cb6-6"></a>    model<span class="op">=</span><span class="st">"distilbert-base-uncased-finetuned-sst-2-english"</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>)</span>
+<span id="cb6-8"><a href="#cb6-8"></a></span>
+<span id="cb6-9"><a href="#cb6-9"></a>texts <span class="op">=</span> [</span>
+<span id="cb6-10"><a href="#cb6-10"></a>    <span class="st">"The film was a masterpiece of modern cinema."</span>,</span>
+<span id="cb6-11"><a href="#cb6-11"></a>    <span class="st">"I've never been so bored in my life."</span>,</span>
+<span id="cb6-12"><a href="#cb6-12"></a>    <span class="st">"It was okay, nothing I'd watch again."</span>,</span>
+<span id="cb6-13"><a href="#cb6-13"></a>    <span class="st">"Incredible performances and stunning visuals."</span>,</span>
+<span id="cb6-14"><a href="#cb6-14"></a>    <span class="st">"The plot made absolutely no sense whatsoever."</span></span>
+<span id="cb6-15"><a href="#cb6-15"></a>]</span>
+<span id="cb6-16"><a href="#cb6-16"></a></span>
+<span id="cb6-17"><a href="#cb6-17"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Text'</span><span class="sc">:&lt;50}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Label'</span><span class="sc">:&lt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Score'</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-18"><a href="#cb6-18"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">70</span>)</span>
+<span id="cb6-19"><a href="#cb6-19"></a><span class="cf">for</span> text <span class="kw">in</span> texts:</span>
+<span id="cb6-20"><a href="#cb6-20"></a>    result <span class="op">=</span> sentiment(text)[<span class="dv">0</span>]</span>
+<span id="cb6-21"><a href="#cb6-21"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>text[:<span class="dv">49</span>]<span class="sc">:&lt;50}</span><span class="ss"> </span><span class="sc">{</span>result[<span class="st">'label'</span>]<span class="sc">:&lt;10}</span><span class="ss"> </span><span class="sc">{</span>result[<span class="st">'score'</span>]<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Text                                               Label      Score
+----------------------------------------------------------------------
+The film was a masterpiece of modern cinema.       POSITIVE   0.9998
+I've never been so bored in my life.               NEGATIVE   0.9995
+It was okay, nothing I'd watch again.              NEGATIVE   0.8712
+Incredible performances and stunning visuals.      POSITIVE   0.9997
+The plot made absolutely no sense whatsoever.      NEGATIVE   0.9989</code></pre>
+<section id="five-class-sentiment-yelp-reviews" class="level4">
+<h4 class="anchored" data-anchor-id="five-class-sentiment-yelp-reviews">Five-Class Sentiment (Yelp Reviews)</h4>
+<p>For finer granularity, use a model trained on star-rating corpora:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>sentiment_5 <span class="op">=</span> pipeline(</span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="st">"text-classification"</span>,</span>
+<span id="cb8-3"><a href="#cb8-3"></a>    model<span class="op">=</span><span class="st">"nlptown/bert-base-multilingual-uncased-sentiment"</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>)</span>
+<span id="cb8-5"><a href="#cb8-5"></a></span>
+<span id="cb8-6"><a href="#cb8-6"></a>reviews <span class="op">=</span> [</span>
+<span id="cb8-7"><a href="#cb8-7"></a>    <span class="st">"Absolutely phenomenal — best restaurant in the city!"</span>,</span>
+<span id="cb8-8"><a href="#cb8-8"></a>    <span class="st">"Pretty good food but service was slow."</span>,</span>
+<span id="cb8-9"><a href="#cb8-9"></a>    <span class="st">"Nothing special, just average."</span>,</span>
+<span id="cb8-10"><a href="#cb8-10"></a>    <span class="st">"Food was cold and staff was rude."</span>,</span>
+<span id="cb8-11"><a href="#cb8-11"></a>    <span class="st">"Disgusting. Never again."</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a>]</span>
+<span id="cb8-13"><a href="#cb8-13"></a></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Review'</span><span class="sc">:&lt;50}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Stars'</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">60</span>)</span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="cf">for</span> review <span class="kw">in</span> reviews:</span>
+<span id="cb8-17"><a href="#cb8-17"></a>    result <span class="op">=</span> sentiment_5(review)[<span class="dv">0</span>]</span>
+<span id="cb8-18"><a href="#cb8-18"></a>    stars <span class="op">=</span> result[<span class="st">"label"</span>]   <span class="co"># e.g., "4 stars"</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>review[:<span class="dv">49</span>]<span class="sc">:&lt;50}</span><span class="ss"> </span><span class="sc">{</span>stars<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Review                                             Stars
+------------------------------------------------------------
+Absolutely phenomenal — best restaurant in the...  5 stars
+Pretty good food but service was slow.             3 stars
+Nothing special, just average.                     3 stars
+Food was cold and staff was rude.                  2 stars
+Disgusting. Never again.                           1 star</code></pre>
+</section>
+</section>
+<section id="aspect-based-sentiment-analysis-absa" class="level3">
+<h3 class="anchored" data-anchor-id="aspect-based-sentiment-analysis-absa">6.3.5. Aspect-Based Sentiment Analysis (ABSA)</h3>
+<p>Standard sentiment analysis gives one polarity score per text. <strong>ABSA</strong> identifies which <em>aspect</em> (feature, attribute) a sentiment targets — essential for product reviews where different aspects can have opposite sentiments.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a><span class="im">import</span> anthropic</span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="im">import</span> json</span>
+<span id="cb10-3"><a href="#cb10-3"></a></span>
+<span id="cb10-4"><a href="#cb10-4"></a>client <span class="op">=</span> anthropic.Anthropic()</span>
+<span id="cb10-5"><a href="#cb10-5"></a></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="kw">def</span> aspect_sentiment(text: <span class="bu">str</span>, aspects: <span class="bu">list</span>[<span class="bu">str</span>]) <span class="op">-&gt;</span> <span class="bu">list</span>[<span class="bu">dict</span>]:</span>
+<span id="cb10-7"><a href="#cb10-7"></a>    prompt <span class="op">=</span> <span class="ss">f"""Analyze the sentiment toward each aspect in the review.</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="ss">For each aspect return: "aspect", "sentiment" (positive/negative/neutral/not_mentioned), "evidence" (the quote from text supporting this).</span></span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="ss">Return ONLY a valid JSON array.</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a></span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="ss">Aspects: </span><span class="sc">{</span><span class="st">", "</span><span class="sc">.</span>join(aspects)<span class="sc">}</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a></span>
+<span id="cb10-13"><a href="#cb10-13"></a><span class="ss">Review: </span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">"""</span></span>
+<span id="cb10-14"><a href="#cb10-14"></a></span>
+<span id="cb10-15"><a href="#cb10-15"></a>    message <span class="op">=</span> client.messages.create(</span>
+<span id="cb10-16"><a href="#cb10-16"></a>        model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,</span>
+<span id="cb10-17"><a href="#cb10-17"></a>        max_tokens<span class="op">=</span><span class="dv">512</span>,</span>
+<span id="cb10-18"><a href="#cb10-18"></a>        messages<span class="op">=</span>[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: prompt}]</span>
+<span id="cb10-19"><a href="#cb10-19"></a>    )</span>
+<span id="cb10-20"><a href="#cb10-20"></a></span>
+<span id="cb10-21"><a href="#cb10-21"></a>    <span class="cf">return</span> json.loads(message.content[<span class="dv">0</span>].text)</span>
+<span id="cb10-22"><a href="#cb10-22"></a></span>
+<span id="cb10-23"><a href="#cb10-23"></a></span>
+<span id="cb10-24"><a href="#cb10-24"></a>review <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb10-25"><a href="#cb10-25"></a><span class="st">The laptop's performance is blazing fast and I'm impressed by the battery life</span></span>
+<span id="cb10-26"><a href="#cb10-26"></a><span class="st">that lasts all day. However, the keyboard feels cheap and mushy, and the screen</span></span>
+<span id="cb10-27"><a href="#cb10-27"></a><span class="st">is quite dim — definitely not ideal for outdoor use. Customer support took 5 days</span></span>
+<span id="cb10-28"><a href="#cb10-28"></a><span class="st">to respond to a simple query.</span></span>
+<span id="cb10-29"><a href="#cb10-29"></a><span class="st">"""</span></span>
+<span id="cb10-30"><a href="#cb10-30"></a></span>
+<span id="cb10-31"><a href="#cb10-31"></a>aspects <span class="op">=</span> [<span class="st">"performance"</span>, <span class="st">"battery"</span>, <span class="st">"keyboard"</span>, <span class="st">"display"</span>, <span class="st">"customer support"</span>, <span class="st">"price"</span>]</span>
+<span id="cb10-32"><a href="#cb10-32"></a>results <span class="op">=</span> aspect_sentiment(review, aspects)</span>
+<span id="cb10-33"><a href="#cb10-33"></a></span>
+<span id="cb10-34"><a href="#cb10-34"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Aspect'</span><span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Sentiment'</span><span class="sc">:&lt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Evidence'</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-35"><a href="#cb10-35"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">70</span>)</span>
+<span id="cb10-36"><a href="#cb10-36"></a><span class="cf">for</span> item <span class="kw">in</span> results:</span>
+<span id="cb10-37"><a href="#cb10-37"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>item[<span class="st">'aspect'</span>]<span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span>item[<span class="st">'sentiment'</span>]<span class="sc">:&lt;12}</span><span class="ss"> </span><span class="sc">{</span>item[<span class="st">'evidence'</span>][:<span class="dv">40</span>]<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Aspect               Sentiment    Evidence
+----------------------------------------------------------------------
+performance          positive     blazing fast
+battery              positive     lasts all day
+keyboard             negative     feels cheap and mushy
+display              negative     quite dim — not ideal for outdoor
+customer support     negative     took 5 days to respond
+price                not_mentioned —</code></pre>
+</section>
+<section id="sentiment-analysis-with-genai" class="level3">
+<h3 class="anchored" data-anchor-id="sentiment-analysis-with-genai">6.3.6. Sentiment Analysis with GenAI</h3>
+<p>Generative models offer the richest sentiment output: they explain reasoning, handle sarcasm, detect mixed sentiments, and return structured results in any format.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">def</span> analyze_sentiment_detailed(text: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">dict</span>:</span>
+<span id="cb12-2"><a href="#cb12-2"></a>    prompt <span class="op">=</span> <span class="ss">f"""Perform a detailed sentiment analysis of the text below.</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="ss">Return a JSON object with:</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a><span class="ss">- "overall_sentiment": positive / negative / neutral / mixed</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a><span class="ss">- "polarity_score": float from -1.0 (very negative) to 1.0 (very positive)</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a><span class="ss">- "confidence": float 0.0 to 1.0</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="ss">- "emotions_detected": list of detected emotions</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="ss">- "sarcasm_detected": true or false</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a><span class="ss">- "key_phrases": list of phrases that most influenced the sentiment</span></span>
+<span id="cb12-10"><a href="#cb12-10"></a><span class="ss">- "explanation": one sentence summary</span></span>
+<span id="cb12-11"><a href="#cb12-11"></a></span>
+<span id="cb12-12"><a href="#cb12-12"></a><span class="ss">Return ONLY valid JSON.</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a></span>
+<span id="cb12-14"><a href="#cb12-14"></a><span class="ss">Text: </span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">"""</span></span>
+<span id="cb12-15"><a href="#cb12-15"></a></span>
+<span id="cb12-16"><a href="#cb12-16"></a>    message <span class="op">=</span> client.messages.create(</span>
+<span id="cb12-17"><a href="#cb12-17"></a>        model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,</span>
+<span id="cb12-18"><a href="#cb12-18"></a>        max_tokens<span class="op">=</span><span class="dv">512</span>,</span>
+<span id="cb12-19"><a href="#cb12-19"></a>        messages<span class="op">=</span>[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: prompt}]</span>
+<span id="cb12-20"><a href="#cb12-20"></a>    )</span>
+<span id="cb12-21"><a href="#cb12-21"></a></span>
+<span id="cb12-22"><a href="#cb12-22"></a>    <span class="cf">return</span> json.loads(message.content[<span class="dv">0</span>].text)</span>
+<span id="cb12-23"><a href="#cb12-23"></a></span>
+<span id="cb12-24"><a href="#cb12-24"></a></span>
+<span id="cb12-25"><a href="#cb12-25"></a>texts <span class="op">=</span> [</span>
+<span id="cb12-26"><a href="#cb12-26"></a>    <span class="st">"Oh great, another software update that breaks everything. Just what I needed on a Monday morning."</span>,</span>
+<span id="cb12-27"><a href="#cb12-27"></a>    <span class="st">"The course was challenging but I learned so much. Tough at times, incredibly rewarding in the end."</span>,</span>
+<span id="cb12-28"><a href="#cb12-28"></a>]</span>
+<span id="cb12-29"><a href="#cb12-29"></a></span>
+<span id="cb12-30"><a href="#cb12-30"></a><span class="cf">for</span> text <span class="kw">in</span> texts:</span>
+<span id="cb12-31"><a href="#cb12-31"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Text: </span><span class="sc">{</span>text[:<span class="dv">70</span>]<span class="sc">}</span><span class="ss">..."</span>)</span>
+<span id="cb12-32"><a href="#cb12-32"></a>    result <span class="op">=</span> analyze_sentiment_detailed(text)</span>
+<span id="cb12-33"><a href="#cb12-33"></a>    <span class="cf">for</span> key, value <span class="kw">in</span> result.items():</span>
+<span id="cb12-34"><a href="#cb12-34"></a>        <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>key<span class="sc">:&lt;22}</span><span class="ss"> </span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Text: Oh great, another software update that breaks everything. Just what I ...
+  overall_sentiment      negative
+  polarity_score         -0.75
+  confidence             0.94
+  emotions_detected      ['frustration', 'sarcasm', 'resignation']
+  sarcasm_detected       True
+  key_phrases            ['Oh great', 'breaks everything', 'Just what I needed']
+  explanation            Sarcastic complaint about a disruptive software update.
+
+Text: The course was challenging but I learned so much. Tough at times, inc...
+  overall_sentiment      mixed
+  polarity_score         0.45
+  confidence             0.88
+  emotions_detected      ['satisfaction', 'pride', 'mild frustration']
+  sarcasm_detected       False
+  key_phrases            ['challenging', 'learned so much', 'incredibly rewarding']
+  explanation            Mixed but net-positive sentiment about a difficult
+                         but ultimately valuable learning experience.</code></pre>
+</section>
+<section id="approach-comparison" class="level3">
+<h3 class="anchored" data-anchor-id="approach-comparison">6.3.7. Approach Comparison</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Approach</th>
+<th>Accuracy</th>
+<th>Speed</th>
+<th>Sarcasm</th>
+<th>Aspect-level</th>
+<th>No training data</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>VADER</td>
+<td>Moderate</td>
+<td>Instant</td>
+<td>Partial</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>TextBlob</td>
+<td>Low–Moderate</td>
+<td>Instant</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>sklearn + TF-IDF</td>
+<td>Moderate</td>
+<td>Fast</td>
+<td>No</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>BERT (fine-tuned)</td>
+<td>High</td>
+<td>Moderate</td>
+<td>Partial</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>GenAI (Claude/GPT)</td>
+<td>Very high</td>
+<td>Slow/API</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule of thumb:</strong> use VADER for quick social-media pipelines, BERT for high-accuracy production classification, and GenAI for nuanced, structured, or explanatory output.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./Keywords_extraction.html" class="pagination-link" aria-label="6.2. Keywords Extraction">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">6.2. Keywords Extraction</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./Emotion_Analysis.html" class="pagination-link" aria-label="6.4. Emotion Analysis">
+        <span class="nav-page-text"><span class="chapter-title">6.4. Emotion Analysis</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

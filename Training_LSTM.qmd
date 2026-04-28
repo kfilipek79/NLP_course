@@ -1,0 +1,204 @@
+---
+title: "8.2. LSTM Architecture & PyTorch Training Loop"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 8.2.1. LSTM Architecture
+
+An LSTM cell maintains two states: the **hidden state** $\mathbf{h}_t$ (short-term memory) and the **cell state** $\mathbf{c}_t$ (long-term memory). Three gates control information flow:
+
+$$
+\begin{aligned}
+\mathbf{f}_t &= \sigma(W_f [\mathbf{h}_{t-1}, \mathbf{x}_t] + b_f) \quad \text{(forget gate)} \\
+\mathbf{i}_t &= \sigma(W_i [\mathbf{h}_{t-1}, \mathbf{x}_t] + b_i) \quad \text{(input gate)} \\
+\tilde{\mathbf{c}}_t &= \tanh(W_c [\mathbf{h}_{t-1}, \mathbf{x}_t] + b_c) \quad \text{(candidate)} \\
+\mathbf{c}_t &= \mathbf{f}_t \odot \mathbf{c}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{c}}_t \\
+\mathbf{o}_t &= \sigma(W_o [\mathbf{h}_{t-1}, \mathbf{x}_t] + b_o) \quad \text{(output gate)} \\
+\mathbf{h}_t &= \mathbf{o}_t \odot \tanh(\mathbf{c}_t)
+\end{aligned}
+$$
+
+The **forget gate** decides how much of the previous cell state to keep. The **input gate** decides what new information to write. The **output gate** decides what to expose as the hidden state. This gating mechanism is why LSTMs can learn long-range dependencies without suffering from the vanishing gradient problem that plagued simple RNNs.
+
+---
+
+### 8.2.2. Building an LSTM Text Classifier in PyTorch
+
+We will train an LSTM to classify movie reviews (positive / negative) using the IMDB dataset.
+
+#### Step 1 — Data preparation
+
+```python
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, Dataset
+from collections import Counter
+import re
+
+# Minimal tokeniser
+def tokenise(text: str) -> list[str]:
+    return re.findall(r"\b\w+\b", text.lower())
+
+# Build vocabulary from training texts
+def build_vocab(texts, max_vocab=10_000, min_freq=2):
+    counter = Counter(token for text in texts for token in tokenise(text))
+    vocab = {"<pad>": 0, "<unk>": 1}
+    for word, freq in counter.most_common(max_vocab):
+        if freq >= min_freq:
+            vocab[word] = len(vocab)
+    return vocab
+
+class TextDataset(Dataset):
+    def __init__(self, texts, labels, vocab, max_len=256):
+        self.samples = []
+        for text, label in zip(texts, labels):
+            ids = [vocab.get(t, 1) for t in tokenise(text)][:max_len]
+            self.samples.append((ids, label))
+        self.max_len = max_len
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        ids, label = self.samples[idx]
+        return ids, label
+
+def collate_fn(batch):
+    ids_list, labels = zip(*batch)
+    max_len = max(len(ids) for ids in ids_list)
+    padded = torch.zeros(len(ids_list), max_len, dtype=torch.long)
+    lengths = []
+    for i, ids in enumerate(ids_list):
+        padded[i, :len(ids)] = torch.tensor(ids)
+        lengths.append(len(ids))
+    return padded, torch.tensor(labels, dtype=torch.long), torch.tensor(lengths)
+```
+
+#### Step 2 — Model definition
+
+```python
+class LSTMClassifier(nn.Module):
+    def __init__(
+        self,
+        vocab_size: int,
+        embed_dim: int = 128,
+        hidden_size: int = 256,
+        num_layers: int = 2,
+        num_classes: int = 2,
+        dropout: float = 0.3,
+        bidirectional: bool = True,
+    ):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
+        self.lstm = nn.LSTM(
+            input_size=embed_dim,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0.0,
+            bidirectional=bidirectional,
+        )
+        direction_factor = 2 if bidirectional else 1
+        self.dropout = nn.Dropout(dropout)
+        self.classifier = nn.Linear(hidden_size * direction_factor, num_classes)
+
+    def forward(self, x: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor:
+        emb = self.dropout(self.embedding(x))          # (B, T, E)
+
+        packed = nn.utils.rnn.pack_padded_sequence(
+            emb, lengths.cpu(), batch_first=True, enforce_sorted=False
+        )
+        _, (hidden, _) = self.lstm(packed)             # hidden: (D*L, B, H)
+
+        # Concatenate last-layer forward and backward hidden states
+        if self.lstm.bidirectional:
+            out = torch.cat([hidden[-2], hidden[-1]], dim=-1)
+        else:
+            out = hidden[-1]
+
+        return self.classifier(self.dropout(out))      # (B, num_classes)
+```
+
+#### Step 3 — Training loop
+
+```python
+def train_epoch(model, loader, optimiser, criterion, device, clip_norm=1.0):
+    model.train()
+    total_loss, correct = 0.0, 0
+    for x, y, lengths in loader:
+        x, y, lengths = x.to(device), y.to(device), lengths.to(device)
+        optimiser.zero_grad()
+        logits = model(x, lengths)
+        loss = criterion(logits, y)
+        loss.backward()
+        nn.utils.clip_grad_norm_(model.parameters(), clip_norm)  # prevent exploding gradients
+        optimiser.step()
+        total_loss += loss.item() * len(y)
+        correct += (logits.argmax(1) == y).sum().item()
+    return total_loss / len(loader.dataset), correct / len(loader.dataset)
+
+@torch.no_grad()
+def evaluate(model, loader, criterion, device):
+    model.eval()
+    total_loss, correct = 0.0, 0
+    for x, y, lengths in loader:
+        x, y, lengths = x.to(device), y.to(device), lengths.to(device)
+        logits = model(x, lengths)
+        total_loss += criterion(logits, y).item() * len(y)
+        correct += (logits.argmax(1) == y).sum().item()
+    return total_loss / len(loader.dataset), correct / len(loader.dataset)
+```
+
+#### Step 4 — Putting it together
+
+```python
+import torch.optim as optim
+
+# --- Hyperparameters (the knobs you turn) ---
+VOCAB_SIZE   = 10_002   # max_vocab + 2 special tokens
+EMBED_DIM    = 128
+HIDDEN_SIZE  = 256
+NUM_LAYERS   = 2
+DROPOUT      = 0.3
+BIDIRECTIONAL = True
+LEARNING_RATE = 1e-3
+WEIGHT_DECAY  = 1e-5
+BATCH_SIZE    = 64
+EPOCHS        = 10
+GRAD_CLIP     = 1.0
+# --------------------------------------------
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+model = LSTMClassifier(
+    vocab_size=VOCAB_SIZE,
+    embed_dim=EMBED_DIM,
+    hidden_size=HIDDEN_SIZE,
+    num_layers=NUM_LAYERS,
+    dropout=DROPOUT,
+    bidirectional=BIDIRECTIONAL,
+).to(device)
+
+optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimiser, patience=2, factor=0.5)
+criterion = nn.CrossEntropyLoss()
+
+# Assume train_loader and val_loader are already prepared
+for epoch in range(1, EPOCHS + 1):
+    tr_loss, tr_acc = train_epoch(model, train_loader, optimiser, criterion, device, GRAD_CLIP)
+    va_loss, va_acc = evaluate(model, val_loader, criterion, device)
+    scheduler.step(va_loss)
+
+    current_lr = optimiser.param_groups[0]["lr"]
+    print(
+        f"Epoch {epoch:02d} | "
+        f"train loss {tr_loss:.4f} acc {tr_acc:.3f} | "
+        f"val loss {va_loss:.4f} acc {va_acc:.3f} | "
+        f"lr {current_lr:.2e}"
+    )
+
+# Save
+torch.save(model.state_dict(), "lstm_classifier.pt")
+```

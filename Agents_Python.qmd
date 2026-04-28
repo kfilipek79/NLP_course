@@ -1,11 +1,11 @@
 ---
-title: "9.2. Building Agents in Python"
+title: "10.2. Building Agents in Python"
 author: Kamil Filipek
 format: html
 editor: visual
 ---
 
-### 9.2.1. A Minimal Agent from Scratch
+### 11.2.1. A Minimal Agent from Scratch
 
 The simplest agent is just a loop: call the LLM, parse its output, execute tools, feed results back, repeat until done. Building one from scratch makes the mechanics transparent before moving to frameworks.
 
@@ -120,7 +120,7 @@ Task: What day of the week is it today, and what is 2^32 divided by 365?
 2³² divided by 365 is approximately 11,758.85.
 ```
 
-### 9.2.2. A Research Agent
+### 11.2.2. A Research Agent
 
 A more realistic agent that searches for information, synthesizes it, and produces a structured report:
 
@@ -250,7 +250,7 @@ infrastructure (search, cloud, hardware) that AI companies now rely on was built
 the years between them.
 ```
 
-### 9.2.3. NLP-Specific Agent: Text Analysis Pipeline
+### 11.2.3. NLP-Specific Agent: Text Analysis Pipeline
 
 An agent that autonomously runs a complete NLP analysis on a document:
 
@@ -351,7 +351,7 @@ Top keywords: nlp (3×), framework (3×), results (2×), performance (2×).
 benchmark results, tempered by hardware resource concerns.
 ```
 
-### 9.2.4. Memory-Augmented Agent
+### 11.2.4. Memory-Augmented Agent
 
 For long-running tasks, agents need persistent memory beyond the context window. A vector database provides **semantic retrieval** of past observations:
 

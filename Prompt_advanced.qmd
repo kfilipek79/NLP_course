@@ -1,0 +1,366 @@
+---
+title: "10.3. Advanced Prompting Techniques"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 10.3.1. Self-Consistency
+
+**Self-Consistency** (Wang et al., 2022) runs the same prompt multiple times with higher temperature (more randomness) and takes the majority-vote answer. It treats the model's reasoning paths as an ensemble — diverse paths that converge on the same answer are more likely to be correct.
+
+```python
+import anthropic
+from collections import Counter
+
+client = anthropic.Anthropic()
+
+def sample_answer(question: str, temperature: float = 0.8) -> str:
+    msg = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=400,
+        system="Solve the problem step by step and state only the final answer on the last line as 'Answer: <value>'.",
+        messages=[{"role": "user", "content": question}],
+    )
+    text = msg.content[0].text
+    for line in reversed(text.splitlines()):
+        if line.strip().lower().startswith("answer:"):
+            return line.split(":", 1)[1].strip()
+    return text.strip().splitlines()[-1]
+
+
+question = """A bakery makes 240 loaves on Monday, 180 on Tuesday,
+and 300 on Wednesday. They sell 85% of total production.
+How many loaves remain unsold?"""
+
+n_samples = 5
+answers = [sample_answer(question) for _ in range(n_samples)]
+majority = Counter(answers).most_common(1)[0]
+
+print(f"Individual answers: {answers}")
+print(f"Majority vote:      {majority[0]}  (appeared {majority[1]}/{n_samples} times)")
+```
+
+```
+Individual answers: ['108 loaves', '108 loaves', '108', '108 loaves', '109 loaves']
+Majority vote:      108 loaves  (appeared 4/5 times)
+```
+
+::: callout-tip
+Self-consistency improves accuracy by 5–20% on arithmetic and commonsense reasoning benchmarks. The tradeoff is higher cost (N × tokens). Use it when accuracy matters more than latency or cost.
+:::
+
+---
+
+### 10.3.2. Least-to-Most Prompting
+
+**Least-to-Most prompting** (Zhou et al., 2022) decomposes a hard problem into an ordered sequence of simpler sub-problems, solving them from easiest to hardest. Each solution is appended to the context, so later steps can build on earlier ones.
+
+It explicitly addresses the failure mode of direct CoT: sometimes the model needs to solve simpler sub-cases before it can generalize.
+
+```python
+DECOMPOSE_PROMPT = """To solve this problem, first list the sub-problems
+that need to be solved in order from simplest to most complex.
+Then solve each sub-problem in sequence.
+
+Problem: {problem}
+
+Sub-problems to solve (ordered simplest → complex):"""
+
+SOLVE_PROMPT = """{decomposition}
+
+Now solve each sub-problem in order, using previous answers as context:"""
+
+problem = """An e-commerce company has two warehouses: Warsaw (capacity 5000 units)
+and Kraków (capacity 3000 units). Warsaw is 60% full; Kraków is 40% full.
+A new shipment of 2500 units arrives. They fill Warsaw first, then overflow to Kraków.
+After the shipment, what percentage of total capacity is used across both warehouses?"""
+
+def prompt(system: str, user: str) -> str:
+    msg = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=600,
+        system=system,
+        messages=[{"role": "user", "content": user}]
+    )
+    return msg.content[0].text
+
+# Step 1: Decompose
+decomposition = prompt(
+    "You are a precise problem-solving assistant.",
+    DECOMPOSE_PROMPT.format(problem=problem)
+)
+print("Decomposition:\n", decomposition)
+
+# Step 2: Solve sequentially
+solution = prompt(
+    "You are a precise problem-solving assistant.",
+    SOLVE_PROMPT.format(decomposition=decomposition)
+)
+print("\nSolution:\n", solution)
+```
+
+```
+Decomposition:
+1. Calculate current units in Warsaw (60% of 5000)
+2. Calculate current units in Kraków  (40% of 3000)
+3. Calculate Warsaw's remaining space
+4. Determine how many units Warsaw can absorb from the shipment
+5. Calculate overflow to Kraków
+6. Calculate total units stored after shipment
+7. Calculate total capacity
+8. Compute the final percentage
+
+Solution:
+1. Warsaw current: 0.60 × 5000 = 3000 units
+2. Kraków current:  0.40 × 3000 = 1200 units
+3. Warsaw remaining: 5000 − 3000 = 2000 units
+4. Warsaw absorbs:  min(2500, 2000) = 2000 units → now full (5000)
+5. Overflow to Kraków: 2500 − 2000 = 500 units → Kraków: 1200 + 500 = 1700 units
+6. Total stored: 5000 + 1700 = 6700 units
+7. Total capacity: 5000 + 3000 = 8000 units
+8. Percentage used: 6700 / 8000 = 83.75%
+
+Final Answer: 83.75% of total capacity is used.
+```
+
+---
+
+### 10.3.3. Plan-and-Solve Prompting
+
+**Plan-and-Solve** (Wang et al., 2023) improves on Zero-Shot CoT by adding an explicit planning step: the model first devises a plan, then executes it. This reduces calculation errors caused by rushing straight into computation.
+
+```python
+PAS_PROMPT = """Let's first devise a plan to solve this problem,
+then execute the plan step by step.
+
+Problem: {problem}
+
+Plan:"""
+
+problem = """A data science team collects 3000 survey responses.
+- 45% are from Europe, the rest from Asia.
+- Among European respondents, 60% prefer Python; the rest prefer R.
+- Among Asian respondents, 70% prefer Python; the rest prefer R.
+How many total respondents prefer R?"""
+
+full_solution = prompt(
+    "You are a careful, methodical analyst.",
+    PAS_PROMPT.format(problem=problem)
+)
+print(full_solution)
+```
+
+```
+Plan:
+1. Calculate number of European respondents.
+2. Calculate number of Asian respondents.
+3. Calculate R-preferring Europeans.
+4. Calculate R-preferring Asians.
+5. Sum to get total R-preferring respondents.
+
+Execution:
+1. European: 3000 × 0.45 = 1350
+2. Asian:    3000 × 0.55 = 1650
+3. R-Europe: 1350 × 0.40 = 540
+4. R-Asia:   1650 × 0.30 = 495
+5. Total R:  540 + 495   = 1035
+
+Answer: 1035 respondents prefer R.
+```
+
+---
+
+### 10.3.4. Self-Refine
+
+**Self-Refine** (Madaan et al., 2023) implements an iterative improvement loop without additional training data: the model generates an answer, critiques it, then revises it. Repeat until quality converges.
+
+```python
+def self_refine(task: str, n_rounds: int = 2) -> str:
+
+    GENERATE = "Complete the following task as well as you can."
+    CRITIQUE = """Review the following output for the task below.
+Identify specific weaknesses: missing information, unclear language, logical gaps, or inaccuracies.
+Be concrete — list at least 3 specific issues.
+
+Task: {task}
+Output: {output}
+
+Issues:"""
+    REFINE = """Improve the output based on the critique.
+Fix all identified issues while preserving correct content.
+
+Task: {task}
+Original output: {output}
+Critique: {critique}
+
+Improved output:"""
+
+    output = prompt(GENERATE, task)
+    print(f"Initial output:\n{output}\n{'─'*60}")
+
+    for i in range(n_rounds):
+        critique = prompt("You are a critical editor.", CRITIQUE.format(task=task, output=output))
+        print(f"Round {i+1} critique:\n{critique}\n{'─'*60}")
+        output = prompt("You are a skilled writer.", REFINE.format(task=task, output=output, critique=critique))
+        print(f"Round {i+1} refined output:\n{output}\n{'─'*60}")
+
+    return output
+
+
+task = "Write a 3-sentence explanation of transformer self-attention for a software engineer unfamiliar with ML."
+final = self_refine(task, n_rounds=2)
+```
+
+---
+
+### 10.3.5. Chain of Verification
+
+**Chain of Verification (CoVe)** (Dhuliawala et al., 2023) combats hallucination by systematically verifying every factual claim in an initial response. The model generates verification questions, answers them independently, then produces a corrected final answer.
+
+```python
+COVE_TEMPLATE = """
+Step 1 — Generate initial answer:
+{question}
+
+Step 2 — Extract verifiable claims from the answer and create a verification question for each.
+List them as:
+  Claim: <claim>
+  Verification Q: <question that can confirm or deny this claim>
+
+Step 3 — Answer each verification question independently (without looking at the original answer).
+
+Step 4 — Compare: does the original answer contradict any verification answers?
+         If yes, revise.
+
+Step 5 — Final verified answer:
+"""
+
+question = "Name three programming languages created before 1975 and state their primary domains."
+
+full_response = prompt(
+    "You are a careful, fact-checking assistant.",
+    COVE_TEMPLATE.format(question=question)
+)
+print(full_response)
+```
+
+```
+Step 1 — Initial answer:
+FORTRAN (1957) — scientific computing; COBOL (1959) — business data processing;
+Lisp (1958) — AI and symbolic computation.
+
+Step 2 — Verifiable claims & verification questions:
+  Claim: FORTRAN was created in 1957.
+  Verification Q: In what year was FORTRAN first released?
+
+  Claim: COBOL was created in 1959.
+  Verification Q: In what year was COBOL first released?
+
+  Claim: Lisp was created in 1958.
+  Verification Q: In what year was Lisp first released?
+
+Step 3 — Independent verification:
+  FORTRAN: released 1957 ✓
+  COBOL: released 1959 ✓
+  Lisp: first implemented 1958, paper by McCarthy 1960 — acceptable ✓
+
+Step 4 — No contradictions found.
+
+Step 5 — Final verified answer:
+FORTRAN (1957) — scientific and numerical computing;
+COBOL (1959) — business and administrative data processing;
+Lisp (1958) — artificial intelligence and symbolic computation.
+```
+
+---
+
+### 10.3.6. Rephrase and Respond
+
+**Rephrase and Respond (RaR)** (Deng et al., 2023) asks the model to rephrase the question in its own words before answering. This reduces misinterpretation and activates more relevant knowledge.
+
+```python
+RAR_TEMPLATE = """First, rephrase the following question in your own words to make sure you understand it correctly.
+Then answer the rephrased version.
+
+Original question: {question}
+
+Rephrased question:
+Answer:"""
+
+ambiguous_questions = [
+    "Can you recommend a good model for my task?",
+    "What's the best way to handle long documents?"
+]
+
+for q in ambiguous_questions:
+    print(f"Original: {q}\n")
+    response = prompt("You are an NLP expert.", RAR_TEMPLATE.format(question=q))
+    print(response)
+    print("\n" + "─"*70 + "\n")
+```
+
+---
+
+### 10.3.7. Emotion Prompting
+
+**Emotion Prompting** (Li et al., 2023) adds emotional stimuli to prompts — phrases that convey the importance of the task or appeal to the model's care for quality. Empirically shown to improve performance on reasoning benchmarks.
+
+```python
+EMOTION_VARIANTS = {
+    "neutral":   "Solve this problem.",
+    "importance":"This is very important to my career. Please solve this carefully.",
+    "confidence":"You are an expert. I believe in your ability to solve this correctly.",
+    "stakes":    "Lives depend on the accuracy of this calculation. Be precise."
+}
+
+problem = """A medication requires 0.05 mg/kg dose.
+Patient weighs 68 kg. Tablets come in 1 mg each.
+How many tablets and what fraction of an additional tablet is needed?"""
+
+for style, prefix in EMOTION_VARIANTS.items():
+    result = prompt(
+        "You are a precise clinical pharmacist.",
+        f"{prefix}\n\n{problem}"
+    )
+    print(f"[{style}] {result}\n{'─'*60}\n")
+```
+
+::: callout-note
+Emotion prompting effects are subtle and model-dependent. Use it as a supplementary technique rather than a primary strategy. The main benefit is ensuring the model treats the task with appropriate care rather than rushing to a brief answer.
+:::
+
+---
+
+### 10.3.8. Choosing the Right Advanced Technique
+
+| Situation | Recommended technique |
+|---|---|
+| High-stakes single answer (maths, facts) | Self-Consistency |
+| Complex problem with clear sub-tasks | Least-to-Most or Plan-and-Solve |
+| Output quality needs iterative improvement | Self-Refine |
+| Factual accuracy is critical | Chain of Verification |
+| Ambiguous or complex question phrasing | Rephrase and Respond |
+| Precision and care matter (medical, legal) | Emotion Prompting |
+| Multi-hop factual reasoning | Self-Ask (Section 10.2) |
+| Conceptual / principle-based reasoning | Step-Back (Section 10.2) |
+
+```python
+# Composing techniques: Self-Refine + CoVe for high-stakes outputs
+
+def reliable_answer(question: str) -> str:
+    # Step 1: Self-Refine for quality
+    draft = prompt("Answer thoroughly.", question)
+    critique = prompt("Critique for gaps and errors.", f"Task: {question}\nOutput: {draft}")
+    refined = prompt("Improve based on critique.", f"Task: {question}\nDraft: {draft}\nCritique: {critique}")
+
+    # Step 2: CoVe for factual accuracy
+    verified = prompt(
+        "Verify each factual claim in the answer and produce a final corrected version.",
+        f"Question: {question}\nAnswer: {refined}"
+    )
+    return verified
+
+answer = reliable_answer("What are the main differences between BERT and GPT architectures?")
+print(answer)
+```

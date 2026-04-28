@@ -1,26 +1,26 @@
 ---
-title: "8.1. Prompt Engineering"
+title: "10.1. Prompt Engineering Basics"
 author: Kamil Filipek
 format: html
 editor: visual
 ---
 
-### 8.1.1. What is Prompt Engineering?
+### 10.1.1. What is Prompt Engineering?
 
-**Prompt engineering** is the practice of designing and refining the input given to a large language model (LLM) in order to elicit the best possible output — without changing the model's weights. It is the primary interface between a user or application and an LLM.
+**Prompt engineering** is the practice of designing and refining the input given to a large language model (LLM) in order to elicit the best possible output --- without changing the model's weights. It is the primary interface between a user or application and an LLM.
 
 Unlike traditional machine learning, where you improve performance by retraining on more data, prompt engineering improves performance by crafting better instructions. This makes it accessible, fast to iterate, and often surprisingly powerful.
 
 The quality of an LLM's output depends heavily on:
 
--   **Clarity** — is the task unambiguously stated?
--   **Context** — does the model have the information it needs?
--   **Format** — is the desired output structure specified?
--   **Examples** — does the model know what "good" looks like?
+-   **Clarity** --- is the task unambiguously stated?
+-   **Context** --- does the model have the information it needs?
+-   **Format** --- is the desired output structure specified?
+-   **Examples** --- does the model know what "good" looks like?
 
-### 8.1.2. Zero-Shot Prompting
+### 10.1.2. Zero-Shot Prompting
 
-In **zero-shot** prompting, the model receives only a task description — no examples. It relies entirely on knowledge acquired during pre-training.
+In **zero-shot** prompting, the model receives only a task description --- no examples. It relies entirely on knowledge acquired during pre-training.
 
 ``` python
 import anthropic
@@ -49,15 +49,15 @@ Label:"""
 print(f"Zero-shot: {response}")
 ```
 
-```
+```         
 Zero-shot: MIXED
 ```
 
 Zero-shot works well for tasks the model has seen many times during training (sentiment, translation, summarization). It struggles with niche domains, specific output formats, or tasks requiring precise reasoning.
 
-### 8.1.3. Few-Shot Prompting
+### 10.1.3. Few-Shot Prompting
 
-**Few-shot** prompting provides $k$ input–output examples before the actual query. The model learns the pattern from the examples and applies it to the new input — no gradient updates, no training.
+**Few-shot** prompting provides $k$ input--output examples before the actual query. The model learns the pattern from the examples and applies it to the new input --- no gradient updates, no training.
 
 ``` python
 few_shot_prompt = """Classify customer feedback into: BUG, FEATURE_REQUEST, COMPLIMENT, or QUESTION.
@@ -84,13 +84,13 @@ response = prompt(
 print(f"Few-shot: {response}")
 ```
 
-```
+```         
 Few-shot: BUG
 ```
 
-**Why few-shot works:** the examples demonstrate the label vocabulary, the expected reasoning pattern, and the output format simultaneously — far more efficiently than instructions alone.
+**Why few-shot works:** the examples demonstrate the label vocabulary, the expected reasoning pattern, and the output format simultaneously --- far more efficiently than instructions alone.
 
-### 8.1.4. Chain-of-Thought Prompting
+### 10.1.4. Chain-of-Thought Prompting
 
 **Chain-of-Thought (CoT)** prompting instructs the model to reason step by step before producing a final answer. It substantially improves accuracy on tasks that require multi-step reasoning: arithmetic, logic, causal inference, and complex classification.
 
@@ -114,7 +114,7 @@ At what time do they meet?"""
 print(f"\nChain-of-Thought:\n{response_cot}")
 ```
 
-```
+```         
 Direct: 09:45
 
 Chain-of-Thought:
@@ -136,7 +136,7 @@ Final answer: The trains meet at 10:00.
 Simply appending **"Let's think step by step"** to a prompt is often sufficient to trigger chain-of-thought reasoning, even without explicit step-by-step examples. This is called *zero-shot CoT* and was demonstrated by Kojima et al. (2022).
 :::
 
-### 8.1.5. System Prompts and Persona
+### 10.1.5. System Prompts and Persona
 
 The **system prompt** sets the model's overall behavior, role, constraints, and output style for the entire conversation. It is processed before any user message and acts as a persistent instruction layer.
 
@@ -162,7 +162,7 @@ Never use jargon without immediately explaining it.""",
 print("Friendly tutor:\n", tutor_response)
 ```
 
-```
+```         
 Academic:
  Word embeddings are dense, low-dimensional vector representations of lexical
  units, derived through the application of neural language models to large
@@ -182,7 +182,7 @@ Friendly tutor:
  mean and how they relate to each other.
 ```
 
-### 8.1.6. Structured Output
+### 10.1.6. Structured Output
 
 For programmatic use, instruct the model to return structured data (JSON, CSV, Markdown tables) rather than free text.
 
@@ -206,7 +206,7 @@ for key, value in job.items():
     print(f"  {key:<20} {value}")
 ```
 
-```
+```         
   job_title            Senior Machine Learning Engineer
   company              DataFlow Inc.
   location             Warsaw (hybrid)
@@ -215,17 +215,17 @@ for key, value in job.items():
   experience_years     5
 ```
 
-### 8.1.7. Prompt Engineering Best Practices
+### 10.1.7. Prompt Engineering Best Practices
 
-| Practice | Why it matters |
-|---|---|
-| Be explicit about the output format | Models default to prose; specify JSON, list, table, etc. |
-| Give a role / persona | Anchors the model's style and domain knowledge |
-| Separate instructions from content | Use delimiters (`---`, `"""`) to avoid ambiguity |
-| Ask for reasoning before the answer | CoT improves accuracy on complex tasks |
-| Iterate and version your prompts | Small wording changes can shift quality significantly |
-| Test edge cases | Check empty input, very long input, adversarial phrasing |
-| Specify length | "In 2–3 sentences" prevents both truncation and verbosity |
+| Practice                            | Why it matters                                             |
+|-------------------------------------|------------------------------------------------------------|
+| Be explicit about the output format | Models default to prose; specify JSON, list, table, etc.   |
+| Give a role / persona               | Anchors the model's style and domain knowledge             |
+| Separate instructions from content  | Use delimiters (`---`, `"""`) to avoid ambiguity           |
+| Ask for reasoning before the answer | CoT improves accuracy on complex tasks                     |
+| Iterate and version your prompts    | Small wording changes can shift quality significantly      |
+| Test edge cases                     | Check empty input, very long input, adversarial phrasing   |
+| Specify length                      | "In 2--3 sentences" prevents both truncation and verbosity |
 
 ``` python
 # Template demonstrating all best practices together
@@ -254,7 +254,7 @@ for k, v in result.items():
     print(f"  {k:<18} {v}")
 ```
 
-```
+```         
   main_topic         Federal Reserve interest rate decision
   sentiment          negative
   key_entities       ['Federal Reserve', 'bond yields', '2007']

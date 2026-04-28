@@ -1,0 +1,89 @@
+---
+title: "8.3. Diagnostics, Regularisation & Pre-trained Embeddings"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 8.3.1. Diagnosing Training Problems
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Loss not decreasing | LR too low, bad initialisation | Increase LR, check data pipeline |
+| Loss diverges / NaN | LR too high, exploding gradients | Lower LR, add gradient clipping |
+| Train acc high, val acc low | Overfitting | More dropout, weight decay, less capacity, more data |
+| Train acc low, val acc similar | Underfitting | Larger model, more epochs, lower dropout |
+| Very slow convergence | LR too low, large dataset | Use Adam, LR warmup, larger batch |
+| Gradient norms exploding in RNN | Long sequences | Gradient clipping (`clip_grad_norm_`) |
+
+---
+
+### 8.3.2. Regularisation Techniques
+
+**Dropout** (Srivastava et al., 2014) randomly zeroes a fraction $p$ of activations during each forward pass at training time. At inference, all activations are used but scaled by $(1-p)$. This prevents co-adaptation of neurons and acts as an implicit ensemble.
+
+**Weight decay (L2 regularisation)** adds a penalty $\lambda \|\theta\|_2^2$ to the loss, pushing weights toward zero and reducing model complexity.
+
+**Early stopping** monitors validation loss and stops training when it starts increasing, preventing overfitting without modifying the architecture.
+
+```python
+# Early stopping (manual implementation)
+best_val_loss = float("inf")
+patience_counter = 0
+PATIENCE = 5
+
+for epoch in range(1, EPOCHS + 1):
+    tr_loss, tr_acc = train_epoch(model, train_loader, optimiser, criterion, device)
+    va_loss, va_acc = evaluate(model, val_loader, criterion, device)
+
+    if va_loss < best_val_loss:
+        best_val_loss = va_loss
+        torch.save(model.state_dict(), "best_model.pt")
+        patience_counter = 0
+    else:
+        patience_counter += 1
+        if patience_counter >= PATIENCE:
+            print(f"Early stopping at epoch {epoch}")
+            break
+
+model.load_state_dict(torch.load("best_model.pt"))
+```
+
+---
+
+### 8.3.3. Using Pre-trained Embeddings
+
+Instead of learning embeddings from scratch, you can initialise the embedding layer with pre-trained vectors (GloVe, FastText, Word2Vec):
+
+```python
+import gensim.downloader as api
+
+# Load GloVe vectors
+glove = api.load("glove-wiki-gigaword-100")   # 100-dim
+
+embed_matrix = torch.zeros(VOCAB_SIZE, 100)
+for word, idx in vocab.items():
+    if word in glove:
+        embed_matrix[idx] = torch.tensor(glove[word])
+
+model.embedding.weight.data.copy_(embed_matrix)
+# Optionally freeze the embedding layer for first few epochs:
+model.embedding.weight.requires_grad = False
+```
+
+Pre-trained embeddings typically improve accuracy significantly on small datasets.
+
+---
+
+### 8.3.4. LSTM vs. Transformer — When to Use Which
+
+| Criterion | LSTM | Transformer (BERT-style) |
+|---|---|---|
+| **Data size** | Works on small datasets | Needs large data (or pre-training) |
+| **Sequence length** | Struggles beyond ~500 tokens | Handles up to 512–8192 tokens |
+| **Speed (inference)** | Fast on CPU, sequential | Needs GPU, parallelisable |
+| **Long-range dependencies** | Good (with attention: excellent) | Excellent |
+| **Interpretability** | Moderate | Attention maps, probing |
+| **Customisation** | Easy to modify | Requires understanding the architecture |
+
+LSTMs remain a strong baseline and are still used in production systems where latency or hardware constraints matter.

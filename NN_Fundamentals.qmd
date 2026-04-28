@@ -1,0 +1,86 @@
+---
+title: "8.1. Neural Network Fundamentals & Hyperparameters"
+author: Kamil Filipek
+format: html
+editor: visual
+---
+
+### 8.1.1. Why Train Your Own Network?
+
+Pre-trained models like BERT and GPT are powerful, but there are good reasons to train a neural network from scratch (or fine-tune a small custom architecture):
+
+- **Domain-specific data** with vocabulary and patterns not well covered by general corpora.
+- **Computational constraints** — a small custom model can run on a CPU or mobile device.
+- **Educational purposes** — understanding backpropagation and weight updates by building the training loop yourself.
+- **Specialised tasks** — sequence labelling, anomaly detection in logs, character-level generation.
+
+This chapter focuses on **LSTM (Long Short-Term Memory)** networks — the most successful recurrent architecture before transformers — and covers all the parameters you need to tune to train one well.
+
+---
+
+### 8.1.2. Neural Network Fundamentals
+
+A neural network is a composition of *layers*, each performing a linear transformation followed by a non-linear *activation function*:
+
+$$
+\mathbf{h}^{(l)} = \sigma\!\left(W^{(l)} \mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}\right)
+$$
+
+where $W^{(l)}$ are learnable weights, $\mathbf{b}^{(l)}$ is a bias vector, and $\sigma$ is the activation.
+
+#### Activation Functions
+
+| Function | Formula | Common use |
+|---|---|---|
+| **ReLU** | $\max(0, x)$ | Hidden layers (default choice) |
+| **Sigmoid** | $1/(1+e^{-x})$ | Binary output layer |
+| **Softmax** | $e^{x_i}/\sum e^{x_j}$ | Multi-class output layer |
+| **Tanh** | $(e^x - e^{-x})/(e^x + e^{-x})$ | RNN hidden states, range $[-1,1]$ |
+| **GELU** | $x \cdot \Phi(x)$ | Transformers (BERT, GPT) |
+
+::: callout-note
+#### Dying ReLU problem
+If a neuron's input is always negative, the gradient through ReLU is zero — the neuron permanently stops learning. Mitigations: **Leaky ReLU** ($\alpha x$ for $x < 0$, typically $\alpha = 0.01$), **ELU**, or weight initialisation with care.
+:::
+
+---
+
+### 8.1.3. Key Hyperparameters Explained
+
+Training a neural network involves choosing a large number of hyperparameters. Below is a structured reference.
+
+#### Architecture parameters
+
+| Parameter | What it controls | Typical range |
+|---|---|---|
+| **Number of layers** (depth) | Model capacity; deeper = more abstract features | 1–6 for RNNs; 12–96 for transformers |
+| **Hidden size** (width) | Neurons per layer | 64–1024 |
+| **Embedding dim** | Dimensionality of token vectors | 50–768 |
+| **Dropout rate** | Fraction of activations randomly zeroed during training (regularisation) | 0.1–0.5 |
+| **Bidirectional** | Whether LSTM reads forward *and* backward | True for classification, False for generation |
+
+#### Training parameters
+
+| Parameter | What it controls | Typical starting value |
+|---|---|---|
+| **Learning rate (LR)** | Step size for gradient descent | 1e-3 (Adam), 1e-2 (SGD) |
+| **Batch size** | Samples processed per gradient update | 32–256 |
+| **Epochs** | Number of full passes over the training set | 5–50 |
+| **LR scheduler** | How the learning rate changes over time | ReduceLROnPlateau, CosineAnnealing |
+| **Gradient clipping** | Prevents exploding gradients in RNNs | `max_norm=1.0` or `5.0` |
+| **Weight decay (L2)** | Penalises large weights (regularisation) | 1e-5 – 1e-4 |
+
+#### Optimiser choice
+
+| Optimiser | When to use |
+|---|---|
+| **Adam** | Default choice; adapts per-parameter LR |
+| **AdamW** | Adam + decoupled weight decay; better for transformers |
+| **SGD + momentum** | When you want tighter control; often best with a good LR schedule |
+| **RMSProp** | RNNs, non-stationary problems |
+
+::: callout-tip
+#### The learning rate is the most important hyperparameter
+
+Too high → loss diverges or oscillates. Too low → training is very slow and may get stuck. A **learning rate finder** (available in PyTorch Lightning and fast.ai) runs a short sweep over candidate LRs and plots loss — the optimal LR sits just before the loss starts rising steeply.
+:::
