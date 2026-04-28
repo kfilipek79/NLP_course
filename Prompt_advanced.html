@@ -8,7 +8,7 @@
 
 <meta name="author" content="Kamil Filipek">
 
-<title>2.3. Ambiguity and Variability in Natural Language – Natural Language Processing - Part I</title>
+<title>10.3. Advanced Prompting Techniques – Natural Language Processing - Part I</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -24,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -34,8 +69,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./Lang_machine.html" rel="next">
-<link href="./Approaches_language..html" rel="prev">
+<link href="./Agents.html" rel="next">
+<link href="./Prompt_CoT.html" rel="prev">
 <link href="./assets/umcs-favicon.ico" rel="icon">
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -89,7 +124,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Levels_analysis.html"><strong>2. Theoretical Foundations</strong></a></li><li class="breadcrumb-item"><a href="./Amb_var.html"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Prompt_engineering.html"><strong>10. Prompt Engineering</strong></a></li><li class="breadcrumb-item"><a href="./Prompt_advanced.html"><span class="chapter-title">10.3. Advanced Prompting Techniques</span></a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -170,7 +205,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -423,7 +458,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./Prompt_advanced.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.3. Advanced Prompting Techniques</span></a>
+  <a href="./Prompt_advanced.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">10.3. Advanced Prompting Techniques</span></a>
   </div>
 </li>
       </ul>
@@ -485,18 +520,23 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">MORE DETAILS</h2>
    
   <ul>
-  <li><a href="#lexical-ambiguity" id="toc-lexical-ambiguity" class="nav-link active" data-scroll-target="#lexical-ambiguity">2.3.1. Lexical Ambiguity</a></li>
-  <li><a href="#syntactic-ambiguity" id="toc-syntactic-ambiguity" class="nav-link" data-scroll-target="#syntactic-ambiguity">2.3.2. Syntactic Ambiguity</a></li>
-  <li><a href="#semantic-and-pragmatic-ambiguities" id="toc-semantic-and-pragmatic-ambiguities" class="nav-link" data-scroll-target="#semantic-and-pragmatic-ambiguities">2.3.3. Semantic and Pragmatic Ambiguities</a></li>
+  <li><a href="#self-consistency" id="toc-self-consistency" class="nav-link active" data-scroll-target="#self-consistency">10.3.1. Self-Consistency</a></li>
+  <li><a href="#least-to-most-prompting" id="toc-least-to-most-prompting" class="nav-link" data-scroll-target="#least-to-most-prompting">10.3.2. Least-to-Most Prompting</a></li>
+  <li><a href="#plan-and-solve-prompting" id="toc-plan-and-solve-prompting" class="nav-link" data-scroll-target="#plan-and-solve-prompting">10.3.3. Plan-and-Solve Prompting</a></li>
+  <li><a href="#self-refine" id="toc-self-refine" class="nav-link" data-scroll-target="#self-refine">10.3.4. Self-Refine</a></li>
+  <li><a href="#chain-of-verification" id="toc-chain-of-verification" class="nav-link" data-scroll-target="#chain-of-verification">10.3.5. Chain of Verification</a></li>
+  <li><a href="#rephrase-and-respond" id="toc-rephrase-and-respond" class="nav-link" data-scroll-target="#rephrase-and-respond">10.3.6. Rephrase and Respond</a></li>
+  <li><a href="#emotion-prompting" id="toc-emotion-prompting" class="nav-link" data-scroll-target="#emotion-prompting">10.3.7. Emotion Prompting</a></li>
+  <li><a href="#choosing-the-right-advanced-technique" id="toc-choosing-the-right-advanced-technique" class="nav-link" data-scroll-target="#choosing-the-right-advanced-technique">10.3.8. Choosing the Right Advanced Technique</a></li>
   </ul>
 </nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Levels_analysis.html"><strong>2. Theoretical Foundations</strong></a></li><li class="breadcrumb-item"><a href="./Amb_var.html"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Prompt_engineering.html"><strong>10. Prompt Engineering</strong></a></li><li class="breadcrumb-item"><a href="./Prompt_advanced.html"><span class="chapter-title">10.3. Advanced Prompting Techniques</span></a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></h1>
+<h1 class="title"><span class="chapter-title">10.3. Advanced Prompting Techniques</span></h1>
 </div>
 
 
@@ -519,109 +559,375 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="lexical-ambiguity" class="level3">
-<h3 class="anchored" data-anchor-id="lexical-ambiguity">2.3.1. Lexical Ambiguity</h3>
-<p>Lexical ambiguity arises when a <strong>single word has more than one possible meaning</strong>, leading to uncertainty in interpretation depending on the context in which it appears. For example, the mentioned before&nbsp;<em>bank</em>&nbsp;may refer either to a financial institution or to the side of a river, and only surrounding linguistic or situational cues allow a listener or reader to determine the intended sense. This phenomenon is central to semantics and pragmatics, as it highlights the dependency of meaning on disambiguation processes. In natural language processing (NLP), lexical ambiguity represents a persistent challenge, since <strong>computational systems must accurately infer which sense of a word applies in a given text to avoid misinterpretation and error propagation in downstream tasks such as translation or sentiment analysis</strong>.</p>
-<p>From a cognitive and linguistic perspective, lexical ambiguity is not merely an obstacle but also a resource of natural languages, enriching communication through metaphor, humor, and wordplay.</p>
-<ul>
-<li><p><strong>Human speakers resolve ambiguity by drawing on contextual knowledge, shared conventions, and probabilistic expectations about word usage</strong>.</p></li>
-<li><p><strong>Computational approaches attempt to mimic these mechanisms using techniques such as word sense disambiguation, distributional semantics, and large-scale pretrained language models (Navigli, 2009; Jurafsky &amp; Martin, 2023)</strong>.</p></li>
-</ul>
-<p>Understanding and addressing lexical ambiguity is therefore not only a theoretical concern for linguists but also a practical requirement for advancing human–machine communication.</p>
-<p>👉 <strong>Large language models (LLMs) and modern NLP pipelines attempt to address lexical ambiguity through <u>context-sensitive embeddings (e.g., BERT, GPT)</u>, which represent words not in isolation but as dependent on their surrounding words</strong>. This approach has markedly improved performance in tasks such as machine translation and question answering, though challenges remain in domains with low resource data, figurative language, or domain-specific jargon (Pilehvar &amp; Camacho-Collados, 2019). Real-world examples show that resolving lexical ambiguity is essential not only for linguistic accuracy but also for building trustworthy AI systems in healthcare, law, and customer service, where misinterpretation may carry material consequences.</p>
+<section id="self-consistency" class="level3">
+<h3 class="anchored" data-anchor-id="self-consistency">10.3.1. Self-Consistency</h3>
+<p><strong>Self-Consistency</strong> (Wang et al., 2022) runs the same prompt multiple times with higher temperature (more randomness) and takes the majority-vote answer. It treats the model’s reasoning paths as an ensemble — diverse paths that converge on the same answer are more likely to be correct.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">import</span> anthropic</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="im">from</span> collections <span class="im">import</span> Counter</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a>client <span class="op">=</span> anthropic.Anthropic()</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">def</span> sample_answer(question: <span class="bu">str</span>, temperature: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.8</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    msg <span class="op">=</span> client.messages.create(</span>
+<span id="cb1-8"><a href="#cb1-8"></a>        model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,</span>
+<span id="cb1-9"><a href="#cb1-9"></a>        max_tokens<span class="op">=</span><span class="dv">400</span>,</span>
+<span id="cb1-10"><a href="#cb1-10"></a>        system<span class="op">=</span><span class="st">"Solve the problem step by step and state only the final answer on the last line as 'Answer: &lt;value&gt;'."</span>,</span>
+<span id="cb1-11"><a href="#cb1-11"></a>        messages<span class="op">=</span>[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}],</span>
+<span id="cb1-12"><a href="#cb1-12"></a>    )</span>
+<span id="cb1-13"><a href="#cb1-13"></a>    text <span class="op">=</span> msg.content[<span class="dv">0</span>].text</span>
+<span id="cb1-14"><a href="#cb1-14"></a>    <span class="cf">for</span> line <span class="kw">in</span> <span class="bu">reversed</span>(text.splitlines()):</span>
+<span id="cb1-15"><a href="#cb1-15"></a>        <span class="cf">if</span> line.strip().lower().startswith(<span class="st">"answer:"</span>):</span>
+<span id="cb1-16"><a href="#cb1-16"></a>            <span class="cf">return</span> line.split(<span class="st">":"</span>, <span class="dv">1</span>)[<span class="dv">1</span>].strip()</span>
+<span id="cb1-17"><a href="#cb1-17"></a>    <span class="cf">return</span> text.strip().splitlines()[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb1-18"><a href="#cb1-18"></a></span>
+<span id="cb1-19"><a href="#cb1-19"></a></span>
+<span id="cb1-20"><a href="#cb1-20"></a>question <span class="op">=</span> <span class="st">"""A bakery makes 240 loaves on Monday, 180 on Tuesday,</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="st">and 300 on Wednesday. They sell 85</span><span class="sc">% o</span><span class="st">f total production.</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="st">How many loaves remain unsold?"""</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a></span>
+<span id="cb1-24"><a href="#cb1-24"></a>n_samples <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a>answers <span class="op">=</span> [sample_answer(question) <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(n_samples)]</span>
+<span id="cb1-26"><a href="#cb1-26"></a>majority <span class="op">=</span> Counter(answers).most_common(<span class="dv">1</span>)[<span class="dv">0</span>]</span>
+<span id="cb1-27"><a href="#cb1-27"></a></span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="bu">print</span>(<span class="ss">f"Individual answers: </span><span class="sc">{</span>answers<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-29"><a href="#cb1-29"></a><span class="bu">print</span>(<span class="ss">f"Majority vote:      </span><span class="sc">{</span>majority[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">  (appeared </span><span class="sc">{</span>majority[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>n_samples<span class="sc">}</span><span class="ss"> times)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Individual answers: ['108 loaves', '108 loaves', '108', '108 loaves', '109 loaves']
+Majority vote:      108 loaves  (appeared 4/5 times)</code></pre>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Self-consistency improves accuracy by 5–20% on arithmetic and commonsense reasoning benchmarks. The tradeoff is higher cost (N × tokens). Use it when accuracy matters more than latency or cost.</p>
+</div>
+</div>
+<hr>
 </section>
-<section id="syntactic-ambiguity" class="level3">
-<h3 class="anchored" data-anchor-id="syntactic-ambiguity">2.3.2. Syntactic Ambiguity</h3>
-<p>Syntactic ambiguity occurs when a <strong>sentence or phrase can be parsed in more than one way due to its grammatical structure</strong>, leading to multiple possible interpretations.</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Example</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong><em>I saw the man with the telescope</em></strong></td>
-</tr>
-<tr class="even">
-<td>The speaker used a telescope to see the man</td>
-</tr>
-<tr class="odd">
-<td>The man being observed had a telescope</td>
-</tr>
-</tbody>
-</table>
-<p>This type of ambiguity arises from structural features such as prepositional phrase attachment, scope of modifiers, or coordination, and it is a central problem in syntax, semantics, and psycholinguistics. <strong>From a linguistic perspective, syntactic ambiguity demonstrates how surface forms can underdetermine meaning, requiring additional contextual or pragmatic information for proper interpretation.</strong></p>
-<p>In computational linguistics and NLP, syntactic ambiguity poses <strong>serious challenges</strong> for tasks like parsing, machine translation, and question answering… A parser that assigns multiple valid syntactic trees to a single sentence must employ disambiguation strategies to select the most plausible interpretation.</p>
-<p>Traditional approaches rely on <strong>i. probabilistic context-free grammars (PCFGs)</strong> or <strong>ii. dependency parsing with statistical models</strong>, while modern systems increasingly use deep learning architectures that incorporate <strong>iii. contextual embeddings</strong> to guide syntactic choices (Kübler, McDonald, &amp; Nivre, 2009; Jurafsky &amp; Martin, 2023). Errors in resolving syntactic ambiguity can propagate across applications, leading to mistranslations, incoherent responses in dialogue systems, or inaccurate information extraction.</p>
-<p>Addressing syntactic ambiguity is therefore critical for both theoretical linguistics and practical NLP systems, especially in domains where precision is essential, such as legal or medical texts.</p>
+<section id="least-to-most-prompting" class="level3">
+<h3 class="anchored" data-anchor-id="least-to-most-prompting">10.3.2. Least-to-Most Prompting</h3>
+<p><strong>Least-to-Most prompting</strong> (Zhou et al., 2022) decomposes a hard problem into an ordered sequence of simpler sub-problems, solving them from easiest to hardest. Each solution is appended to the context, so later steps can build on earlier ones.</p>
+<p>It explicitly addresses the failure mode of direct CoT: sometimes the model needs to solve simpler sub-cases before it can generalize.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>DECOMPOSE_PROMPT <span class="op">=</span> <span class="st">"""To solve this problem, first list the sub-problems</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="st">that need to be solved in order from simplest to most complex.</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="st">Then solve each sub-problem in sequence.</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="st">Problem: </span><span class="sc">{problem}</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="st">Sub-problems to solve (ordered simplest → complex):"""</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a></span>
+<span id="cb3-9"><a href="#cb3-9"></a>SOLVE_PROMPT <span class="op">=</span> <span class="st">"""</span><span class="sc">{decomposition}</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a></span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="st">Now solve each sub-problem in order, using previous answers as context:"""</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a></span>
+<span id="cb3-13"><a href="#cb3-13"></a>problem <span class="op">=</span> <span class="st">"""An e-commerce company has two warehouses: Warsaw (capacity 5000 units)</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a><span class="st">and Kraków (capacity 3000 units). Warsaw is 60</span><span class="sc">% f</span><span class="st">ull; Kraków is 40</span><span class="sc">% f</span><span class="st">ull.</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a><span class="st">A new shipment of 2500 units arrives. They fill Warsaw first, then overflow to Kraków.</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a><span class="st">After the shipment, what percentage of total capacity is used across both warehouses?"""</span></span>
+<span id="cb3-17"><a href="#cb3-17"></a></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="kw">def</span> prompt(system: <span class="bu">str</span>, user: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb3-19"><a href="#cb3-19"></a>    msg <span class="op">=</span> client.messages.create(</span>
+<span id="cb3-20"><a href="#cb3-20"></a>        model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,</span>
+<span id="cb3-21"><a href="#cb3-21"></a>        max_tokens<span class="op">=</span><span class="dv">600</span>,</span>
+<span id="cb3-22"><a href="#cb3-22"></a>        system<span class="op">=</span>system,</span>
+<span id="cb3-23"><a href="#cb3-23"></a>        messages<span class="op">=</span>[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: user}]</span>
+<span id="cb3-24"><a href="#cb3-24"></a>    )</span>
+<span id="cb3-25"><a href="#cb3-25"></a>    <span class="cf">return</span> msg.content[<span class="dv">0</span>].text</span>
+<span id="cb3-26"><a href="#cb3-26"></a></span>
+<span id="cb3-27"><a href="#cb3-27"></a><span class="co"># Step 1: Decompose</span></span>
+<span id="cb3-28"><a href="#cb3-28"></a>decomposition <span class="op">=</span> prompt(</span>
+<span id="cb3-29"><a href="#cb3-29"></a>    <span class="st">"You are a precise problem-solving assistant."</span>,</span>
+<span id="cb3-30"><a href="#cb3-30"></a>    DECOMPOSE_PROMPT.<span class="bu">format</span>(problem<span class="op">=</span>problem)</span>
+<span id="cb3-31"><a href="#cb3-31"></a>)</span>
+<span id="cb3-32"><a href="#cb3-32"></a><span class="bu">print</span>(<span class="st">"Decomposition:</span><span class="ch">\n</span><span class="st">"</span>, decomposition)</span>
+<span id="cb3-33"><a href="#cb3-33"></a></span>
+<span id="cb3-34"><a href="#cb3-34"></a><span class="co"># Step 2: Solve sequentially</span></span>
+<span id="cb3-35"><a href="#cb3-35"></a>solution <span class="op">=</span> prompt(</span>
+<span id="cb3-36"><a href="#cb3-36"></a>    <span class="st">"You are a precise problem-solving assistant."</span>,</span>
+<span id="cb3-37"><a href="#cb3-37"></a>    SOLVE_PROMPT.<span class="bu">format</span>(decomposition<span class="op">=</span>decomposition)</span>
+<span id="cb3-38"><a href="#cb3-38"></a>)</span>
+<span id="cb3-39"><a href="#cb3-39"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Solution:</span><span class="ch">\n</span><span class="st">"</span>, solution)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Decomposition:
+1. Calculate current units in Warsaw (60% of 5000)
+2. Calculate current units in Kraków  (40% of 3000)
+3. Calculate Warsaw's remaining space
+4. Determine how many units Warsaw can absorb from the shipment
+5. Calculate overflow to Kraków
+6. Calculate total units stored after shipment
+7. Calculate total capacity
+8. Compute the final percentage
+
+Solution:
+1. Warsaw current: 0.60 × 5000 = 3000 units
+2. Kraków current:  0.40 × 3000 = 1200 units
+3. Warsaw remaining: 5000 − 3000 = 2000 units
+4. Warsaw absorbs:  min(2500, 2000) = 2000 units → now full (5000)
+5. Overflow to Kraków: 2500 − 2000 = 500 units → Kraków: 1200 + 500 = 1700 units
+6. Total stored: 5000 + 1700 = 6700 units
+7. Total capacity: 5000 + 3000 = 8000 units
+8. Percentage used: 6700 / 8000 = 83.75%
+
+Final Answer: 83.75% of total capacity is used.</code></pre>
+<hr>
 </section>
-<section id="semantic-and-pragmatic-ambiguities" class="level3">
-<h3 class="anchored" data-anchor-id="semantic-and-pragmatic-ambiguities">2.3.3. Semantic and Pragmatic Ambiguities</h3>
-<p>Semantic ambiguity arises when a <strong>sentence or phrase allows multiple interpretations because the meanings of its words or combinations of words can be understood in more than one way</strong>. Unlike lexical ambiguity, which is tied to individual words, semantic ambiguity often results from broader compositional meaning. For instance,&nbsp;<em>Visiting relatives can be boring</em>&nbsp;may mean that the act of visiting relatives is boring, or that relatives who are visiting are boring. Such ambiguities highlight the complexity of semantic composition, where the interaction of words within a sentence leads to interpretive uncertainty (Pustejovsky, 1995).</p>
-<p><strong>In NLP, semantic ambiguity is particularly problematic for tasks such as semantic role labeling, textual entailment, and machine translation, where the correct interpretation depends on grasping the intended meaning of entire propositions.</strong></p>
-<p>Pragmatic ambiguity occurs when a <strong>sentence has a clear literal meaning, but its intended interpretation varies depending on context, speaker intention, or shared knowledge</strong>. For example, the utterance&nbsp;<em>Can you open the window?</em>&nbsp;is literally a question about ability, but pragmatically it is usually interpreted as a polite request. Similarly, irony, metaphor, or underspecified reference (e.g.,&nbsp;<em>They said it will rain tomorrow</em>—who are&nbsp;<em>they</em>?) introduce pragmatic ambiguity, which requires background knowledge and inference for resolution (Levinson, 1983).</p>
-<p>In computational systems, pragmatic ambiguity presents challenges for dialogue modeling, sentiment detection, and human–computer interaction, since models must go beyond syntax and semantics to incorporate contextual, cultural, and situational information. Recent work with large language models demonstrates progress in handling pragmatic cues, but robust resolution remains a significant open problem in AI.</p>
+<section id="plan-and-solve-prompting" class="level3">
+<h3 class="anchored" data-anchor-id="plan-and-solve-prompting">10.3.3. Plan-and-Solve Prompting</h3>
+<p><strong>Plan-and-Solve</strong> (Wang et al., 2023) improves on Zero-Shot CoT by adding an explicit planning step: the model first devises a plan, then executes it. This reduces calculation errors caused by rushing straight into computation.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>PAS_PROMPT <span class="op">=</span> <span class="st">"""Let's first devise a plan to solve this problem,</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="st">then execute the plan step by step.</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="st">Problem: </span><span class="sc">{problem}</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="st">Plan:"""</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a></span>
+<span id="cb5-8"><a href="#cb5-8"></a>problem <span class="op">=</span> <span class="st">"""A data science team collects 3000 survey responses.</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="st">- 45% are from Europe, the rest from Asia.</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="st">- Among European respondents, 60% prefer Python; the rest prefer R.</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="st">- Among Asian respondents, 70% prefer Python; the rest prefer R.</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a><span class="st">How many total respondents prefer R?"""</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a></span>
+<span id="cb5-14"><a href="#cb5-14"></a>full_solution <span class="op">=</span> prompt(</span>
+<span id="cb5-15"><a href="#cb5-15"></a>    <span class="st">"You are a careful, methodical analyst."</span>,</span>
+<span id="cb5-16"><a href="#cb5-16"></a>    PAS_PROMPT.<span class="bu">format</span>(problem<span class="op">=</span>problem)</span>
+<span id="cb5-17"><a href="#cb5-17"></a>)</span>
+<span id="cb5-18"><a href="#cb5-18"></a><span class="bu">print</span>(full_solution)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Plan:
+1. Calculate number of European respondents.
+2. Calculate number of Asian respondents.
+3. Calculate R-preferring Europeans.
+4. Calculate R-preferring Asians.
+5. Sum to get total R-preferring respondents.
+
+Execution:
+1. European: 3000 × 0.45 = 1350
+2. Asian:    3000 × 0.55 = 1650
+3. R-Europe: 1350 × 0.40 = 540
+4. R-Asia:   1650 × 0.30 = 495
+5. Total R:  540 + 495   = 1035
+
+Answer: 1035 respondents prefer R.</code></pre>
+<hr>
+</section>
+<section id="self-refine" class="level3">
+<h3 class="anchored" data-anchor-id="self-refine">10.3.4. Self-Refine</h3>
+<p><strong>Self-Refine</strong> (Madaan et al., 2023) implements an iterative improvement loop without additional training data: the model generates an answer, critiques it, then revises it. Repeat until quality converges.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">def</span> self_refine(task: <span class="bu">str</span>, n_rounds: <span class="bu">int</span> <span class="op">=</span> <span class="dv">2</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a>    GENERATE <span class="op">=</span> <span class="st">"Complete the following task as well as you can."</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>    CRITIQUE <span class="op">=</span> <span class="st">"""Review the following output for the task below.</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="st">Identify specific weaknesses: missing information, unclear language, logical gaps, or inaccuracies.</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="st">Be concrete — list at least 3 specific issues.</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="st">Task: </span><span class="sc">{task}</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="st">Output: </span><span class="sc">{output}</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="st">Issues:"""</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>    REFINE <span class="op">=</span> <span class="st">"""Improve the output based on the critique.</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="st">Fix all identified issues while preserving correct content.</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a></span>
+<span id="cb7-15"><a href="#cb7-15"></a><span class="st">Task: </span><span class="sc">{task}</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a><span class="st">Original output: </span><span class="sc">{output}</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a><span class="st">Critique: </span><span class="sc">{critique}</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a></span>
+<span id="cb7-19"><a href="#cb7-19"></a><span class="st">Improved output:"""</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a></span>
+<span id="cb7-21"><a href="#cb7-21"></a>    output <span class="op">=</span> prompt(GENERATE, task)</span>
+<span id="cb7-22"><a href="#cb7-22"></a>    <span class="bu">print</span>(<span class="ss">f"Initial output:</span><span class="ch">\n</span><span class="sc">{</span>output<span class="sc">}</span><span class="ch">\n</span><span class="sc">{</span><span class="st">'─'</span><span class="op">*</span><span class="dv">60</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-23"><a href="#cb7-23"></a></span>
+<span id="cb7-24"><a href="#cb7-24"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_rounds):</span>
+<span id="cb7-25"><a href="#cb7-25"></a>        critique <span class="op">=</span> prompt(<span class="st">"You are a critical editor."</span>, CRITIQUE.<span class="bu">format</span>(task<span class="op">=</span>task, output<span class="op">=</span>output))</span>
+<span id="cb7-26"><a href="#cb7-26"></a>        <span class="bu">print</span>(<span class="ss">f"Round </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss"> critique:</span><span class="ch">\n</span><span class="sc">{</span>critique<span class="sc">}</span><span class="ch">\n</span><span class="sc">{</span><span class="st">'─'</span><span class="op">*</span><span class="dv">60</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-27"><a href="#cb7-27"></a>        output <span class="op">=</span> prompt(<span class="st">"You are a skilled writer."</span>, REFINE.<span class="bu">format</span>(task<span class="op">=</span>task, output<span class="op">=</span>output, critique<span class="op">=</span>critique))</span>
+<span id="cb7-28"><a href="#cb7-28"></a>        <span class="bu">print</span>(<span class="ss">f"Round </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss"> refined output:</span><span class="ch">\n</span><span class="sc">{</span>output<span class="sc">}</span><span class="ch">\n</span><span class="sc">{</span><span class="st">'─'</span><span class="op">*</span><span class="dv">60</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-29"><a href="#cb7-29"></a></span>
+<span id="cb7-30"><a href="#cb7-30"></a>    <span class="cf">return</span> output</span>
+<span id="cb7-31"><a href="#cb7-31"></a></span>
+<span id="cb7-32"><a href="#cb7-32"></a></span>
+<span id="cb7-33"><a href="#cb7-33"></a>task <span class="op">=</span> <span class="st">"Write a 3-sentence explanation of transformer self-attention for a software engineer unfamiliar with ML."</span></span>
+<span id="cb7-34"><a href="#cb7-34"></a>final <span class="op">=</span> self_refine(task, n_rounds<span class="op">=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="chain-of-verification" class="level3">
+<h3 class="anchored" data-anchor-id="chain-of-verification">10.3.5. Chain of Verification</h3>
+<p><strong>Chain of Verification (CoVe)</strong> (Dhuliawala et al., 2023) combats hallucination by systematically verifying every factual claim in an initial response. The model generates verification questions, answers them independently, then produces a corrected final answer.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>COVE_TEMPLATE <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="st">Step 1 — Generate initial answer:</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="sc">{question}</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="st">Step 2 — Extract verifiable claims from the answer and create a verification question for each.</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="st">List them as:</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="st">  Claim: &lt;claim&gt;</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="st">  Verification Q: &lt;question that can confirm or deny this claim&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a></span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="st">Step 3 — Answer each verification question independently (without looking at the original answer).</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a></span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="st">Step 4 — Compare: does the original answer contradict any verification answers?</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="st">         If yes, revise.</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a></span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="st">Step 5 — Final verified answer:</span></span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="st">"""</span></span>
+<span id="cb8-17"><a href="#cb8-17"></a></span>
+<span id="cb8-18"><a href="#cb8-18"></a>question <span class="op">=</span> <span class="st">"Name three programming languages created before 1975 and state their primary domains."</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a></span>
+<span id="cb8-20"><a href="#cb8-20"></a>full_response <span class="op">=</span> prompt(</span>
+<span id="cb8-21"><a href="#cb8-21"></a>    <span class="st">"You are a careful, fact-checking assistant."</span>,</span>
+<span id="cb8-22"><a href="#cb8-22"></a>    COVE_TEMPLATE.<span class="bu">format</span>(question<span class="op">=</span>question)</span>
+<span id="cb8-23"><a href="#cb8-23"></a>)</span>
+<span id="cb8-24"><a href="#cb8-24"></a><span class="bu">print</span>(full_response)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Step 1 — Initial answer:
+FORTRAN (1957) — scientific computing; COBOL (1959) — business data processing;
+Lisp (1958) — AI and symbolic computation.
+
+Step 2 — Verifiable claims &amp; verification questions:
+  Claim: FORTRAN was created in 1957.
+  Verification Q: In what year was FORTRAN first released?
+
+  Claim: COBOL was created in 1959.
+  Verification Q: In what year was COBOL first released?
+
+  Claim: Lisp was created in 1958.
+  Verification Q: In what year was Lisp first released?
+
+Step 3 — Independent verification:
+  FORTRAN: released 1957 ✓
+  COBOL: released 1959 ✓
+  Lisp: first implemented 1958, paper by McCarthy 1960 — acceptable ✓
+
+Step 4 — No contradictions found.
+
+Step 5 — Final verified answer:
+FORTRAN (1957) — scientific and numerical computing;
+COBOL (1959) — business and administrative data processing;
+Lisp (1958) — artificial intelligence and symbolic computation.</code></pre>
+<hr>
+</section>
+<section id="rephrase-and-respond" class="level3">
+<h3 class="anchored" data-anchor-id="rephrase-and-respond">10.3.6. Rephrase and Respond</h3>
+<p><strong>Rephrase and Respond (RaR)</strong> (Deng et al., 2023) asks the model to rephrase the question in its own words before answering. This reduces misinterpretation and activates more relevant knowledge.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a>RAR_TEMPLATE <span class="op">=</span> <span class="st">"""First, rephrase the following question in your own words to make sure you understand it correctly.</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="st">Then answer the rephrased version.</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a></span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="st">Original question: </span><span class="sc">{question}</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="st">Rephrased question:</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="st">Answer:"""</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a></span>
+<span id="cb10-9"><a href="#cb10-9"></a>ambiguous_questions <span class="op">=</span> [</span>
+<span id="cb10-10"><a href="#cb10-10"></a>    <span class="st">"Can you recommend a good model for my task?"</span>,</span>
+<span id="cb10-11"><a href="#cb10-11"></a>    <span class="st">"What's the best way to handle long documents?"</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a>]</span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a><span class="cf">for</span> q <span class="kw">in</span> ambiguous_questions:</span>
+<span id="cb10-15"><a href="#cb10-15"></a>    <span class="bu">print</span>(<span class="ss">f"Original: </span><span class="sc">{</span>q<span class="sc">}</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb10-16"><a href="#cb10-16"></a>    response <span class="op">=</span> prompt(<span class="st">"You are an NLP expert."</span>, RAR_TEMPLATE.<span class="bu">format</span>(question<span class="op">=</span>q))</span>
+<span id="cb10-17"><a href="#cb10-17"></a>    <span class="bu">print</span>(response)</span>
+<span id="cb10-18"><a href="#cb10-18"></a>    <span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span> <span class="op">+</span> <span class="st">"─"</span><span class="op">*</span><span class="dv">70</span> <span class="op">+</span> <span class="st">"</span><span class="ch">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="emotion-prompting" class="level3">
+<h3 class="anchored" data-anchor-id="emotion-prompting">10.3.7. Emotion Prompting</h3>
+<p><strong>Emotion Prompting</strong> (Li et al., 2023) adds emotional stimuli to prompts — phrases that convey the importance of the task or appeal to the model’s care for quality. Empirically shown to improve performance on reasoning benchmarks.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a>EMOTION_VARIANTS <span class="op">=</span> {</span>
+<span id="cb11-2"><a href="#cb11-2"></a>    <span class="st">"neutral"</span>:   <span class="st">"Solve this problem."</span>,</span>
+<span id="cb11-3"><a href="#cb11-3"></a>    <span class="st">"importance"</span>:<span class="st">"This is very important to my career. Please solve this carefully."</span>,</span>
+<span id="cb11-4"><a href="#cb11-4"></a>    <span class="st">"confidence"</span>:<span class="st">"You are an expert. I believe in your ability to solve this correctly."</span>,</span>
+<span id="cb11-5"><a href="#cb11-5"></a>    <span class="st">"stakes"</span>:    <span class="st">"Lives depend on the accuracy of this calculation. Be precise."</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>}</span>
+<span id="cb11-7"><a href="#cb11-7"></a></span>
+<span id="cb11-8"><a href="#cb11-8"></a>problem <span class="op">=</span> <span class="st">"""A medication requires 0.05 mg/kg dose.</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a><span class="st">Patient weighs 68 kg. Tablets come in 1 mg each.</span></span>
+<span id="cb11-10"><a href="#cb11-10"></a><span class="st">How many tablets and what fraction of an additional tablet is needed?"""</span></span>
+<span id="cb11-11"><a href="#cb11-11"></a></span>
+<span id="cb11-12"><a href="#cb11-12"></a><span class="cf">for</span> style, prefix <span class="kw">in</span> EMOTION_VARIANTS.items():</span>
+<span id="cb11-13"><a href="#cb11-13"></a>    result <span class="op">=</span> prompt(</span>
+<span id="cb11-14"><a href="#cb11-14"></a>        <span class="st">"You are a precise clinical pharmacist."</span>,</span>
+<span id="cb11-15"><a href="#cb11-15"></a>        <span class="ss">f"</span><span class="sc">{</span>prefix<span class="sc">}</span><span class="ch">\n\n</span><span class="sc">{</span>problem<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb11-16"><a href="#cb11-16"></a>    )</span>
+<span id="cb11-17"><a href="#cb11-17"></a>    <span class="bu">print</span>(<span class="ss">f"[</span><span class="sc">{</span>style<span class="sc">}</span><span class="ss">] </span><span class="sc">{</span>result<span class="sc">}</span><span class="ch">\n</span><span class="sc">{</span><span class="st">'─'</span><span class="op">*</span><span class="dv">60</span><span class="sc">}</span><span class="ch">\n</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Emotion prompting effects are subtle and model-dependent. Use it as a supplementary technique rather than a primary strategy. The main benefit is ensuring the model treats the task with appropriate care rather than rushing to a brief answer.</p>
+</div>
+</div>
+<hr>
+</section>
+<section id="choosing-the-right-advanced-technique" class="level3">
+<h3 class="anchored" data-anchor-id="choosing-the-right-advanced-technique">10.3.8. Choosing the Right Advanced Technique</h3>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 7%">
-<col style="width: 24%">
-<col style="width: 24%">
-<col style="width: 9%">
-<col style="width: 34%">
+<col style="width: 50%">
+<col style="width: 50%">
 </colgroup>
 <thead>
 <tr class="header">
-<th><strong>Type of Ambiguity</strong></th>
-<th><strong>Source</strong></th>
-<th><strong>Example</strong></th>
-<th><strong>Linguistic Focus</strong></th>
-<th><strong>NLP Challenges &amp; Applications</strong></th>
+<th>Situation</th>
+<th>Recommended technique</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>Lexical</strong></td>
-<td>A single word has multiple meanings (polysemy or homonymy).</td>
-<td><em>Bank</em>&nbsp;= financial institution / river side</td>
-<td>Semantics, lexicon</td>
-<td>Word sense disambiguation, machine translation, sentiment analysis (e.g.,&nbsp;<em>critical</em>&nbsp;= negative vs.&nbsp;positive)</td>
+<td>High-stakes single answer (maths, facts)</td>
+<td>Self-Consistency</td>
 </tr>
 <tr class="even">
-<td><strong>Syntactic</strong></td>
-<td>Multiple possible sentence structures (different parses).</td>
-<td><em>I saw the man with the telescope</em>&nbsp;(who has the telescope?)</td>
-<td>Syntax, grammar</td>
-<td>Parsing, machine translation, information extraction; errors propagate to downstream tasks</td>
+<td>Complex problem with clear sub-tasks</td>
+<td>Least-to-Most or Plan-and-Solve</td>
 </tr>
 <tr class="odd">
-<td><strong>Semantic</strong></td>
-<td>Multiple interpretations of sentence meaning due to compositional semantics.</td>
-<td><em>Visiting relatives can be boring</em>&nbsp;(act of visiting vs.&nbsp;relatives themselves)</td>
-<td>Semantics, meaning composition</td>
-<td>Semantic role labeling, entailment, question answering; crucial in disambiguating propositions</td>
+<td>Output quality needs iterative improvement</td>
+<td>Self-Refine</td>
 </tr>
 <tr class="even">
-<td><strong>Pragmatic</strong></td>
-<td>Interpretation depends on context, speaker intention, or shared knowledge.</td>
-<td><em>Can you open the window?</em>&nbsp;(ability vs.&nbsp;polite request)</td>
-<td>Pragmatics, context, discourse</td>
-<td>Dialogue systems, sentiment detection, irony/metaphor understanding; essential in human–machine interaction</td>
+<td>Factual accuracy is critical</td>
+<td>Chain of Verification</td>
+</tr>
+<tr class="odd">
+<td>Ambiguous or complex question phrasing</td>
+<td>Rephrase and Respond</td>
+</tr>
+<tr class="even">
+<td>Precision and care matter (medical, legal)</td>
+<td>Emotion Prompting</td>
+</tr>
+<tr class="odd">
+<td>Multi-hop factual reasoning</td>
+<td>Self-Ask (Section 10.2)</td>
+</tr>
+<tr class="even">
+<td>Conceptual / principle-based reasoning</td>
+<td>Step-Back (Section 10.2)</td>
 </tr>
 </tbody>
 </table>
-<p><strong>References:</strong></p>
-<ul>
-<li><p>Navigli, R. (2009). Word sense disambiguation: A survey.&nbsp;<em>ACM Computing Surveys (CSUR)</em>, 41(2), 1–69.</p></li>
-<li><p>Jurafsky, D., &amp; Martin, J. H. (2023).&nbsp;<em>Speech and Language Processing</em>&nbsp;(3rd ed., draft).</p></li>
-<li><p>Pilehvar, M. T., &amp; Camacho-Collados, J. (2019). Embeddings in natural language processing: Theory and advances in word representations.&nbsp;<em>Synthesis Lectures on Human Language Technologies</em>, 12(2), 1–175.</p></li>
-<li><p>Kübler, S., McDonald, R., &amp; Nivre, J. (2009).&nbsp;<em>Dependency Parsing</em>. Morgan &amp; Claypool.</p></li>
-<li><p>Pustejovsky, J. (1995).&nbsp;<em>The Generative Lexicon</em>. MIT Press.</p></li>
-</ul>
-<!-- -->
-<ul>
-<li>Levinson, S. C. (1983).&nbsp;<em>Pragmatics</em>. Cambridge University Press.</li>
-</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a><span class="co"># Composing techniques: Self-Refine + CoVe for high-stakes outputs</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="kw">def</span> reliable_answer(question: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb12-4"><a href="#cb12-4"></a>    <span class="co"># Step 1: Self-Refine for quality</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>    draft <span class="op">=</span> prompt(<span class="st">"Answer thoroughly."</span>, question)</span>
+<span id="cb12-6"><a href="#cb12-6"></a>    critique <span class="op">=</span> prompt(<span class="st">"Critique for gaps and errors."</span>, <span class="ss">f"Task: </span><span class="sc">{</span>question<span class="sc">}</span><span class="ch">\n</span><span class="ss">Output: </span><span class="sc">{</span>draft<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-7"><a href="#cb12-7"></a>    refined <span class="op">=</span> prompt(<span class="st">"Improve based on critique."</span>, <span class="ss">f"Task: </span><span class="sc">{</span>question<span class="sc">}</span><span class="ch">\n</span><span class="ss">Draft: </span><span class="sc">{</span>draft<span class="sc">}</span><span class="ch">\n</span><span class="ss">Critique: </span><span class="sc">{</span>critique<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-8"><a href="#cb12-8"></a></span>
+<span id="cb12-9"><a href="#cb12-9"></a>    <span class="co"># Step 2: CoVe for factual accuracy</span></span>
+<span id="cb12-10"><a href="#cb12-10"></a>    verified <span class="op">=</span> prompt(</span>
+<span id="cb12-11"><a href="#cb12-11"></a>        <span class="st">"Verify each factual claim in the answer and produce a final corrected version."</span>,</span>
+<span id="cb12-12"><a href="#cb12-12"></a>        <span class="ss">f"Question: </span><span class="sc">{</span>question<span class="sc">}</span><span class="ch">\n</span><span class="ss">Answer: </span><span class="sc">{</span>refined<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a>    )</span>
+<span id="cb12-14"><a href="#cb12-14"></a>    <span class="cf">return</span> verified</span>
+<span id="cb12-15"><a href="#cb12-15"></a></span>
+<span id="cb12-16"><a href="#cb12-16"></a>answer <span class="op">=</span> reliable_answer(<span class="st">"What are the main differences between BERT and GPT architectures?"</span>)</span>
+<span id="cb12-17"><a href="#cb12-17"></a><span class="bu">print</span>(answer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 
 </section>
@@ -1029,13 +1335,13 @@ ul.task-list li input[type="checkbox"] {
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./Approaches_language..html" class="pagination-link" aria-label="2.2. Structural vs. Functional Approaches to Language">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></span>
+      <a href="./Prompt_CoT.html" class="pagination-link" aria-label="10.2. Chain-of-Thought &amp; Reasoning Prompts">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">10.2. Chain-of-Thought &amp; Reasoning Prompts</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./Lang_machine.html" class="pagination-link" aria-label="2.4. Representing Language for Machines">
-        <span class="nav-page-text"><span class="chapter-title">2.4. Representing Language for Machines</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./Agents.html" class="pagination-link" aria-label="11.1. AI Agents — Concepts and Architectures">
+        <span class="nav-page-text"><span class="chapter-title">11.1. AI Agents — Concepts and Architectures</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

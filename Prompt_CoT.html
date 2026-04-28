@@ -8,7 +8,7 @@
 
 <meta name="author" content="Kamil Filipek">
 
-<title>2.3. Ambiguity and Variability in Natural Language – Natural Language Processing - Part I</title>
+<title>10.2. Chain-of-Thought &amp; Reasoning Prompts – Natural Language Processing - Part I</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -24,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -34,8 +69,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./Lang_machine.html" rel="next">
-<link href="./Approaches_language..html" rel="prev">
+<link href="./Prompt_advanced.html" rel="next">
+<link href="./Prompt_engineering.html" rel="prev">
 <link href="./assets/umcs-favicon.ico" rel="icon">
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -89,7 +124,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Levels_analysis.html"><strong>2. Theoretical Foundations</strong></a></li><li class="breadcrumb-item"><a href="./Amb_var.html"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Prompt_engineering.html"><strong>10. Prompt Engineering</strong></a></li><li class="breadcrumb-item"><a href="./Prompt_CoT.html"><span class="chapter-title">10.2. Chain-of-Thought &amp; Reasoning Prompts</span></a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -170,7 +205,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -418,7 +453,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./Prompt_CoT.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">10.2. Chain-of-Thought &amp; Reasoning Prompts</span></a>
+  <a href="./Prompt_CoT.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">10.2. Chain-of-Thought &amp; Reasoning Prompts</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -485,18 +520,23 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">MORE DETAILS</h2>
    
   <ul>
-  <li><a href="#lexical-ambiguity" id="toc-lexical-ambiguity" class="nav-link active" data-scroll-target="#lexical-ambiguity">2.3.1. Lexical Ambiguity</a></li>
-  <li><a href="#syntactic-ambiguity" id="toc-syntactic-ambiguity" class="nav-link" data-scroll-target="#syntactic-ambiguity">2.3.2. Syntactic Ambiguity</a></li>
-  <li><a href="#semantic-and-pragmatic-ambiguities" id="toc-semantic-and-pragmatic-ambiguities" class="nav-link" data-scroll-target="#semantic-and-pragmatic-ambiguities">2.3.3. Semantic and Pragmatic Ambiguities</a></li>
+  <li><a href="#why-reasoning-matters-in-prompts" id="toc-why-reasoning-matters-in-prompts" class="nav-link active" data-scroll-target="#why-reasoning-matters-in-prompts">10.2.1. Why Reasoning Matters in Prompts</a></li>
+  <li><a href="#zero-shot-chain-of-thought" id="toc-zero-shot-chain-of-thought" class="nav-link" data-scroll-target="#zero-shot-chain-of-thought">10.2.2. Zero-Shot Chain-of-Thought</a></li>
+  <li><a href="#few-shot-chain-of-thought" id="toc-few-shot-chain-of-thought" class="nav-link" data-scroll-target="#few-shot-chain-of-thought">10.2.3. Few-Shot Chain-of-Thought</a></li>
+  <li><a href="#step-back-prompting" id="toc-step-back-prompting" class="nav-link" data-scroll-target="#step-back-prompting">10.2.4. Step-Back Prompting</a></li>
+  <li><a href="#self-ask-prompting" id="toc-self-ask-prompting" class="nav-link" data-scroll-target="#self-ask-prompting">10.2.5. Self-Ask Prompting</a></li>
+  <li><a href="#contrastive-chain-of-thought" id="toc-contrastive-chain-of-thought" class="nav-link" data-scroll-target="#contrastive-chain-of-thought">10.2.6. Contrastive Chain-of-Thought</a></li>
+  <li><a href="#tabular-chain-of-thought" id="toc-tabular-chain-of-thought" class="nav-link" data-scroll-target="#tabular-chain-of-thought">10.2.7. Tabular Chain-of-Thought</a></li>
+  <li><a href="#when-to-use-each-technique" id="toc-when-to-use-each-technique" class="nav-link" data-scroll-target="#when-to-use-each-technique">10.2.8. When to Use Each Technique</a></li>
   </ul>
 </nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Levels_analysis.html"><strong>2. Theoretical Foundations</strong></a></li><li class="breadcrumb-item"><a href="./Amb_var.html"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Prompt_engineering.html"><strong>10. Prompt Engineering</strong></a></li><li class="breadcrumb-item"><a href="./Prompt_CoT.html"><span class="chapter-title">10.2. Chain-of-Thought &amp; Reasoning Prompts</span></a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></h1>
+<h1 class="title"><span class="chapter-title">10.2. Chain-of-Thought &amp; Reasoning Prompts</span></h1>
 </div>
 
 
@@ -519,109 +559,286 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="lexical-ambiguity" class="level3">
-<h3 class="anchored" data-anchor-id="lexical-ambiguity">2.3.1. Lexical Ambiguity</h3>
-<p>Lexical ambiguity arises when a <strong>single word has more than one possible meaning</strong>, leading to uncertainty in interpretation depending on the context in which it appears. For example, the mentioned before&nbsp;<em>bank</em>&nbsp;may refer either to a financial institution or to the side of a river, and only surrounding linguistic or situational cues allow a listener or reader to determine the intended sense. This phenomenon is central to semantics and pragmatics, as it highlights the dependency of meaning on disambiguation processes. In natural language processing (NLP), lexical ambiguity represents a persistent challenge, since <strong>computational systems must accurately infer which sense of a word applies in a given text to avoid misinterpretation and error propagation in downstream tasks such as translation or sentiment analysis</strong>.</p>
-<p>From a cognitive and linguistic perspective, lexical ambiguity is not merely an obstacle but also a resource of natural languages, enriching communication through metaphor, humor, and wordplay.</p>
-<ul>
-<li><p><strong>Human speakers resolve ambiguity by drawing on contextual knowledge, shared conventions, and probabilistic expectations about word usage</strong>.</p></li>
-<li><p><strong>Computational approaches attempt to mimic these mechanisms using techniques such as word sense disambiguation, distributional semantics, and large-scale pretrained language models (Navigli, 2009; Jurafsky &amp; Martin, 2023)</strong>.</p></li>
-</ul>
-<p>Understanding and addressing lexical ambiguity is therefore not only a theoretical concern for linguists but also a practical requirement for advancing human–machine communication.</p>
-<p>👉 <strong>Large language models (LLMs) and modern NLP pipelines attempt to address lexical ambiguity through <u>context-sensitive embeddings (e.g., BERT, GPT)</u>, which represent words not in isolation but as dependent on their surrounding words</strong>. This approach has markedly improved performance in tasks such as machine translation and question answering, though challenges remain in domains with low resource data, figurative language, or domain-specific jargon (Pilehvar &amp; Camacho-Collados, 2019). Real-world examples show that resolving lexical ambiguity is essential not only for linguistic accuracy but also for building trustworthy AI systems in healthcare, law, and customer service, where misinterpretation may carry material consequences.</p>
+<section id="why-reasoning-matters-in-prompts" class="level3">
+<h3 class="anchored" data-anchor-id="why-reasoning-matters-in-prompts">10.2.1. Why Reasoning Matters in Prompts</h3>
+<p>Standard prompts ask the model to jump straight from input to answer. For tasks that require multi-step logic — mathematics, causal reasoning, multi-hop question answering — this direct approach frequently fails. <strong>Chain-of-Thought (CoT)</strong> prompting addresses this by eliciting an explicit reasoning trace before the final answer.</p>
+<p>The core insight (Wei et al., 2022): if you give a large-enough model room to “think aloud”, its accuracy on hard reasoning tasks improves dramatically. The reasoning steps serve as scratchpad space and also let you verify the model’s logic.</p>
+<hr>
 </section>
-<section id="syntactic-ambiguity" class="level3">
-<h3 class="anchored" data-anchor-id="syntactic-ambiguity">2.3.2. Syntactic Ambiguity</h3>
-<p>Syntactic ambiguity occurs when a <strong>sentence or phrase can be parsed in more than one way due to its grammatical structure</strong>, leading to multiple possible interpretations.</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Example</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong><em>I saw the man with the telescope</em></strong></td>
-</tr>
-<tr class="even">
-<td>The speaker used a telescope to see the man</td>
-</tr>
-<tr class="odd">
-<td>The man being observed had a telescope</td>
-</tr>
-</tbody>
-</table>
-<p>This type of ambiguity arises from structural features such as prepositional phrase attachment, scope of modifiers, or coordination, and it is a central problem in syntax, semantics, and psycholinguistics. <strong>From a linguistic perspective, syntactic ambiguity demonstrates how surface forms can underdetermine meaning, requiring additional contextual or pragmatic information for proper interpretation.</strong></p>
-<p>In computational linguistics and NLP, syntactic ambiguity poses <strong>serious challenges</strong> for tasks like parsing, machine translation, and question answering… A parser that assigns multiple valid syntactic trees to a single sentence must employ disambiguation strategies to select the most plausible interpretation.</p>
-<p>Traditional approaches rely on <strong>i. probabilistic context-free grammars (PCFGs)</strong> or <strong>ii. dependency parsing with statistical models</strong>, while modern systems increasingly use deep learning architectures that incorporate <strong>iii. contextual embeddings</strong> to guide syntactic choices (Kübler, McDonald, &amp; Nivre, 2009; Jurafsky &amp; Martin, 2023). Errors in resolving syntactic ambiguity can propagate across applications, leading to mistranslations, incoherent responses in dialogue systems, or inaccurate information extraction.</p>
-<p>Addressing syntactic ambiguity is therefore critical for both theoretical linguistics and practical NLP systems, especially in domains where precision is essential, such as legal or medical texts.</p>
+<section id="zero-shot-chain-of-thought" class="level3">
+<h3 class="anchored" data-anchor-id="zero-shot-chain-of-thought">10.2.2. Zero-Shot Chain-of-Thought</h3>
+<p>The simplest activation: append <strong>“Let’s think step by step.”</strong> to any question. No examples needed.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">import</span> anthropic</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>client <span class="op">=</span> anthropic.Anthropic()</span>
+<span id="cb1-4"><a href="#cb1-4"></a></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">def</span> prompt(system: <span class="bu">str</span>, user: <span class="bu">str</span>, max_tokens: <span class="bu">int</span> <span class="op">=</span> <span class="dv">600</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    msg <span class="op">=</span> client.messages.create(</span>
+<span id="cb1-7"><a href="#cb1-7"></a>        model<span class="op">=</span><span class="st">"claude-sonnet-4-6"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8"></a>        max_tokens<span class="op">=</span>max_tokens,</span>
+<span id="cb1-9"><a href="#cb1-9"></a>        system<span class="op">=</span>system,</span>
+<span id="cb1-10"><a href="#cb1-10"></a>        messages<span class="op">=</span>[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: user}]</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    )</span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="cf">return</span> msg.content[<span class="dv">0</span>].text</span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a></span>
+<span id="cb1-15"><a href="#cb1-15"></a>question <span class="op">=</span> <span class="st">"""A store sells apples at 3 for €2.</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="st">Maria buys 15 apples and pays with a €20 note.</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="st">How much change does she receive?"""</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="co"># Direct answer</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a>direct <span class="op">=</span> prompt(<span class="st">"Answer concisely."</span>, question)</span>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="bu">print</span>(<span class="ss">f"Direct: </span><span class="sc">{</span>direct<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-22"><a href="#cb1-22"></a></span>
+<span id="cb1-23"><a href="#cb1-23"></a><span class="co"># Zero-Shot CoT</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a>cot <span class="op">=</span> prompt(</span>
+<span id="cb1-25"><a href="#cb1-25"></a>    <span class="st">"Answer the question. Let's think step by step."</span>,</span>
+<span id="cb1-26"><a href="#cb1-26"></a>    question</span>
+<span id="cb1-27"><a href="#cb1-27"></a>)</span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Zero-Shot CoT:</span><span class="ch">\n</span><span class="sc">{</span>cot<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Direct: €10
+
+Zero-Shot CoT:
+Step 1: Find the price per apple.
+        3 apples = €2 → 1 apple = €2/3
+
+Step 2: Cost of 15 apples.
+        15 × (€2/3) = €30/3 = €10
+
+Step 3: Change from €20.
+        €20 − €10 = €10
+
+Answer: Maria receives €10 change.</code></pre>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Zero-Shot CoT works because large models already know how to reason — the trigger phrase simply shifts them from “answer immediately” mode to “explain your reasoning” mode.</p>
+</div>
+</div>
+<hr>
 </section>
-<section id="semantic-and-pragmatic-ambiguities" class="level3">
-<h3 class="anchored" data-anchor-id="semantic-and-pragmatic-ambiguities">2.3.3. Semantic and Pragmatic Ambiguities</h3>
-<p>Semantic ambiguity arises when a <strong>sentence or phrase allows multiple interpretations because the meanings of its words or combinations of words can be understood in more than one way</strong>. Unlike lexical ambiguity, which is tied to individual words, semantic ambiguity often results from broader compositional meaning. For instance,&nbsp;<em>Visiting relatives can be boring</em>&nbsp;may mean that the act of visiting relatives is boring, or that relatives who are visiting are boring. Such ambiguities highlight the complexity of semantic composition, where the interaction of words within a sentence leads to interpretive uncertainty (Pustejovsky, 1995).</p>
-<p><strong>In NLP, semantic ambiguity is particularly problematic for tasks such as semantic role labeling, textual entailment, and machine translation, where the correct interpretation depends on grasping the intended meaning of entire propositions.</strong></p>
-<p>Pragmatic ambiguity occurs when a <strong>sentence has a clear literal meaning, but its intended interpretation varies depending on context, speaker intention, or shared knowledge</strong>. For example, the utterance&nbsp;<em>Can you open the window?</em>&nbsp;is literally a question about ability, but pragmatically it is usually interpreted as a polite request. Similarly, irony, metaphor, or underspecified reference (e.g.,&nbsp;<em>They said it will rain tomorrow</em>—who are&nbsp;<em>they</em>?) introduce pragmatic ambiguity, which requires background knowledge and inference for resolution (Levinson, 1983).</p>
-<p>In computational systems, pragmatic ambiguity presents challenges for dialogue modeling, sentiment detection, and human–computer interaction, since models must go beyond syntax and semantics to incorporate contextual, cultural, and situational information. Recent work with large language models demonstrates progress in handling pragmatic cues, but robust resolution remains a significant open problem in AI.</p>
+<section id="few-shot-chain-of-thought" class="level3">
+<h3 class="anchored" data-anchor-id="few-shot-chain-of-thought">10.2.3. Few-Shot Chain-of-Thought</h3>
+<p>Provide worked examples that include <strong>both</strong> the reasoning trace and the final answer. The model learns the expected reasoning pattern from the demonstrations.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>FEW_SHOT_COT <span class="op">=</span> <span class="st">"""Solve each problem by thinking step by step, then state the answer.</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="st">Problem: A cyclist travels 60 km in 2 hours, then rests for 30 minutes,</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="st">         then travels 40 km in 1 hour. What is the average speed for the</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="st">         entire journey (excluding rest time)?</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="st">Reasoning:</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="st">  Total distance = 60 + 40 = 100 km</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="st">  Total moving time = 2 h + 1 h = 3 h</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="st">  Average speed = 100 / 3 ≈ 33.3 km/h</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="st">Answer: ≈ 33.3 km/h</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a></span>
+<span id="cb3-12"><a href="#cb3-12"></a><span class="st">Problem: A tank is 3/4 full. After adding 120 litres it is 9/10 full.</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="st">         What is the tank's total capacity?</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a><span class="st">Reasoning:</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a><span class="st">  The 120 litres represent 9/10 − 3/4 = 18/20 − 15/20 = 3/20 of the tank.</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a><span class="st">  Total capacity = 120 / (3/20) = 120 × 20/3 = 800 litres.</span></span>
+<span id="cb3-17"><a href="#cb3-17"></a><span class="st">Answer: 800 litres</span></span>
+<span id="cb3-18"><a href="#cb3-18"></a></span>
+<span id="cb3-19"><a href="#cb3-19"></a><span class="st">Problem: </span><span class="sc">{problem}</span></span>
+<span id="cb3-20"><a href="#cb3-20"></a><span class="st">Reasoning:"""</span></span>
+<span id="cb3-21"><a href="#cb3-21"></a></span>
+<span id="cb3-22"><a href="#cb3-22"></a>problem <span class="op">=</span> <span class="st">"""A train and a car start from the same city at 08:00.</span></span>
+<span id="cb3-23"><a href="#cb3-23"></a><span class="st">The train travels at 160 km/h; the car at 100 km/h.</span></span>
+<span id="cb3-24"><a href="#cb3-24"></a><span class="st">How far apart are they at 10:30?"""</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a></span>
+<span id="cb3-26"><a href="#cb3-26"></a>response <span class="op">=</span> prompt(</span>
+<span id="cb3-27"><a href="#cb3-27"></a>    <span class="st">"You are a precise mathematics tutor."</span>,</span>
+<span id="cb3-28"><a href="#cb3-28"></a>    FEW_SHOT_COT.<span class="bu">format</span>(problem<span class="op">=</span>problem)</span>
+<span id="cb3-29"><a href="#cb3-29"></a>)</span>
+<span id="cb3-30"><a href="#cb3-30"></a><span class="bu">print</span>(response)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>  Travel time = 08:00 to 10:30 = 2.5 hours
+  Train distance = 160 × 2.5 = 400 km
+  Car distance  = 100 × 2.5 = 250 km
+  Distance apart = 400 − 250 = 150 km
+Answer: 150 km apart</code></pre>
+<hr>
+</section>
+<section id="step-back-prompting" class="level3">
+<h3 class="anchored" data-anchor-id="step-back-prompting">10.2.4. Step-Back Prompting</h3>
+<p><strong>Step-back prompting</strong> (Zheng et al., 2023) asks the model to first retrieve the underlying <em>principle</em> or <em>concept</em> before solving the specific problem. This prevents the model from jumping to an answer without activating the relevant knowledge.</p>
+<p>Pattern: <strong>“What general principle applies here? → Apply that principle → Answer.”</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>STEP_BACK_TEMPLATE <span class="op">=</span> <span class="st">"""Before answering the specific question, step back and identify</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="st">the underlying concept or principle. Then apply it to answer.</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="st">Question: </span><span class="sc">{question}</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="st">Step 1 — What general concept or principle is relevant here?</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="st">Step 2 — Apply that principle to this specific case.</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="st">Step 3 — State the final answer clearly."""</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a></span>
+<span id="cb5-10"><a href="#cb5-10"></a>questions <span class="op">=</span> [</span>
+<span id="cb5-11"><a href="#cb5-11"></a>    <span class="st">"Why does mixing red and blue light give magenta, but mixing red and blue paint gives purple?"</span>,</span>
+<span id="cb5-12"><a href="#cb5-12"></a>    <span class="st">"A Python list and a Python tuple look similar — when should I prefer a tuple?"</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a>]</span>
+<span id="cb5-14"><a href="#cb5-14"></a></span>
+<span id="cb5-15"><a href="#cb5-15"></a><span class="cf">for</span> q <span class="kw">in</span> questions:</span>
+<span id="cb5-16"><a href="#cb5-16"></a>    <span class="bu">print</span>(<span class="ss">f"Q: </span><span class="sc">{</span>q<span class="sc">}</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb5-17"><a href="#cb5-17"></a>    <span class="bu">print</span>(prompt(<span class="st">"You are a clear and precise explainer."</span>, STEP_BACK_TEMPLATE.<span class="bu">format</span>(question<span class="op">=</span>q)))</span>
+<span id="cb5-18"><a href="#cb5-18"></a>    <span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span> <span class="op">+</span> <span class="st">"─"</span><span class="op">*</span><span class="dv">70</span> <span class="op">+</span> <span class="st">"</span><span class="ch">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Q: Why does mixing red and blue light give magenta, but mixing red and blue paint give purple?
+
+Step 1 — Relevant concept: additive vs subtractive colour mixing.
+  Light uses additive mixing (RGB): combining red + blue adds wavelengths → magenta.
+  Paint uses subtractive mixing (CMY): each pigment absorbs certain wavelengths;
+  red paint absorbs cyan, blue paint absorbs yellow → together they absorb most
+  wavelengths except a narrow band near purple/violet.
+
+Step 2 — Application: the physical medium determines how colours combine.
+
+Step 3 — Red + blue light → magenta; red + blue pigment → purple/violet.</code></pre>
+<hr>
+</section>
+<section id="self-ask-prompting" class="level3">
+<h3 class="anchored" data-anchor-id="self-ask-prompting">10.2.5. Self-Ask Prompting</h3>
+<p><strong>Self-Ask</strong> (Press et al., 2022) trains the model to decompose a complex question into simpler sub-questions, answer each one, then synthesise the final answer. Particularly effective for multi-hop factual queries.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a>SELF_ASK_TEMPLATE <span class="op">=</span> <span class="st">"""Answer the question by first asking and answering relevant</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="st">sub-questions, then giving the final answer.</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="st">Format:</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="st">  Follow-up question: ...</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="st">  Intermediate answer: ...</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="st">  (repeat as needed)</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="st">  Final answer: ...</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="st">Question: </span><span class="sc">{question}</span><span class="st">"""</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a></span>
+<span id="cb7-12"><a href="#cb7-12"></a>question <span class="op">=</span> <span class="st">"Was the president of France when the Eiffel Tower was built also the president when the first Tour de France took place?"</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="bu">print</span>(prompt(</span>
+<span id="cb7-15"><a href="#cb7-15"></a>    <span class="st">"You are a precise research assistant."</span>,</span>
+<span id="cb7-16"><a href="#cb7-16"></a>    SELF_ASK_TEMPLATE.<span class="bu">format</span>(question<span class="op">=</span>question)</span>
+<span id="cb7-17"><a href="#cb7-17"></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Follow-up question: When was the Eiffel Tower built?
+Intermediate answer: The Eiffel Tower was constructed between 1887 and 1889,
+  completing in March 1889.
+
+Follow-up question: Who was the president of France in 1889?
+Intermediate answer: Sadi Carnot was President of France in 1889.
+
+Follow-up question: When was the first Tour de France?
+Intermediate answer: The first Tour de France took place in July 1903.
+
+Follow-up question: Who was the president of France in 1903?
+Intermediate answer: Émile Loubet was President of France in 1903.
+
+Final answer: No. Sadi Carnot was president during the Eiffel Tower's construction
+(1889), but he was assassinated in 1894. Émile Loubet was president during the
+first Tour de France (1903).</code></pre>
+<hr>
+</section>
+<section id="contrastive-chain-of-thought" class="level3">
+<h3 class="anchored" data-anchor-id="contrastive-chain-of-thought">10.2.6. Contrastive Chain-of-Thought</h3>
+<p><strong>Contrastive CoT</strong> provides both a correct and an incorrect reasoning trace in the few-shot examples — labelled explicitly. The model learns to distinguish good from poor reasoning, improving the quality of its own traces.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a>CONTRASTIVE_COT <span class="op">=</span> <span class="st">"""I will show you correct and incorrect reasoning, then ask you to solve a new problem correctly.</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="st">INCORRECT EXAMPLE:</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="st">Problem: If 5 workers build a wall in 10 days, how long for 2 workers?</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="st">Reasoning: Fewer workers → take less time. 5−2=3 fewer workers → 10−3=7 days.</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="st">Answer: 7 days ← WRONG (this reasoning is incorrect)</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="st">CORRECT EXAMPLE:</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="st">Problem: If 5 workers build a wall in 10 days, how long for 2 workers?</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="st">Reasoning: Total work = 5 workers × 10 days = 50 worker-days.</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="st">           With 2 workers: 50 worker-days ÷ 2 workers = 25 days.</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="st">Answer: 25 days ← CORRECT</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a></span>
+<span id="cb9-14"><a href="#cb9-14"></a><span class="st">Now solve this problem using correct reasoning:</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a><span class="st">Problem: </span><span class="sc">{problem}</span><span class="st">"""</span></span>
+<span id="cb9-16"><a href="#cb9-16"></a></span>
+<span id="cb9-17"><a href="#cb9-17"></a>problem <span class="op">=</span> <span class="st">"A pump fills a tank in 6 hours. A second pump fills it in 4 hours. How long do they take together?"</span></span>
+<span id="cb9-18"><a href="#cb9-18"></a></span>
+<span id="cb9-19"><a href="#cb9-19"></a><span class="bu">print</span>(prompt(<span class="st">"You are a precise maths tutor."</span>, CONTRASTIVE_COT.<span class="bu">format</span>(problem<span class="op">=</span>problem)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>Reasoning:
+  Rate of pump 1 = 1/6 tank per hour
+  Rate of pump 2 = 1/4 tank per hour
+  Combined rate  = 1/6 + 1/4 = 2/12 + 3/12 = 5/12 tank per hour
+  Time together  = 1 ÷ (5/12) = 12/5 = 2.4 hours = 2 hours 24 minutes
+Answer: 2 hours and 24 minutes ← CORRECT</code></pre>
+<hr>
+</section>
+<section id="tabular-chain-of-thought" class="level3">
+<h3 class="anchored" data-anchor-id="tabular-chain-of-thought">10.2.7. Tabular Chain-of-Thought</h3>
+<p><strong>Tabular CoT</strong> (Ye &amp; Durrett, 2023) structures reasoning as a markdown table, enforcing clear intermediate steps and reducing errors in multi-step computations. Especially effective for problems involving multiple entities or comparisons.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a>TABULAR_COT_SYSTEM <span class="op">=</span> <span class="st">"""Solve problems by constructing a step-by-step reasoning table.</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="st">Format each step as | Step | Operation | Value |</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="st">End with a clear Final Answer line."""</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a></span>
+<span id="cb11-5"><a href="#cb11-5"></a>problem <span class="op">=</span> <span class="st">"""Three freelancers bid for a project:</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="st">Alice: €80/hour, estimates 40 hours</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="st">Bob:   €65/hour, estimates 55 hours</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a><span class="st">Carol: €90/hour, estimates 32 hours</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a><span class="st">Who offers the lowest total cost?"""</span></span>
+<span id="cb11-10"><a href="#cb11-10"></a></span>
+<span id="cb11-11"><a href="#cb11-11"></a><span class="bu">print</span>(prompt(TABULAR_COT_SYSTEM, problem))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre><code>| Step | Operation               | Value            |
+|------|-------------------------|------------------|
+| 1    | Alice total cost        | €80 × 40 = €3200 |
+| 2    | Bob total cost          | €65 × 55 = €3575 |
+| 3    | Carol total cost        | €90 × 32 = €2880 |
+| 4    | Minimum cost            | €2880 (Carol)    |
+
+Final Answer: Carol offers the lowest total cost at €2880.</code></pre>
+<hr>
+</section>
+<section id="when-to-use-each-technique" class="level3">
+<h3 class="anchored" data-anchor-id="when-to-use-each-technique">10.2.8. When to Use Each Technique</h3>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 7%">
-<col style="width: 24%">
-<col style="width: 24%">
-<col style="width: 9%">
-<col style="width: 34%">
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
 </colgroup>
 <thead>
 <tr class="header">
-<th><strong>Type of Ambiguity</strong></th>
-<th><strong>Source</strong></th>
-<th><strong>Example</strong></th>
-<th><strong>Linguistic Focus</strong></th>
-<th><strong>NLP Challenges &amp; Applications</strong></th>
+<th>Technique</th>
+<th>Best for</th>
+<th>Key trigger</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>Lexical</strong></td>
-<td>A single word has multiple meanings (polysemy or homonymy).</td>
-<td><em>Bank</em>&nbsp;= financial institution / river side</td>
-<td>Semantics, lexicon</td>
-<td>Word sense disambiguation, machine translation, sentiment analysis (e.g.,&nbsp;<em>critical</em>&nbsp;= negative vs.&nbsp;positive)</td>
+<td><strong>Zero-Shot CoT</strong></td>
+<td>Any reasoning task, quick wins</td>
+<td>“Let’s think step by step”</td>
 </tr>
 <tr class="even">
-<td><strong>Syntactic</strong></td>
-<td>Multiple possible sentence structures (different parses).</td>
-<td><em>I saw the man with the telescope</em>&nbsp;(who has the telescope?)</td>
-<td>Syntax, grammar</td>
-<td>Parsing, machine translation, information extraction; errors propagate to downstream tasks</td>
+<td><strong>Few-Shot CoT</strong></td>
+<td>Consistent output format needed</td>
+<td>2–4 worked examples with traces</td>
 </tr>
 <tr class="odd">
-<td><strong>Semantic</strong></td>
-<td>Multiple interpretations of sentence meaning due to compositional semantics.</td>
-<td><em>Visiting relatives can be boring</em>&nbsp;(act of visiting vs.&nbsp;relatives themselves)</td>
-<td>Semantics, meaning composition</td>
-<td>Semantic role labeling, entailment, question answering; crucial in disambiguating propositions</td>
+<td><strong>Step-Back</strong></td>
+<td>Factual / conceptual questions</td>
+<td>“What principle applies?”</td>
 </tr>
 <tr class="even">
-<td><strong>Pragmatic</strong></td>
-<td>Interpretation depends on context, speaker intention, or shared knowledge.</td>
-<td><em>Can you open the window?</em>&nbsp;(ability vs.&nbsp;polite request)</td>
-<td>Pragmatics, context, discourse</td>
-<td>Dialogue systems, sentiment detection, irony/metaphor understanding; essential in human–machine interaction</td>
+<td><strong>Self-Ask</strong></td>
+<td>Multi-hop factual queries</td>
+<td>“Follow-up question: …”</td>
+</tr>
+<tr class="odd">
+<td><strong>Contrastive CoT</strong></td>
+<td>Improving reasoning quality</td>
+<td>Show wrong + right traces</td>
+</tr>
+<tr class="even">
+<td><strong>Tabular CoT</strong></td>
+<td>Numerical / comparative problems</td>
+<td>Markdown table format</td>
 </tr>
 </tbody>
 </table>
-<p><strong>References:</strong></p>
-<ul>
-<li><p>Navigli, R. (2009). Word sense disambiguation: A survey.&nbsp;<em>ACM Computing Surveys (CSUR)</em>, 41(2), 1–69.</p></li>
-<li><p>Jurafsky, D., &amp; Martin, J. H. (2023).&nbsp;<em>Speech and Language Processing</em>&nbsp;(3rd ed., draft).</p></li>
-<li><p>Pilehvar, M. T., &amp; Camacho-Collados, J. (2019). Embeddings in natural language processing: Theory and advances in word representations.&nbsp;<em>Synthesis Lectures on Human Language Technologies</em>, 12(2), 1–175.</p></li>
-<li><p>Kübler, S., McDonald, R., &amp; Nivre, J. (2009).&nbsp;<em>Dependency Parsing</em>. Morgan &amp; Claypool.</p></li>
-<li><p>Pustejovsky, J. (1995).&nbsp;<em>The Generative Lexicon</em>. MIT Press.</p></li>
-</ul>
-<!-- -->
-<ul>
-<li>Levinson, S. C. (1983).&nbsp;<em>Pragmatics</em>. Cambridge University Press.</li>
-</ul>
 
 
 </section>
@@ -1029,13 +1246,13 @@ ul.task-list li input[type="checkbox"] {
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./Approaches_language..html" class="pagination-link" aria-label="2.2. Structural vs. Functional Approaches to Language">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></span>
+      <a href="./Prompt_engineering.html" class="pagination-link" aria-label="10.1. Prompt Engineering Basics">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">10.1. Prompt Engineering Basics</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./Lang_machine.html" class="pagination-link" aria-label="2.4. Representing Language for Machines">
-        <span class="nav-page-text"><span class="chapter-title">2.4. Representing Language for Machines</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./Prompt_advanced.html" class="pagination-link" aria-label="10.3. Advanced Prompting Techniques">
+        <span class="nav-page-text"><span class="chapter-title">10.3. Advanced Prompting Techniques</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

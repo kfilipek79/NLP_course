@@ -8,7 +8,7 @@
 
 <meta name="author" content="Kamil Filipek">
 
-<title>2.3. Ambiguity and Variability in Natural Language – Natural Language Processing - Part I</title>
+<title>8.1. Neural Network Fundamentals &amp; Hyperparameters – Natural Language Processing - Part I</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -34,8 +34,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./Lang_machine.html" rel="next">
-<link href="./Approaches_language..html" rel="prev">
+<link href="./Training_LSTM.html" rel="next">
+<link href="./LSA.html" rel="prev">
 <link href="./assets/umcs-favicon.ico" rel="icon">
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -76,6 +76,35 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 <style>html{ scroll-behavior: smooth; }</style>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -89,7 +118,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Levels_analysis.html"><strong>2. Theoretical Foundations</strong></a></li><li class="breadcrumb-item"><a href="./Amb_var.html"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./NN_Fundamentals.html"><strong>8. Training Neural Networks</strong></a></li><li class="breadcrumb-item"><a href="./NN_Fundamentals.html"><span class="chapter-title">8.1. Neural Network Fundamentals &amp; Hyperparameters</span></a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -170,7 +199,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
+  <a href="./Amb_var.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -356,7 +385,7 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./NN_Fundamentals.html" class="sidebar-item-text sidebar-link"><span class="chapter-title">8.1. Neural Network Fundamentals &amp; Hyperparameters</span></a>
+  <a href="./NN_Fundamentals.html" class="sidebar-item-text sidebar-link active"><span class="chapter-title">8.1. Neural Network Fundamentals &amp; Hyperparameters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -485,18 +514,18 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">MORE DETAILS</h2>
    
   <ul>
-  <li><a href="#lexical-ambiguity" id="toc-lexical-ambiguity" class="nav-link active" data-scroll-target="#lexical-ambiguity">2.3.1. Lexical Ambiguity</a></li>
-  <li><a href="#syntactic-ambiguity" id="toc-syntactic-ambiguity" class="nav-link" data-scroll-target="#syntactic-ambiguity">2.3.2. Syntactic Ambiguity</a></li>
-  <li><a href="#semantic-and-pragmatic-ambiguities" id="toc-semantic-and-pragmatic-ambiguities" class="nav-link" data-scroll-target="#semantic-and-pragmatic-ambiguities">2.3.3. Semantic and Pragmatic Ambiguities</a></li>
+  <li><a href="#why-train-your-own-network" id="toc-why-train-your-own-network" class="nav-link active" data-scroll-target="#why-train-your-own-network">8.1.1. Why Train Your Own Network?</a></li>
+  <li><a href="#neural-network-fundamentals" id="toc-neural-network-fundamentals" class="nav-link" data-scroll-target="#neural-network-fundamentals">8.1.2. Neural Network Fundamentals</a></li>
+  <li><a href="#key-hyperparameters-explained" id="toc-key-hyperparameters-explained" class="nav-link" data-scroll-target="#key-hyperparameters-explained">8.1.3. Key Hyperparameters Explained</a></li>
   </ul>
 </nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./Levels_analysis.html"><strong>2. Theoretical Foundations</strong></a></li><li class="breadcrumb-item"><a href="./Amb_var.html"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./NN_Fundamentals.html"><strong>8. Training Neural Networks</strong></a></li><li class="breadcrumb-item"><a href="./NN_Fundamentals.html"><span class="chapter-title">8.1. Neural Network Fundamentals &amp; Hyperparameters</span></a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title"><span class="chapter-title">2.3. Ambiguity and Variability in Natural Language</span></h1>
+<h1 class="title"><span class="chapter-title">8.1. Neural Network Fundamentals &amp; Hyperparameters</span></h1>
 </div>
 
 
@@ -519,111 +548,228 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="lexical-ambiguity" class="level3">
-<h3 class="anchored" data-anchor-id="lexical-ambiguity">2.3.1. Lexical Ambiguity</h3>
-<p>Lexical ambiguity arises when a <strong>single word has more than one possible meaning</strong>, leading to uncertainty in interpretation depending on the context in which it appears. For example, the mentioned before&nbsp;<em>bank</em>&nbsp;may refer either to a financial institution or to the side of a river, and only surrounding linguistic or situational cues allow a listener or reader to determine the intended sense. This phenomenon is central to semantics and pragmatics, as it highlights the dependency of meaning on disambiguation processes. In natural language processing (NLP), lexical ambiguity represents a persistent challenge, since <strong>computational systems must accurately infer which sense of a word applies in a given text to avoid misinterpretation and error propagation in downstream tasks such as translation or sentiment analysis</strong>.</p>
-<p>From a cognitive and linguistic perspective, lexical ambiguity is not merely an obstacle but also a resource of natural languages, enriching communication through metaphor, humor, and wordplay.</p>
+<section id="why-train-your-own-network" class="level3">
+<h3 class="anchored" data-anchor-id="why-train-your-own-network">8.1.1. Why Train Your Own Network?</h3>
+<p>Pre-trained models like BERT and GPT are powerful, but there are good reasons to train a neural network from scratch (or fine-tune a small custom architecture):</p>
 <ul>
-<li><p><strong>Human speakers resolve ambiguity by drawing on contextual knowledge, shared conventions, and probabilistic expectations about word usage</strong>.</p></li>
-<li><p><strong>Computational approaches attempt to mimic these mechanisms using techniques such as word sense disambiguation, distributional semantics, and large-scale pretrained language models (Navigli, 2009; Jurafsky &amp; Martin, 2023)</strong>.</p></li>
+<li><strong>Domain-specific data</strong> with vocabulary and patterns not well covered by general corpora.</li>
+<li><strong>Computational constraints</strong> — a small custom model can run on a CPU or mobile device.</li>
+<li><strong>Educational purposes</strong> — understanding backpropagation and weight updates by building the training loop yourself.</li>
+<li><strong>Specialised tasks</strong> — sequence labelling, anomaly detection in logs, character-level generation.</li>
 </ul>
-<p>Understanding and addressing lexical ambiguity is therefore not only a theoretical concern for linguists but also a practical requirement for advancing human–machine communication.</p>
-<p>👉 <strong>Large language models (LLMs) and modern NLP pipelines attempt to address lexical ambiguity through <u>context-sensitive embeddings (e.g., BERT, GPT)</u>, which represent words not in isolation but as dependent on their surrounding words</strong>. This approach has markedly improved performance in tasks such as machine translation and question answering, though challenges remain in domains with low resource data, figurative language, or domain-specific jargon (Pilehvar &amp; Camacho-Collados, 2019). Real-world examples show that resolving lexical ambiguity is essential not only for linguistic accuracy but also for building trustworthy AI systems in healthcare, law, and customer service, where misinterpretation may carry material consequences.</p>
+<p>This chapter focuses on <strong>LSTM (Long Short-Term Memory)</strong> networks — the most successful recurrent architecture before transformers — and covers all the parameters you need to tune to train one well.</p>
+<hr>
 </section>
-<section id="syntactic-ambiguity" class="level3">
-<h3 class="anchored" data-anchor-id="syntactic-ambiguity">2.3.2. Syntactic Ambiguity</h3>
-<p>Syntactic ambiguity occurs when a <strong>sentence or phrase can be parsed in more than one way due to its grammatical structure</strong>, leading to multiple possible interpretations.</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Example</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong><em>I saw the man with the telescope</em></strong></td>
-</tr>
-<tr class="even">
-<td>The speaker used a telescope to see the man</td>
-</tr>
-<tr class="odd">
-<td>The man being observed had a telescope</td>
-</tr>
-</tbody>
-</table>
-<p>This type of ambiguity arises from structural features such as prepositional phrase attachment, scope of modifiers, or coordination, and it is a central problem in syntax, semantics, and psycholinguistics. <strong>From a linguistic perspective, syntactic ambiguity demonstrates how surface forms can underdetermine meaning, requiring additional contextual or pragmatic information for proper interpretation.</strong></p>
-<p>In computational linguistics and NLP, syntactic ambiguity poses <strong>serious challenges</strong> for tasks like parsing, machine translation, and question answering… A parser that assigns multiple valid syntactic trees to a single sentence must employ disambiguation strategies to select the most plausible interpretation.</p>
-<p>Traditional approaches rely on <strong>i. probabilistic context-free grammars (PCFGs)</strong> or <strong>ii. dependency parsing with statistical models</strong>, while modern systems increasingly use deep learning architectures that incorporate <strong>iii. contextual embeddings</strong> to guide syntactic choices (Kübler, McDonald, &amp; Nivre, 2009; Jurafsky &amp; Martin, 2023). Errors in resolving syntactic ambiguity can propagate across applications, leading to mistranslations, incoherent responses in dialogue systems, or inaccurate information extraction.</p>
-<p>Addressing syntactic ambiguity is therefore critical for both theoretical linguistics and practical NLP systems, especially in domains where precision is essential, such as legal or medical texts.</p>
-</section>
-<section id="semantic-and-pragmatic-ambiguities" class="level3">
-<h3 class="anchored" data-anchor-id="semantic-and-pragmatic-ambiguities">2.3.3. Semantic and Pragmatic Ambiguities</h3>
-<p>Semantic ambiguity arises when a <strong>sentence or phrase allows multiple interpretations because the meanings of its words or combinations of words can be understood in more than one way</strong>. Unlike lexical ambiguity, which is tied to individual words, semantic ambiguity often results from broader compositional meaning. For instance,&nbsp;<em>Visiting relatives can be boring</em>&nbsp;may mean that the act of visiting relatives is boring, or that relatives who are visiting are boring. Such ambiguities highlight the complexity of semantic composition, where the interaction of words within a sentence leads to interpretive uncertainty (Pustejovsky, 1995).</p>
-<p><strong>In NLP, semantic ambiguity is particularly problematic for tasks such as semantic role labeling, textual entailment, and machine translation, where the correct interpretation depends on grasping the intended meaning of entire propositions.</strong></p>
-<p>Pragmatic ambiguity occurs when a <strong>sentence has a clear literal meaning, but its intended interpretation varies depending on context, speaker intention, or shared knowledge</strong>. For example, the utterance&nbsp;<em>Can you open the window?</em>&nbsp;is literally a question about ability, but pragmatically it is usually interpreted as a polite request. Similarly, irony, metaphor, or underspecified reference (e.g.,&nbsp;<em>They said it will rain tomorrow</em>—who are&nbsp;<em>they</em>?) introduce pragmatic ambiguity, which requires background knowledge and inference for resolution (Levinson, 1983).</p>
-<p>In computational systems, pragmatic ambiguity presents challenges for dialogue modeling, sentiment detection, and human–computer interaction, since models must go beyond syntax and semantics to incorporate contextual, cultural, and situational information. Recent work with large language models demonstrates progress in handling pragmatic cues, but robust resolution remains a significant open problem in AI.</p>
+<section id="neural-network-fundamentals" class="level3">
+<h3 class="anchored" data-anchor-id="neural-network-fundamentals">8.1.2. Neural Network Fundamentals</h3>
+<p>A neural network is a composition of <em>layers</em>, each performing a linear transformation followed by a non-linear <em>activation function</em>:</p>
+<p><span class="math display">\[
+\mathbf{h}^{(l)} = \sigma\!\left(W^{(l)} \mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}\right)
+\]</span></p>
+<p>where <span class="math inline">\(W^{(l)}\)</span> are learnable weights, <span class="math inline">\(\mathbf{b}^{(l)}\)</span> is a bias vector, and <span class="math inline">\(\sigma\)</span> is the activation.</p>
+<section id="activation-functions" class="level4">
+<h4 class="anchored" data-anchor-id="activation-functions">Activation Functions</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 7%">
-<col style="width: 24%">
-<col style="width: 24%">
-<col style="width: 9%">
-<col style="width: 34%">
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
 </colgroup>
 <thead>
 <tr class="header">
-<th><strong>Type of Ambiguity</strong></th>
-<th><strong>Source</strong></th>
-<th><strong>Example</strong></th>
-<th><strong>Linguistic Focus</strong></th>
-<th><strong>NLP Challenges &amp; Applications</strong></th>
+<th>Function</th>
+<th>Formula</th>
+<th>Common use</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>Lexical</strong></td>
-<td>A single word has multiple meanings (polysemy or homonymy).</td>
-<td><em>Bank</em>&nbsp;= financial institution / river side</td>
-<td>Semantics, lexicon</td>
-<td>Word sense disambiguation, machine translation, sentiment analysis (e.g.,&nbsp;<em>critical</em>&nbsp;= negative vs.&nbsp;positive)</td>
+<td><strong>ReLU</strong></td>
+<td><span class="math inline">\(\max(0, x)\)</span></td>
+<td>Hidden layers (default choice)</td>
 </tr>
 <tr class="even">
-<td><strong>Syntactic</strong></td>
-<td>Multiple possible sentence structures (different parses).</td>
-<td><em>I saw the man with the telescope</em>&nbsp;(who has the telescope?)</td>
-<td>Syntax, grammar</td>
-<td>Parsing, machine translation, information extraction; errors propagate to downstream tasks</td>
+<td><strong>Sigmoid</strong></td>
+<td><span class="math inline">\(1/(1+e^{-x})\)</span></td>
+<td>Binary output layer</td>
 </tr>
 <tr class="odd">
-<td><strong>Semantic</strong></td>
-<td>Multiple interpretations of sentence meaning due to compositional semantics.</td>
-<td><em>Visiting relatives can be boring</em>&nbsp;(act of visiting vs.&nbsp;relatives themselves)</td>
-<td>Semantics, meaning composition</td>
-<td>Semantic role labeling, entailment, question answering; crucial in disambiguating propositions</td>
+<td><strong>Softmax</strong></td>
+<td><span class="math inline">\(e^{x_i}/\sum e^{x_j}\)</span></td>
+<td>Multi-class output layer</td>
 </tr>
 <tr class="even">
-<td><strong>Pragmatic</strong></td>
-<td>Interpretation depends on context, speaker intention, or shared knowledge.</td>
-<td><em>Can you open the window?</em>&nbsp;(ability vs.&nbsp;polite request)</td>
-<td>Pragmatics, context, discourse</td>
-<td>Dialogue systems, sentiment detection, irony/metaphor understanding; essential in human–machine interaction</td>
+<td><strong>Tanh</strong></td>
+<td><span class="math inline">\((e^x - e^{-x})/(e^x + e^{-x})\)</span></td>
+<td>RNN hidden states, range <span class="math inline">\([-1,1]\)</span></td>
+</tr>
+<tr class="odd">
+<td><strong>GELU</strong></td>
+<td><span class="math inline">\(x \cdot \Phi(x)\)</span></td>
+<td>Transformers (BERT, GPT)</td>
 </tr>
 </tbody>
 </table>
-<p><strong>References:</strong></p>
-<ul>
-<li><p>Navigli, R. (2009). Word sense disambiguation: A survey.&nbsp;<em>ACM Computing Surveys (CSUR)</em>, 41(2), 1–69.</p></li>
-<li><p>Jurafsky, D., &amp; Martin, J. H. (2023).&nbsp;<em>Speech and Language Processing</em>&nbsp;(3rd ed., draft).</p></li>
-<li><p>Pilehvar, M. T., &amp; Camacho-Collados, J. (2019). Embeddings in natural language processing: Theory and advances in word representations.&nbsp;<em>Synthesis Lectures on Human Language Technologies</em>, 12(2), 1–175.</p></li>
-<li><p>Kübler, S., McDonald, R., &amp; Nivre, J. (2009).&nbsp;<em>Dependency Parsing</em>. Morgan &amp; Claypool.</p></li>
-<li><p>Pustejovsky, J. (1995).&nbsp;<em>The Generative Lexicon</em>. MIT Press.</p></li>
-</ul>
-<!-- -->
-<ul>
-<li>Levinson, S. C. (1983).&nbsp;<em>Pragmatics</em>. Cambridge University Press.</li>
-</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Dying ReLU problem
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If a neuron’s input is always negative, the gradient through ReLU is zero — the neuron permanently stops learning. Mitigations: <strong>Leaky ReLU</strong> (<span class="math inline">\(\alpha x\)</span> for <span class="math inline">\(x &lt; 0\)</span>, typically <span class="math inline">\(\alpha = 0.01\)</span>), <strong>ELU</strong>, or weight initialisation with care.</p>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="key-hyperparameters-explained" class="level3">
+<h3 class="anchored" data-anchor-id="key-hyperparameters-explained">8.1.3. Key Hyperparameters Explained</h3>
+<p>Training a neural network involves choosing a large number of hyperparameters. Below is a structured reference.</p>
+<section id="architecture-parameters" class="level4">
+<h4 class="anchored" data-anchor-id="architecture-parameters">Architecture parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>What it controls</th>
+<th>Typical range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Number of layers</strong> (depth)</td>
+<td>Model capacity; deeper = more abstract features</td>
+<td>1–6 for RNNs; 12–96 for transformers</td>
+</tr>
+<tr class="even">
+<td><strong>Hidden size</strong> (width)</td>
+<td>Neurons per layer</td>
+<td>64–1024</td>
+</tr>
+<tr class="odd">
+<td><strong>Embedding dim</strong></td>
+<td>Dimensionality of token vectors</td>
+<td>50–768</td>
+</tr>
+<tr class="even">
+<td><strong>Dropout rate</strong></td>
+<td>Fraction of activations randomly zeroed during training (regularisation)</td>
+<td>0.1–0.5</td>
+</tr>
+<tr class="odd">
+<td><strong>Bidirectional</strong></td>
+<td>Whether LSTM reads forward <em>and</em> backward</td>
+<td>True for classification, False for generation</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="training-parameters" class="level4">
+<h4 class="anchored" data-anchor-id="training-parameters">Training parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>What it controls</th>
+<th>Typical starting value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Learning rate (LR)</strong></td>
+<td>Step size for gradient descent</td>
+<td>1e-3 (Adam), 1e-2 (SGD)</td>
+</tr>
+<tr class="even">
+<td><strong>Batch size</strong></td>
+<td>Samples processed per gradient update</td>
+<td>32–256</td>
+</tr>
+<tr class="odd">
+<td><strong>Epochs</strong></td>
+<td>Number of full passes over the training set</td>
+<td>5–50</td>
+</tr>
+<tr class="even">
+<td><strong>LR scheduler</strong></td>
+<td>How the learning rate changes over time</td>
+<td>ReduceLROnPlateau, CosineAnnealing</td>
+</tr>
+<tr class="odd">
+<td><strong>Gradient clipping</strong></td>
+<td>Prevents exploding gradients in RNNs</td>
+<td><code>max_norm=1.0</code> or <code>5.0</code></td>
+</tr>
+<tr class="even">
+<td><strong>Weight decay (L2)</strong></td>
+<td>Penalises large weights (regularisation)</td>
+<td>1e-5 – 1e-4</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="optimiser-choice" class="level4">
+<h4 class="anchored" data-anchor-id="optimiser-choice">Optimiser choice</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Optimiser</th>
+<th>When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Adam</strong></td>
+<td>Default choice; adapts per-parameter LR</td>
+</tr>
+<tr class="even">
+<td><strong>AdamW</strong></td>
+<td>Adam + decoupled weight decay; better for transformers</td>
+</tr>
+<tr class="odd">
+<td><strong>SGD + momentum</strong></td>
+<td>When you want tighter control; often best with a good LR schedule</td>
+</tr>
+<tr class="even">
+<td><strong>RMSProp</strong></td>
+<td>RNNs, non-stationary problems</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The learning rate is the most important hyperparameter
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Too high → loss diverges or oscillates. Too low → training is very slow and may get stuck. A <strong>learning rate finder</strong> (available in PyTorch Lightning and fast.ai) runs a short sweep over candidate LRs and plots loss — the optimal LR sits just before the loss starts rising steeply.</p>
+</div>
+</div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
@@ -1029,13 +1175,13 @@ ul.task-list li input[type="checkbox"] {
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./Approaches_language..html" class="pagination-link" aria-label="2.2. Structural vs. Functional Approaches to Language">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">2.2. Structural vs.&nbsp;Functional Approaches to Language</span></span>
+      <a href="./LSA.html" class="pagination-link" aria-label="7.4. Latent Semantic Analysis">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-title">7.4. Latent Semantic Analysis</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./Lang_machine.html" class="pagination-link" aria-label="2.4. Representing Language for Machines">
-        <span class="nav-page-text"><span class="chapter-title">2.4. Representing Language for Machines</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./Training_LSTM.html" class="pagination-link" aria-label="8.2. LSTM Architecture &amp; PyTorch Training Loop">
+        <span class="nav-page-text"><span class="chapter-title">8.2. LSTM Architecture &amp; PyTorch Training Loop</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
